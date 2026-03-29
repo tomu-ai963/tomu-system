@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>褒め褒め鏡</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:linear-gradient(145deg,#f5f0ff 0%,#fdf4f0 40%,#fff8f4 70%,#f8f4ff 100%);display:flex;align-items:center;justify-content:center;font-family:'Zen Kaku Gothic New',sans-serif;padding:24px 16px;position:relative;overflow:hidden}
+.orb{position:absolute;border-radius:50%;pointer-events:none}
+.orb1{top:-80px;left:-60px;width:320px;height:320px;background:radial-gradient(circle,rgba(220,190,255,0.35) 0%,transparent 70%);animation:pulse 6s ease-in-out infinite}
+.orb2{bottom:-60px;right:-40px;width:280px;height:280px;background:radial-gradient(circle,rgba(255,210,190,0.4) 0%,transparent 70%);animation:pulse 8s ease-in-out infinite 2s}
+.container{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;gap:28px;position:relative;z-index:1}
+.header{text-align:center;animation:fadeUp 0.8s ease-out}
+.mirror-icon{font-size:48px;display:block;margin-bottom:8px;filter:drop-shadow(0 4px 12px rgba(180,130,200,0.4))}
+h1{font-family:'Shippori Mincho',serif;font-size:32px;font-weight:600;background:linear-gradient(135deg,#c878c0 0%,#e8a060 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.06em;margin-bottom:8px}
+.subtitle{font-size:14px;color:#b09ab8;letter-spacing:0.08em;font-weight:300}
+.mirror{width:100%;background:rgba(255,252,255,0.75);backdrop-filter:blur(20px);border-radius:24px;border:1.5px solid rgba(220,190,240,0.5);padding:32px 28px;box-shadow:0 8px 40px rgba(180,130,200,0.15),inset 0 1px 0 rgba(255,255,255,0.8);position:relative;overflow:hidden;animation:fadeUp 0.8s ease-out 0.2s both}
+.shimmer{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.4) 50%,transparent 60%);animation:shimmer 4s ease-in-out infinite;pointer-events:none}
+.label{font-family:'Shippori Mincho',serif;font-size:15px;color:#a88ab0;margin-bottom:16px;letter-spacing:0.04em}
+textarea{width:100%;padding:14px 16px;border-radius:14px;border:1.5px solid rgba(210,170,230,0.5);background:rgba(252,248,255,0.8);font-size:14px;color:#5a4060;line-height:1.7;font-family:'Zen Kaku Gothic New',sans-serif;resize:none;outline:none;transition:border-color 0.2s,box-shadow 0.2s;margin-bottom:16px}
+textarea:focus{border-color:#d4a0c8;box-shadow:0 0 0 3px rgba(212,160,200,0.2)}
+textarea::placeholder{color:#c4a8c0;font-style:italic}
+.btn{width:100%;padding:14px 24px;border-radius:50px;border:none;background:linear-gradient(135deg,#d4a0c8 0%,#e8b890 100%);color:white;font-size:15px;font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;letter-spacing:0.06em;cursor:pointer;box-shadow:0 4px 20px rgba(212,160,200,0.4);transition:opacity 0.2s}
+.btn:disabled{background:linear-gradient(135deg,#d8c8d8 0%,#e8d8c8 100%);box-shadow:none;cursor:not-allowed}
+.praise-section{animation:fadeUp 0.6s ease-out}
+.praise-header{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.praise-label{font-size:13px;color:#c08ab0;letter-spacing:0.1em;font-weight:700}
+.praise-text{font-family:'Shippori Mincho',serif;font-size:15px;color:#5a4060;line-height:1.9;letter-spacing:0.03em;margin-bottom:20px}
+.reset-btn{display:block;margin:0 auto;padding:10px 28px;border-radius:50px;border:1.5px solid rgba(210,170,230,0.6);background:transparent;color:#b090c0;font-size:13px;font-family:'Zen Kaku Gothic New',sans-serif;cursor:pointer;letter-spacing:0.06em}
+.footer{font-size:12px;color:#c4aac8;letter-spacing:0.1em;animation:fadeUp 0.8s ease-out 0.4s both}
+.hidden{display:none}
+@keyframes pulse{0%,100%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.02)}}
+@keyframes shimmer{0%{transform:translateX(-100%) skewX(-15deg)}100%{transform:translateX(300%) skewX(-15deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="container">
+  <div class="header">
+    <span class="mirror-icon">🪞</span>
+    <h1>褒め褒め鏡</h1>
+    <p class="subtitle">今日の自分を、鏡に映してみて</p>
+  </div>
+  <div class="mirror">
+    <div class="shimmer"></div>
+    <div id="input-section">
+      <p class="label">今日のあなたを、少し聞かせて</p>
+      <textarea id="userInput" rows="4" placeholder="今日も一日頑張りました。特に難しかったことに取り組んで、少し自信がつきました。"></textarea>
+      <button class="btn" id="praiseBtn" onclick="getPraise()">✨ 鏡に映す</button>
+    </div>
+    <div id="praise-section" class="praise-section hidden">
+      <div class="praise-header"><span>🌸</span><span class="praise-label">鏡からのことば</span></div>
+      <p class="praise-text" id="praiseText"></p>
+      <button class="reset-btn" onclick="reset()">もう一度映す</button>
+    </div>
+  </div>
+  <p class="footer">あなたの今日を、ちゃんと見ています</p>
+</div>
+<script>
+const WORKER_URL = "https://ai-proxy.inverted-triangle-leef.workers.dev";
+const SYSTEM_PROMPT = `あなたは「褒め褒め鏡」です。ユーザーが入力した内容を読んで、その人のことを心から褒めてください。やさしく、温かく、誠実に。具体的な内容に触れながら3〜5文で。最後に短い応援メッセージで締める。絵文字は1〜2個だけ。`;
+
+async function getPraise() {
+  const input = document.getElementById("userInput").value.trim();
+  if (!input) return;
+  const btn = document.getElementById("praiseBtn");
+  btn.textContent = "鏡が映している…";
+  btn.disabled = true;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 300,
+        messages: [
+          {role: "system", content: SYSTEM_PROMPT},
+          {role: "user", content: input}
+        ]
+      })
+    });
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || "あなたは素晴らしいです。✨";
+    document.getElementById("praiseText").textContent = text;
+    document.getElementById("input-section").classList.add("hidden");
+    document.getElementById("praise-section").classList.remove("hidden");
+  } catch {
+    document.getElementById("praiseText").textContent = "あなたのことを褒めたくて仕方ないのですが、少し調子が悪いみたい。でも、ここまで書いてくれたあなたは、間違いなく素敵な人です。✨";
+    document.getElementById("input-section").classList.add("hidden");
+    document.getElementById("praise-section").classList.remove("hidden");
+  }
+}
+
+function reset() {
+  document.getElementById("userInput").value = "";
+  document.getElementById("praiseBtn").textContent = "✨ 鏡に映す";
+  document.getElementById("praiseBtn").disabled = false;
+  document.getElementById("input-section").classList.remove("hidden");
+  document.getElementById("praise-section").classList.add("hidden");
+}
+</script>
+</body>
+</html>

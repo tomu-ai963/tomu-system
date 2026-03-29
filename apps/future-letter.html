@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>未来の自分からの手紙</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(170deg, #0a0a1a 0%, #0d1525 40%, #0f1a2e 70%, #0a0f1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Georgia', 'Yu Mincho', '游明朝', serif;
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  opacity: 0.2;
+  pointer-events: none;
+  animation: twinkle var(--dur) var(--delay) infinite ease-in-out;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes inkDrop {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.glow-1 {
+  position: absolute;
+  top: 10%; right: 15%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(200,190,255,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.glow-2 {
+  position: absolute;
+  bottom: 20%; left: 10%;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(150,200,255,0.04) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.main-card {
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.header-sub {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: rgba(180,160,255,0.5);
+  margin-bottom: 12px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 300;
+  color: rgba(230,225,255,0.92);
+  letter-spacing: 0.1em;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.divider {
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(180,160,255,0.4), transparent);
+  margin: 14px auto 0;
+}
+
+.card-body {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 32px 28px;
+  backdrop-filter: blur(12px);
+}
+
+/* idle phase */
+.phase-idle { display: block; }
+.phase-writing { display: none; }
+.phase-done { display: none; }
+
+.desc {
+  font-size: 13px;
+  line-height: 1.8;
+  color: rgba(200,195,230,0.6);
+  margin: 0 0 20px;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+textarea {
+  width: 100%;
+  min-height: 120px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: rgba(230,225,255,0.85);
+  font-size: 14px;
+  line-height: 1.8;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: 'Georgia', 'Yu Mincho', serif;
+  letter-spacing: 0.03em;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+textarea:focus {
+  border-color: rgba(180,160,255,0.5);
+  box-shadow: 0 0 0 1px rgba(180,160,255,0.2), inset 0 0 20px rgba(180,160,255,0.05);
+}
+
+.btn-wrap { text-align: center; margin-top: 20px; }
+
+.send-btn {
+  background: linear-gradient(135deg, rgba(140,120,220,0.8), rgba(100,140,220,0.8));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 30px;
+  padding: 12px 36px;
+  color: rgba(230,225,255,0.95);
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  transition: all 0.3s;
+}
+.send-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(180,160,255,0.3); }
+.send-btn:active { transform: translateY(0); }
+.send-btn:disabled {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.3);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* writing phase */
+.loading-center { text-align: center; padding: 32px 0; }
+.loading-label {
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  color: rgba(180,160,255,0.6);
+  margin-bottom: 24px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+}
+.dots { display: flex; justify-content: center; gap: 8px; }
+.dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgba(180,160,255,0.6);
+  animation: pulse-soft 1.2s ease infinite;
+}
+.dot:nth-child(2) { animation-delay: 0.4s; }
+.dot:nth-child(3) { animation-delay: 0.8s; }
+
+/* done phase */
+.letter-date {
+  font-size: 11px;
+  color: rgba(180,160,255,0.4);
+  letter-spacing: 0.2em;
+  margin-bottom: 20px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+.letter-body {
+  font-size: 15px;
+  line-height: 2.1;
+  color: rgba(220,215,255,0.88);
+  letter-spacing: 0.06em;
+  font-family: 'Georgia', 'Yu Mincho', '游明朝', serif;
+  min-height: 100px;
+  border-left: 2px solid rgba(180,160,255,0.15);
+  padding-left: 16px;
+  white-space: pre-wrap;
+}
+.cursor {
+  display: inline-block;
+  width: 1px; height: 1em;
+  background: rgba(180,160,255,0.7);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: pulse-soft 1s infinite;
+}
+
+.reset-wrap {
+  text-align: center;
+  margin-top: 28px;
+}
+.divider-sm {
+  width: 40px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(180,160,255,0.3), transparent);
+  margin: 0 auto 20px;
+}
+.reset-btn {
+  background: transparent;
+  border: none;
+  color: rgba(180,160,255,0.5);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  transition: color 0.2s;
+}
+.reset-btn:hover { color: rgba(180,160,255,0.9); }
+
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.15);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+</style>
+</head>
+<body>
+
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+
+<div class="main-card">
+
+  <div class="header">
+    <div class="header-sub">a letter from your future self</div>
+    <h1>未来の自分からの手紙</h1>
+    <div class="divider"></div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- idle -->
+    <div class="phase-idle" id="phaseIdle">
+      <p class="desc">
+        今日あったことを、ここに。<br>
+        5年後の自分が、手紙を送ります。
+      </p>
+      <textarea id="userInput" placeholder="今日、頑張ったこと。嬉しかったこと。しんどかったこと。なんでも。"></textarea>
+      <div class="btn-wrap">
+        <button class="send-btn" id="sendBtn" onclick="sendLetter()" disabled>手紙を受け取る</button>
+      </div>
+    </div>
+
+    <!-- writing -->
+    <div class="phase-writing" id="phaseWriting">
+      <div class="loading-center">
+        <div class="loading-label">5年後から、届いています</div>
+        <div class="dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- done -->
+    <div class="phase-done" id="phaseDone">
+      <div class="letter-date" id="letterDate"></div>
+      <div class="letter-body" id="letterBody"></div>
+      <div class="reset-wrap" id="resetWrap" style="display:none">
+        <div class="divider-sm"></div>
+        <button class="reset-btn" onclick="resetLetter()">もう一通、受け取る</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">Works 12 — tomu_ai_dev</div>
+</div>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.b6815ad2ee3097cc0f9e79b8536776b9.workers.dev/';
+
+// 星を生成
+for (let i = 0; i < 60; i++) {
+  const star = document.createElement('div');
+  star.className = 'star';
+  const size = Math.random() * 2 + 0.5;
+  star.style.cssText = `
+    top:${Math.random()*100}%;
+    left:${Math.random()*100}%;
+    width:${size}px;
+    height:${size}px;
+    --dur:${(Math.random()*3+2).toFixed(1)}s;
+    --delay:${(Math.random()*4).toFixed(1)}s;
+  `;
+  document.body.appendChild(star);
+}
+
+// 日付セット
+const now = new Date();
+const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+
+// テキストエリア監視
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+userInput.addEventListener('input', () => {
+  sendBtn.disabled = !userInput.value.trim();
+});
+
+let fullLetter = '';
+let charIndex = 0;
+let typewriterTimer = null;
+
+function setPhase(phase) {
+  document.getElementById('phaseIdle').style.display = phase === 'idle' ? 'block' : 'none';
+  document.getElementById('phaseWriting').style.display = phase === 'writing' ? 'block' : 'none';
+  document.getElementById('phaseDone').style.display = phase === 'done' ? 'block' : 'none';
+}
+
+async function sendLetter() {
+  const input = userInput.value.trim();
+  if (!input) return;
+
+  setPhase('writing');
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appType: 'future-letter',
+        input: input
+      })
+    });
+    const data = await res.json();
+    fullLetter = data.result || '手紙を受け取れませんでした。';
+  } catch(e) {
+    fullLetter = '手紙を受け取れませんでした。もう一度試してください。';
+  }
+
+  charIndex = 0;
+  document.getElementById('letterDate').textContent = `${dateStr} — 5年後の日付より`;
+  document.getElementById('letterBody').textContent = '';
+  document.getElementById('resetWrap').style.display = 'none';
+  setPhase('done');
+  typewriterStep();
+}
+
+function typewriterStep() {
+  if (charIndex < fullLetter.length) {
+    charIndex++;
+    const body = document.getElementById('letterBody');
+    body.innerHTML = escapeHtml(fullLetter.slice(0, charIndex))
+      + '<span class="cursor"></span>';
+    typewriterTimer = setTimeout(typewriterStep, 28);
+  } else {
+    const body = document.getElementById('letterBody');
+    body.textContent = fullLetter;
+    document.getElementById('resetWrap').style.display = 'block';
+  }
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
+function resetLetter() {
+  clearTimeout(typewriterTimer);
+  userInput.value = '';
+  sendBtn.disabled = true;
+  setPhase('idle');
+}
+</script>
+</body>
+</html>

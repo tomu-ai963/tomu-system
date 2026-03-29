@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunch Spin — 今日のランチ、AIが決める</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f5f0;
+  --surface: #ffffff;
+  --text: #2c2416;
+  --muted: #9b8e7e;
+  --accent: #c17f4a;
+  --accent-light: #e8d5be;
+  --accent-dark: #9a5f2e;
+  --border: #e8e0d5;
+  --sage: #7a8c6e;
+  --sage-light: #d8e5d0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  min-height: 100vh;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  color: var(--text);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+/* ノイズテクスチャ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ヘッダー */
+header {
+  padding: 28px 32px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.logo span {
+  color: var(--accent);
+}
+
+.tagline {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* メインレイアウト */
+main {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 0;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 40px 24px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  main { grid-template-columns: 1fr; padding: 24px 16px; }
+  header { padding: 20px 16px 16px; }
+}
+
+/* 左カラム：ルーレット */
+.wheel-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.wheel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.4rem;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.wheel-title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.wheel-wrap {
+  position: relative;
+  width: min(300px, 80vw);
+  height: min(300px, 80vw);
+}
+
+canvas#wheel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 20px 60px rgba(44,36,22,0.12),
+    0 4px 16px rgba(44,36,22,0.08);
+}
+
+/* ポインター */
+.pointer {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* 中央ボタン */
+.hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(44,36,22,0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.hub:hover { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 4px 20px rgba(44,36,22,0.2); }
+.hub:active { transform: translate(-50%, -50%) scale(0.95); }
+.hub:disabled { cursor: default; opacity: 0.6; }
+.hub svg { width: 18px; height: 18px; }
+
+/* スピンボタン */
+.spin-btn {
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  padding: 14px 44px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.spin-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+}
+.spin-btn:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(154,95,46,0.3); }
+.spin-btn:active { transform: translateY(0); }
+.spin-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+/* 結果カード */
+.result-area { min-height: 90px; display: flex; align-items: center; justify-content: center; width: 100%; }
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 28px;
+  text-align: center;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(44,36,22,0.08);
+  animation: slide-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: none;
+  position: relative;
+  overflow: hidden;
+}
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-light), var(--accent), var(--accent-light));
+}
+.result-card.show { display: block; }
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-emoji { font-size: 2rem; margin-bottom: 6px; }
+.result-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.result-ai-comment {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.6;
+  font-style: italic;
+}
+.result-loading {
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.dot-anim span {
+  display: inline-block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+.dot-anim span:nth-child(2) { animation-delay: 0.2s; }
+.dot-anim span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* 右カラム：AI + メニュー */
+.right-col {
+  padding-left: 40px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+@media (max-width: 720px) {
+  .right-col { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 28px; }
+}
+
+.section-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* AI気分入力 */
+.mood-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.mood-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.mood-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mood-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.mood-input:focus { border-color: var(--accent); }
+.mood-input::placeholder { color: var(--muted); }
+
+.suggest-btn {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.suggest-btn:hover { background: var(--accent); color: #fff; }
+.suggest-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* AI提案結果 */
+.ai-suggest-box {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--sage-light);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: #3d4e35;
+  line-height: 1.7;
+  display: none;
+  animation: fade-in 0.4s ease;
+}
+.ai-suggest-box.show { display: block; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.ai-suggest-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+}
+
+/* メニュー管理 */
+.menu-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.menu-row:hover { background: var(--bg); }
+
+.menu-check {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.menu-emoji { font-size: 1rem; }
+.menu-name { font-size: 0.82rem; flex: 1; }
+.menu-del {
+  background: none;
+  border: none;
+  color: var(--border);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 2px;
+  transition: color 0.15s;
+}
+.menu-del:hover { color: #c0392b; }
+
+.add-row {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.add-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.78rem;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.add-input:focus { border-color: var(--accent); }
+.add-input::placeholder { color: var(--muted); }
+
+.add-btn {
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.add-btn:hover { background: var(--accent-dark); }
+
+/* フッター */
+footer {
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.powered {
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.powered-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sage);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Lunch<em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--accent)">Spin</em></div>
+  <div class="tagline">AI-Powered Lunch Decider</div>
+</header>
+
+<main>
+  <!-- 左：ルーレット -->
+  <div class="wheel-col">
+    <div class="wheel-title">今日のランチ、<br><em>AIが決める。</em></div>
+
+    <div class="wheel-wrap">
+      <canvas id="wheel" width="600" height="600"></canvas>
+      <!-- ポインター -->
+      <svg class="pointer" width="22" height="26" viewBox="0 0 22 26">
+        <path d="M11 24 L2 6 Q11 0 20 6 Z" fill="var(--text)" opacity="0.85"/>
+      </svg>
+      <!-- 中央ボタン -->
+      <button class="hub" id="hubBtn" onclick="spin()" title="回す">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
+          <path d="M21 12a9 9 0 11-9-9"/>
+          <polyline points="21 3 21 9 15 9"/>
+        </svg>
+      </button>
+    </div>
+
+    <button class="spin-btn" id="mainSpinBtn" onclick="spin()">SPIN</button>
+
+    <div class="result-area">
+      <div class="result-card" id="resultCard">
+        <div class="result-emoji" id="resultEmoji"></div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-loading" id="resultLoading" style="display:none">
+          AIがコメント中
+          <div class="dot-anim"><span></span><span></span><span></span></div>
+        </div>
+        <div class="result-ai-comment" id="resultComment"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右：AI + メニュー -->
+  <div class="right-col">
+
+    <!-- AI気分入力 -->
+    <div class="mood-card">
+      <div class="section-label">✦ AI に今日の気分を教える</div>
+
+      <div class="mood-chips" id="moodChips">
+        <button class="chip" onclick="toggleChip(this)">😴 疲れた</button>
+        <button class="chip" onclick="toggleChip(this)">💪 元気</button>
+        <button class="chip" onclick="toggleChip(this)">🥵 暑い</button>
+        <button class="chip" onclick="toggleChip(this)">🥶 寒い</button>
+        <button class="chip" onclick="toggleChip(this)">💸 節約したい</button>
+        <button class="chip" onclick="toggleChip(this)">🎉 特別な日</button>
+        <button class="chip" onclick="toggleChip(this)">⏰ 急いでる</button>
+        <button class="chip" onclick="toggleChip(this)">🍃 ヘルシーに</button>
+      </div>
+
+      <div class="mood-input-row">
+        <input class="mood-input" id="moodInput" placeholder="今日の気分を自由に入力…" maxlength="60">
+        <button class="suggest-btn" id="suggestBtn" onclick="aiSuggest()">
+          ✦ 提案
+        </button>
+      </div>
+
+      <div class="ai-suggest-box" id="aiSuggestBox">
+        <div class="ai-suggest-name" id="aiSuggestName"></div>
+        <div id="aiSuggestReason"></div>
+      </div>
+    </div>
+
+    <!-- メニュー管理 -->
+    <div class="menu-card">
+      <div class="section-label">メニューを管理</div>
+      <div class="menu-list" id="menuList"></div>
+      <div class="add-row">
+        <input class="add-input" id="addInput" placeholder="メニューを追加…" maxlength="12">
+        <button class="add-btn" onclick="addItem()">追加</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="powered">
+    <div class="powered-dot"></div>
+    Powered by Claude AI
+    <div class="powered-dot"></div>
+  </div>
+</footer>
+
+<script>
+const MENU = [
+  { name: 'ラーメン',     emoji: '🍜', color: '#b5795a' },
+  { name: 'カレー',       emoji: '🍛', color: '#c4974a' },
+  { name: '寿司',         emoji: '🍣', color: '#6b8fa8' },
+  { name: '定食',         emoji: '🍱', color: '#7a8c6e' },
+  { name: 'パスタ',       emoji: '🍝', color: '#a07a5a' },
+  { name: 'うどん',       emoji: '🍜', color: '#c4a44a' },
+  { name: 'バーガー',     emoji: '🍔', color: '#a05a3a' },
+  { name: '丼もの',       emoji: '🥣', color: '#6a8a7a' },
+  { name: 'サンドイッチ', emoji: '🥪', color: '#b8956a' },
+  { name: '焼肉',         emoji: '🥩', color: '#9a5a4a' },
+];
+
+let items = MENU.map(d => ({ ...d, active: true }));
+let spinning = false;
+let currentAngle = 0;
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const W = 600, cx = W/2, cy = W/2, r = W/2 - 8;
+
+function getActive() { return items.filter(i => i.active); }
+
+// ===== ホイール描画 =====
+function drawWheel(angle = 0) {
+  const active = getActive();
+  ctx.clearRect(0, 0, W, W);
+  if (!active.length) return;
+
+  const slice = (Math.PI * 2) / active.length;
+
+  active.forEach((item, i) => {
+    const start = angle + i * slice;
+    const end = start + slice;
+
+    // セクター
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    // 交互に明暗
+    const base = item.color;
+    ctx.fillStyle = i % 2 === 0 ? base : adjustColor(base, 20);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    const mid = start + slice / 2;
+
+    // 絵文字
+    const er = r * 0.75;
+    ctx.save();
+    ctx.translate(cx + Math.cos(mid) * er, cy + Math.sin(mid) * er);
+    ctx.rotate(mid + Math.PI/2);
+    ctx.font = `${active.length <= 7 ? 28 : 20}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.emoji, 0, -8);
+    ctx.restore();
+
+    // テキスト
+    const tr = r * 0.44;
+    ctx.save();
+    ctx.translate(cx + Math.cos(mid) * tr, cy + Math.sin(mid) * tr);
+    ctx.rotate(mid + Math.PI/2);
+    const fs = active.length <= 6 ? 18 : active.length <= 9 ? 14 : 11;
+    ctx.font = `500 ${fs}px 'Noto Sans JP', sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(item.name, 0, 0);
+    ctx.restore();
+  });
+
+  // 外枠
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 中央円
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#e8e0d5';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function adjustColor(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, (n >> 16) + amount);
+  const g = Math.min(255, ((n >> 8) & 0xff) + amount);
+  const b = Math.min(255, (n & 0xff) + amount);
+  return `rgb(${r},${g},${b})`;
+}
+
+// ===== スピン =====
+function spin() {
+  if (spinning) return;
+  const active = getActive();
+  if (active.length < 2) { alert('2つ以上有効にしてください'); return; }
+
+  spinning = true;
+  setDisabled(true);
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('aiSuggestBox').classList.remove('show');
+
+  const spins = 5 + Math.random() * 5;
+  const extra = Math.random() * Math.PI * 2;
+  const target = currentAngle + spins * Math.PI * 2 + extra;
+  const dur = 3800;
+  const t0 = performance.now();
+  const start = currentAngle;
+
+  function ease(t) { return 1 - Math.pow(1 - t, 4); }
+
+  (function frame(now) {
+    const p = Math.min((now - t0) / dur, 1);
+    currentAngle = start + (target - start) * ease(p);
+    drawWheel(currentAngle);
+    if (p < 1) { requestAnimationFrame(frame); }
+    else {
+      currentAngle = target % (Math.PI * 2);
+      spinning = false;
+      setDisabled(false);
+      showResult();
+    }
+  })(performance.now());
+}
+
+function setDisabled(v) {
+  document.getElementById('hubBtn').disabled = v;
+  document.getElementById('mainSpinBtn').disabled = v;
+}
+
+function showResult() {
+  const active = getActive();
+  const slice = (Math.PI * 2) / active.length;
+  const arrow = ((-Math.PI/2 - currentAngle) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const winner = active[Math.floor(arrow / slice) % active.length];
+
+  document.getElementById('resultEmoji').textContent = winner.emoji;
+  document.getElementById('resultName').textContent = winner.name;
+  document.getElementById('resultComment').textContent = '';
+  document.getElementById('resultLoading').style.display = 'flex';
+  document.getElementById('resultCard').classList.add('show');
+
+  getSpinComment(winner.name);
+}
+
+// ===== AI: スピン後コメント =====
+async function getSpinComment(menuName) {
+  const mood = getMoodText();
+  const prompt = mood
+    ? `今日のランチは「${menuName}」に決まりました！ユーザーの気分は「${mood}」です。短く一言、ランチを楽しみにさせる温かいコメントをください。2文以内で。`
+    : `今日のランチは「${menuName}」に決まりました！短く一言、ランチを楽しみにさせる温かいコメントをください。2文以内で。`;
+
+  try {
+    const res = await fetch('https://orange-sound-354b.b6815ad2ee3097cc0f9e79b8536776b9.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appType: 'lunch',
+        input: prompt
+      })
+    });
+    const data = await res.json();
+    const text = data.result || '';
+    document.getElementById('resultComment').textContent = text;
+  } catch(e) {
+    document.getElementById('resultComment').textContent = '今日もおいしいランチを！';
+  } finally {
+    document.getElementById('resultLoading').style.display = 'none';
+  }
+}
+
+// ===== AI: 気分から提案 =====
+async function aiSuggest() {
+  const mood = getMoodText();
+  if (!mood) { document.getElementById('moodInput').focus(); return; }
+
+  const active = getActive();
+  const menuList = active.map(i => i.name).join('、');
+  const prompt = `メニュー候補：${menuList}\nユーザーの今日の気分：「${mood}」\n\nこの中から最適な1つを選び、以下のJSON形式で返してください（他は一切出力しないこと）：\n{"menu":"メニュー名","reason":"選んだ理由を1〜2文で"}`;
+
+  const btn = document.getElementById('suggestBtn');
+  btn.disabled = true;
+  btn.textContent = '考え中…';
+  document.getElementById('aiSuggestBox').classList.remove('show');
+
+  try {
+    const res = await fetch('https://orange-sound-354b.b6815ad2ee3097cc0f9e79b8536776b9.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appType: 'lunch',
+        input: prompt
+      })
+    });
+    const data = await res.json();
+    const raw = data.result || '{}';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    document.getElementById('aiSuggestName').textContent = `✦ ${parsed.menu || '—'}`;
+    document.getElementById('aiSuggestReason').textContent = parsed.reason || '';
+    document.getElementById('aiSuggestBox').classList.add('show');
+  } catch(e) {
+    document.getElementById('aiSuggestName').textContent = '提案を取得できませんでした';
+    document.getElementById('aiSuggestReason').textContent = '';
+    document.getElementById('aiSuggestBox').classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ 提案';
+  }
+}
+
+function getMoodText() {
+  const chips = [...document.querySelectorAll('.chip.active')].map(c => c.textContent.trim()).join('、');
+  const input = document.getElementById('moodInput').value.trim();
+  return [chips, input].filter(Boolean).join('。');
+}
+
+function toggleChip(el) { el.classList.toggle('active'); }
+
+// ===== メニュー管理 =====
+function renderMenu() {
+  const list = document.getElementById('menuList');
+  list.innerHTML = items.map((item, i) => `
+    <div class="menu-row">
+      <input type="checkbox" class="menu-check" ${item.active ? 'checked' : ''} onchange="toggleItem(${i}, this.checked)">
+      <span class="menu-emoji">${item.emoji}</span>
+      <span class="menu-name">${item.name}</span>
+      <button class="menu-del" onclick="deleteItem(${i})" title="削除">×</button>
+    </div>
+  `).join('');
+}
+
+function toggleItem(i, v) { items[i].active = v; drawWheel(currentAngle); }
+
+function deleteItem(i) {
+  items.splice(i, 1);
+  renderMenu();
+  drawWheel(currentAngle);
+}
+
+function addItem() {
+  const input = document.getElementById('addInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const colors = ['#b5795a','#c4974a','#6b8fa8','#7a8c6e','#a07a5a','#c4a44a','#a05a3a','#6a8a7a'];
+  const emojis = ['🍴','🍽️','🥘','🫕','🍲','🥗','🍤','🧆'];
+  items.push({
+    name,
+    emoji: emojis[Math.floor(Math.random()*emojis.length)],
+    color: colors[Math.floor(Math.random()*colors.length)],
+    active: true
+  });
+  input.value = '';
+  renderMenu();
+  drawWheel(currentAngle);
+}
+
+document.getElementById('addInput').addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+document.getElementById('moodInput').addEventListener('keydown', e => { if (e.key === 'Enter') aiSuggest(); });
+
+renderMenu();
+drawWheel(0);
+</script>
+</body>
+</html>
