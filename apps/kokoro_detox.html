@@ -704,18 +704,24 @@ async function runDetox() {
   const userInput = `${feelingPart}${input}`.trim() || `気分：${selectedFeeling}`;
 
   try {
+    const email = TomuAuth.getEmail();
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'detox',
+        appType: 'kokoro_detox',
         input: `${userInput}　（返し方：${selectedTone}。最後に「---」の後に1文の詩的なアファーメーションを添えてください）`,
-        extra: { tone: selectedTone }
+        extra: { tone: selectedTone },
+        email: email
       })
     });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
+      if (errData.error === 'subscription_required' || errData.error === 'login_required') {
+        TomuAuth.showOverlay();
+        throw new Error('セッションが切れました。再度ログインしてください。');
+      }
       throw new Error(errData.error || `HTTP ${response.status}`);
     }
 
@@ -781,5 +787,8 @@ function resetApp() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>
