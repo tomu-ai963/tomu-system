@@ -851,7 +851,7 @@ footer {
         <li class="plan-feature">月間利用制限なし</li>
         <li class="plan-feature">いつでもプラン変更可</li>
       </ul>
-      <button class="plan-btn">はじめる</button>
+      <button class="plan-btn" onclick="startCheckout('light')">はじめる</button>
     </div>
 
     <div class="plan-card featured fade-up">
@@ -865,7 +865,7 @@ footer {
         <li class="plan-feature">新アプリ優先アクセス</li>
         <li class="plan-feature">いつでもプラン変更可</li>
       </ul>
-      <button class="plan-btn">はじめる</button>
+      <button class="plan-btn" onclick="startCheckout('standard')">はじめる</button>
     </div>
 
     <div class="plan-card fade-up">
@@ -878,7 +878,7 @@ footer {
         <li class="plan-feature">新アプリ優先アクセス</li>
         <li class="plan-feature">今後追加のアプリも含む</li>
       </ul>
-      <button class="plan-btn">はじめる</button>
+      <button class="plan-btn" onclick="startCheckout('full')">はじめる</button>
     </div>
 
   </div>
@@ -963,12 +963,55 @@ footer {
   <div class="footer-copy">© 2026 とむSYSTEM. All rights reserved.</div>
 </footer>
 
+<!-- Checkout モーダル -->
+<div id="checkout-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:36px 32px;width:90%;max-width:400px;position:relative;">
+    <button onclick="document.getElementById('checkout-modal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#8a7e72;">×</button>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:8px;">メールアドレスを入力</h3>
+    <p style="font-size:0.8rem;color:#8a7e72;margin-bottom:20px;">サブスクリプションの管理に使用します</p>
+    <input id="checkout-email" type="email" placeholder="your@email.com"
+      style="width:100%;padding:12px 16px;border:1px solid #ddd5c8;border-radius:8px;font-size:0.9rem;margin-bottom:16px;box-sizing:border-box;">
+    <button id="checkout-go-btn" onclick="goToCheckout()"
+      style="width:100%;background:#1a1612;color:#f7f3ee;border:none;padding:14px;border-radius:40px;font-size:0.85rem;letter-spacing:.15em;cursor:pointer;">
+      決済に進む
+    </button>
+    <p id="checkout-error" style="color:#c0392b;font-size:0.75rem;margin-top:8px;display:none;">メールアドレスを入力してください</p>
+  </div>
+</div>
+
 <script>
 // フェードイン
 const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.12 });
 document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Stripe Checkout
+const STRIPE_LINKS = {
+  light:    'https://buy.stripe.com/3cI00i8nQf5Sd1c3T58Zq01',
+  standard: 'https://buy.stripe.com/8x214mcE6f5S2my1KX8Zq02',
+  full:     'https://buy.stripe.com/3cIcN4dIag9W2my4X98Zq03',
+};
+
+let selectedPlan = null;
+
+function startCheckout(plan) {
+  selectedPlan = plan;
+  document.getElementById('checkout-email').value = '';
+  document.getElementById('checkout-error').style.display = 'none';
+  const modal = document.getElementById('checkout-modal');
+  modal.style.display = 'flex';
+}
+
+function goToCheckout() {
+  const email = document.getElementById('checkout-email').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('checkout-error').style.display = 'block';
+    return;
+  }
+  const url = STRIPE_LINKS[selectedPlan] + '?prefilled_email=' + encodeURIComponent(email);
+  window.location.href = url;
+}
 </script>
 </body>
 </html>
