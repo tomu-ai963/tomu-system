@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心のデトックス — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --accent2: #7a9e7e;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --light-accent: #eedfc8;
+  --detox-deep: #2d3a2e;
+  --detox-mist: #e8f0e9;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ノイズテクスチャ */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-back {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+}
+.nav-back:hover { color: var(--accent); }
+
+/* MAIN */
+main {
+  padding-top: 90px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* HERO */
+.hero {
+  width: 100%;
+  padding: 80px 24px 60px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--detox-mist) 0%, var(--paper) 100%);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(122,158,126,0.12) 0%, transparent 70%);
+}
+
+.hero-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--accent2);
+}
+
+.hero-sub {
+  font-size: 0.82rem;
+  color: var(--muted);
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* BREATHING ORB */
+.orb-wrap {
+  margin: 40px auto 0;
+  width: 80px;
+  height: 80px;
+  position: relative;
+}
+
+.orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(122,158,126,0.6), rgba(45,58,46,0.3));
+  border: 1px solid rgba(122,158,126,0.3);
+  animation: breathe 4s ease-in-out infinite;
+  box-shadow: 0 0 24px rgba(122,158,126,0.2);
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+/* APP CONTAINER */
+.app-wrap {
+  width: 100%;
+  max-width: 680px;
+  padding: 60px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* STEP LABEL */
+.step-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.9rem;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+  opacity: 0;
+  transition: opacity .3s;
+}
+
+.card:focus-within::before { opacity: 1; }
+
+/* FEELING SELECTOR */
+.feeling-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media(max-width: 480px) {
+  .feeling-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.feeling-btn {
+  padding: 14px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: var(--muted);
+  transition: all .2s;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.feeling-btn:hover {
+  border-color: var(--accent2);
+  color: var(--detox-deep);
+  background: var(--detox-mist);
+}
+
+.feeling-btn.active {
+  border-color: var(--accent2);
+  background: var(--detox-mist);
+  color: var(--detox-deep);
+}
+
+.feeling-btn .feeling-icon {
+  display: block;
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+/* TEXTAREA */
+.input-wrap {
+  position: relative;
+}
+
+textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.8;
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s;
+}
+
+textarea:focus {
+  border-color: var(--accent2);
+}
+
+textarea::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.char-count {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 0.68rem;
+  color: var(--border);
+  letter-spacing: 0.05em;
+}
+
+/* TONE SELECTOR */
+.tone-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tone-btn {
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.73rem;
+  font-weight: 300;
+  color: var(--muted);
+  transition: all .2s;
+  letter-spacing: 0.05em;
+}
+
+.tone-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tone-btn.active {
+  border-color: var(--accent);
+  background: var(--light-accent);
+  color: var(--ink);
+}
+
+/* SUBMIT BUTTON */
+.detox-btn {
+  width: 100%;
+  padding: 18px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent2) 0%, var(--detox-deep) 100%);
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all .3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.detox-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.detox-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(45,58,46,0.25);
+}
+
+.detox-btn .btn-text { transition: opacity .2s; }
+
+/* LOADING */
+.loading-dots {
+  display: none;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: .2s; }
+.loading-dots span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.detox-btn.loading .btn-text { display: none; }
+.detox-btn.loading .loading-dots { display: flex; }
+
+/* RESPONSE */
+.response-area {
+  display: none;
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.response-area.visible {
+  display: block;
+  animation: fadeUp .6s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.response-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.response-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent2));
+}
+
+.response-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 24px;
+}
+
+.response-tag::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--accent2);
+}
+
+.response-text {
+  font-size: 0.88rem;
+  line-height: 2.1;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+/* AFFIRMATION CARD */
+.affirmation-box {
+  margin-top: 28px;
+  padding: 24px 28px;
+  background: var(--detox-mist);
+  border-radius: 14px;
+  border-left: 3px solid var(--accent2);
+}
+
+.affirmation-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 10px;
+}
+
+.affirmation-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--detox-deep);
+  line-height: 1.7;
+}
+
+/* ACTION ROW */
+.action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.73rem;
+  font-weight: 300;
+  color: var(--muted);
+  transition: all .2s;
+  letter-spacing: 0.05em;
+}
+
+.action-btn:hover {
+  border-color: var(--accent2);
+  color: var(--detox-deep);
+}
+
+.action-btn.copy-done {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+/* ERROR */
+.error-msg {
+  display: none;
+  padding: 16px 20px;
+  background: #fff5f5;
+  border: 1px solid #fccaca;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  color: #c0392b;
+}
+
+.error-msg.visible { display: block; }
+
+/* DIVIDER */
+.divider {
+  width: 40px;
+  height: 1px;
+  background: var(--border);
+  margin: 0 auto;
+}
+
+/* FOOTER */
+footer {
+  padding: 40px 24px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  width: 100%;
+}
+
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* モバイル調整 */
+@media(max-width: 640px) {
+  nav { padding: 16px 20px; }
+  .hero { padding: 60px 20px 48px; }
+  .card { padding: 24px 20px; }
+  .response-card { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-logo">とむ<span>SYSTEM</span></a>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-back">← アプリ一覧</a>
+</nav>
+
+<main>
+  <div class="hero">
+    <p class="hero-label">Mental Detox · 心のデトックス</p>
+    <h1>今の気持ちを<br><em>そのまま</em>話してみて</h1>
+    <p class="hero-sub">誰にも言えないこと、ぐるぐる考えていること。<br>ここで言葉にして、少し楽になりましょう。</p>
+    <div class="orb-wrap">
+      <div class="orb"></div>
+    </div>
+  </div>
+
+  <div class="app-wrap">
+
+    <!-- STEP 1: 気分 -->
+    <div class="card">
+      <div class="step-label">
+        <div class="step-num">1</div>
+        <span class="step-title">今の気分に近いものを選んで</span>
+      </div>
+      <div class="feeling-grid" id="feelingGrid">
+        <button class="feeling-btn" data-value="疲れた"><span class="feeling-icon">😮‍💨</span>疲れた</button>
+        <button class="feeling-btn" data-value="不安"><span class="feeling-icon">😟</span>不安</button>
+        <button class="feeling-btn" data-value="モヤモヤ"><span class="feeling-icon">😑</span>モヤモヤ</button>
+        <button class="feeling-btn" data-value="怒り"><span class="feeling-icon">😤</span>怒り</button>
+        <button class="feeling-btn" data-value="悲しい"><span class="feeling-icon">😢</span>悲しい</button>
+        <button class="feeling-btn" data-value="虚無感"><span class="feeling-icon">😶</span>虚無感</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: 言葉にする -->
+    <div class="card">
+      <div class="step-label">
+        <div class="step-num">2</div>
+        <span class="step-title">言葉にしてみる</span>
+      </div>
+      <div class="input-wrap">
+        <textarea
+          id="userInput"
+          placeholder="今日あったこと、ずっと気になっていること、誰かへの言えない気持ち…なんでも。"
+          maxlength="600"
+          oninput="updateCharCount(this)"
+        ></textarea>
+        <span class="char-count" id="charCount">0 / 600</span>
+      </div>
+    </div>
+
+    <!-- STEP 3: トーン -->
+    <div class="card">
+      <div class="step-label">
+        <div class="step-num">3</div>
+        <span class="step-title">どんな言葉がほしい？</span>
+      </div>
+      <div class="tone-row" id="toneRow">
+        <button class="tone-btn active" data-value="やさしく受け止めて">やさしく受け止めて</button>
+        <button class="tone-btn" data-value="一緒に整理して">一緒に整理して</button>
+        <button class="tone-btn" data-value="背中を押して">背中を押して</button>
+        <button class="tone-btn" data-value="ただ聞いてほしい">ただ聞いてほしい</button>
+      </div>
+    </div>
+
+    <!-- 送信ボタン -->
+    <button class="detox-btn" id="detoxBtn" onclick="runDetox()">
+      <span class="btn-text">デトックスを始める</span>
+      <span class="loading-dots">
+        <span></span><span></span><span></span>
+      </span>
+    </button>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- レスポンス表示 -->
+    <div class="response-area" id="responseArea">
+      <div class="response-card">
+        <p class="response-tag">Claude からのことば</p>
+        <div class="response-text" id="responseText"></div>
+        <div class="affirmation-box" id="affirmationBox" style="display:none">
+          <p class="affirmation-label">Today's Affirmation</p>
+          <p class="affirmation-text" id="affirmationText"></p>
+        </div>
+        <div class="action-row">
+          <button class="action-btn" onclick="copyResponse()">コピーする</button>
+          <button class="action-btn" onclick="resetApp()">もう一度話す</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 <a href="https://tomu-ai963.github.io/tomu-system/">とむSYSTEM</a> · Powered by Claude API</p>
+</footer>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.b6815ad2ee3097cc0f9e79b8536776b9.workers.dev/';
+
+let selectedFeeling = '';
+let selectedTone = 'やさしく受け止めて';
+
+// 気分ボタン
+document.querySelectorAll('.feeling-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.feeling-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedFeeling = btn.dataset.value;
+  });
+});
+
+// トーンボタン
+document.querySelectorAll('.tone-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTone = btn.dataset.value;
+  });
+});
+
+function updateCharCount(el) {
+  document.getElementById('charCount').textContent = `${el.value.length} / 600`;
+}
+
+async function runDetox() {
+  const input = document.getElementById('userInput').value.trim();
+  const btn = document.getElementById('detoxBtn');
+  const errorMsg = document.getElementById('errorMsg');
+
+  if (!input && !selectedFeeling) {
+    showError('気持ちを選ぶか、言葉を入力してください。');
+    return;
+  }
+
+  // ロード状態
+  btn.classList.add('loading');
+  btn.disabled = true;
+  errorMsg.classList.remove('visible');
+
+  const feelingPart = selectedFeeling ? `気分：${selectedFeeling}　` : '';
+  const userInput = `${feelingPart}${input}`.trim() || `気分：${selectedFeeling}`;
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appType: 'detox',
+        input: `${userInput}　（返し方：${selectedTone}。最後に「---」の後に1文の詩的なアファーメーションを添えてください）`,
+        extra: { tone: selectedTone }
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.result || '';
+
+    if (!text) throw new Error('応答が空でした。もう一度お試しください。');
+
+    // アファーメーション分離
+    const parts = text.split('---');
+    const mainText = parts[0].trim();
+    const affirmation = parts[1] ? parts[1].trim() : '';
+
+    document.getElementById('responseText').textContent = mainText;
+
+    if (affirmation) {
+      document.getElementById('affirmationText').textContent = affirmation;
+      document.getElementById('affirmationBox').style.display = 'block';
+    } else {
+      document.getElementById('affirmationBox').style.display = 'none';
+    }
+
+    document.getElementById('responseArea').classList.add('visible');
+    document.getElementById('responseArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    console.error(err);
+    showError(`エラーが発生しました：${err.message}`);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function copyResponse() {
+  const text = document.getElementById('responseText').textContent;
+  const affirmation = document.getElementById('affirmationText').textContent;
+  const full = affirmation ? `${text}\n\n${affirmation}` : text;
+  
+  navigator.clipboard.writeText(full).then(() => {
+    const btn = event.target;
+    btn.textContent = 'コピーしました ✓';
+    btn.classList.add('copy-done');
+    setTimeout(() => {
+      btn.textContent = 'コピーする';
+      btn.classList.remove('copy-done');
+    }, 2000);
+  });
+}
+
+function resetApp() {
+  document.getElementById('userInput').value = '';
+  document.getElementById('charCount').textContent = '0 / 600';
+  document.getElementById('responseArea').classList.remove('visible');
+  document.querySelectorAll('.feeling-btn').forEach(b => b.classList.remove('active'));
+  selectedFeeling = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

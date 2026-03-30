@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三行タスク整理 — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --accent2: #7a9e7e;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --light-accent: #eedfc8;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px 80px;
+}
+
+/* ノイズ */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== ヘッダー ===== */
+header {
+  text-align: center;
+  margin-bottom: 48px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.logo-link {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 20px;
+}
+.logo-link span { color: var(--accent); }
+
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.subtitle {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ===== メインカード ===== */
+.card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 40px;
+  animation: fadeUp 0.6s 0.1s ease both;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px 0 0 2px;
+}
+
+/* ===== テキストエリア ===== */
+label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 160px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--ink);
+  background: var(--paper);
+  resize: vertical;
+  transition: border-color 0.2s;
+  line-height: 1.8;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+textarea::placeholder {
+  color: var(--border);
+  font-style: italic;
+}
+
+/* ===== ボタン ===== */
+.btn-wrap {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+button {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--surface);
+  background: var(--ink);
+  border: none;
+  padding: 14px 32px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+button:active { transform: translateY(0); }
+button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ===== ローディング ===== */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+button.loading .spinner { display: block; }
+button.loading .btn-text { display: none; }
+
+/* ===== 結果エリア ===== */
+.result-area {
+  margin-top: 32px;
+  display: none;
+  animation: fadeUp 0.4s ease both;
+}
+
+.result-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ===== タスクカード ===== */
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  animation: slideIn 0.3s ease both;
+}
+
+.task-item:nth-child(1) { animation-delay: 0.05s; }
+.task-item:nth-child(2) { animation-delay: 0.12s; }
+.task-item:nth-child(3) { animation-delay: 0.19s; }
+
+.task-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--accent);
+  line-height: 1;
+  min-width: 20px;
+  padding-top: 2px;
+}
+
+.task-text {
+  font-size: 0.9rem;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--ink);
+  flex: 1;
+}
+
+.task-done {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 3px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.task-done:hover { border-color: var(--accent2); }
+
+.task-done.checked {
+  background: var(--accent2);
+  border-color: var(--accent2);
+}
+
+.task-done.checked::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 8px; height: 8px;
+  background: white;
+  border-radius: 50%;
+}
+
+.task-item.done .task-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* ===== フッター ===== */
+.card-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--warm);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.retry-btn {
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 7px 18px;
+  font-size: 0.68rem;
+}
+
+.retry-btn:hover { background: var(--warm); color: var(--ink); transform: none; }
+
+/* ===== エラー ===== */
+.error-msg {
+  display: none;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 2px;
+  font-size: 0.82rem;
+  color: #c0392b;
+}
+
+/* ===== footer ===== */
+.page-footer {
+  margin-top: 40px;
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: var(--border);
+  text-transform: uppercase;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+/* ===== アニメーション ===== */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(-10px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo-link" href="#">とむ<span>SYSTEM</span></a>
+  <h1>三行<em>タスク</em>整理</h1>
+  <p class="subtitle">AI が今日の最重要タスクを 3 つに絞る</p>
+</header>
+
+<div class="card">
+  <label for="input">今日やること・頭の中にあること</label>
+  <textarea
+    id="input"
+    placeholder="例）資料作成、メール返信、請求書送付、買い物、ブログ更新、コード修正…"
+  ></textarea>
+
+  <div class="btn-wrap">
+    <button id="runBtn" onclick="runAI()">
+      <div class="spinner"></div>
+      <span class="btn-text">▷ 整理する</span>
+    </button>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="result-area" id="resultArea">
+    <div class="result-label">Today's 3 Tasks</div>
+    <div class="tasks-list" id="tasksList"></div>
+    <div class="card-footer">
+      <span class="badge">Powered by Claude</span>
+      <button class="retry-btn" onclick="resetUI()">やり直す</button>
+    </div>
+  </div>
+</div>
+
+<p class="page-footer">とむSYSTEM — App 04</p>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/";
+
+async function runAI() {
+  const input = document.getElementById("input").value.trim();
+  if (!input) return;
+
+  const btn = document.getElementById("runBtn");
+  const errorMsg = document.getElementById("errorMsg");
+  const resultArea = document.getElementById("resultArea");
+
+  // ローディング開始
+  btn.disabled = true;
+  btn.classList.add("loading");
+  errorMsg.style.display = "none";
+  resultArea.style.display = "none";
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appType: "three-tasks",
+        input: input
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    renderTasks(data.result);
+
+  } catch (err) {
+    errorMsg.textContent = "エラーが発生しました：" + err.message;
+    errorMsg.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("loading");
+  }
+}
+
+function renderTasks(rawText) {
+  // 行ごとに分割して空行・記号除去
+  const lines = rawText
+    .split("\n")
+    .map(l => l.replace(/^[-・•\d\.\)]+\s*/, "").trim())
+    .filter(l => l.length > 2)
+    .slice(0, 3);
+
+  const list = document.getElementById("tasksList");
+  list.innerHTML = "";
+
+  const nums = ["Ⅰ", "Ⅱ", "Ⅲ"];
+
+  lines.forEach((task, i) => {
+    const item = document.createElement("div");
+    item.className = "task-item";
+    item.innerHTML = `
+      <span class="task-num">${nums[i]}</span>
+      <span class="task-text">${escapeHtml(task)}</span>
+      <div class="task-done" onclick="toggleDone(this)"></div>
+    `;
+    list.appendChild(item);
+  });
+
+  // 3つ未満の場合の補完（念のため）
+  while (list.children.length < 3) {
+    const item = document.createElement("div");
+    item.className = "task-item";
+    item.innerHTML = `<span class="task-num">${nums[list.children.length]}</span><span class="task-text" style="color:var(--muted);font-style:italic;">（タスクなし）</span><div class="task-done"></div>`;
+    list.appendChild(item);
+  }
+
+  document.getElementById("resultArea").style.display = "block";
+}
+
+function toggleDone(el) {
+  el.classList.toggle("checked");
+  el.closest(".task-item").classList.toggle("done");
+}
+
+function resetUI() {
+  document.getElementById("resultArea").style.display = "none";
+  document.getElementById("errorMsg").style.display = "none";
+  document.getElementById("input").value = "";
+  document.getElementById("input").focus();
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// Enterキー（Ctrl+Enter）で実行
+document.getElementById("input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.ctrlKey) runAI();
+});
+</script>
+</body>
+</html>

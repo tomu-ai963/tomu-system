@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10秒英会話 — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --accent2: #7a9e7e;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --light-accent: #eedfc8;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ノイズ */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 18px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-back {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-back:hover { color: var(--accent); }
+.nav-back::before { content: '←'; font-size: 0.85rem; }
+
+/* MAIN */
+main {
+  flex: 1;
+  padding-top: 100px;
+  padding-bottom: 80px;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* HERO */
+.app-hero {
+  text-align: center;
+  margin-bottom: 56px;
+  animation: fadeUp 0.7s ease both;
+}
+
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  background: var(--light-accent);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.app-badge .dot {
+  width: 5px; height: 5px;
+  background: var(--accent2);
+  border-radius: 50%;
+  animation: pulse 2s ease infinite;
+}
+
+.app-hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+.app-hero h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.app-hero p {
+  font-size: 0.88rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* SITUATION CHIPS */
+.situation-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.chip {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  background: var(--surface);
+  transition: all .18s ease;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+}
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--light-accent);
+}
+.chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--light-accent);
+}
+
+/* INPUT AREA */
+.input-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.7s ease 0.1s both;
+}
+
+.input-card label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.input-card textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--ink);
+  background: var(--paper);
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s;
+  line-height: 1.7;
+}
+.input-card textarea:focus {
+  border-color: var(--accent);
+}
+.input-card textarea::placeholder {
+  color: #c5b9ae;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.submit-btn:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(184,115,51,0.25);
+}
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.submit-btn .arrow {
+  font-size: 1.1rem;
+  transition: transform .2s;
+}
+.submit-btn:hover .arrow { transform: translateX(3px); }
+
+/* SPINNER */
+.spinner {
+  display: none;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(247,243,238,0.3);
+  border-top-color: var(--paper);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* RESULT CARD */
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: none;
+  animation: fadeUp 0.5s ease both;
+}
+
+.result-card.visible { display: block; }
+
+.result-header {
+  padding: 14px 28px;
+  background: var(--warm);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.result-header .icon { font-size: 0.9rem; }
+
+.result-body {
+  padding: 32px 28px;
+}
+
+/* フレーズ表示 */
+.phrase-en {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-bottom: 6px;
+  position: relative;
+  padding-left: 16px;
+}
+.phrase-en::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 6px;
+  width: 3px;
+  height: calc(100% - 8px);
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.phrase-ja {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-left: 16px;
+}
+
+.phrase-katakana {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 16px;
+  margin-bottom: 24px;
+}
+.phrase-katakana .label {
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--light-accent);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.phrase-katakana .kana {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.divider {
+  width: 40px;
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+
+/* 全文テキスト表示（フレーズ抽出失敗時） */
+.raw-result {
+  font-size: 0.92rem;
+  color: var(--ink);
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+/* アクションボタン */
+.result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-copy, .btn-again {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .18s ease;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.btn-copy {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.btn-copy:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+.btn-copy.copied {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+.btn-again {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--paper);
+}
+.btn-again:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* HISTORY */
+.history-section {
+  margin-top: 40px;
+  animation: fadeUp 0.7s ease 0.2s both;
+  display: none;
+}
+.history-section.visible { display: block; }
+
+.history-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.history-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.history-item:hover {
+  border-color: var(--accent);
+  background: var(--light-accent);
+}
+.history-item .h-phrase {
+  font-family: 'EB Garamond', serif;
+  font-size: 0.95rem;
+  color: var(--ink);
+  flex: 1;
+}
+.history-item .h-situation {
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 32px 24px;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ERROR */
+.error-msg {
+  padding: 14px 20px;
+  background: #fff5f5;
+  border: 1px solid #fdb;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #c0392b;
+  display: none;
+  margin-top: 12px;
+}
+.error-msg.visible { display: block; }
+
+@media (max-width: 480px) {
+  nav { padding: 16px 20px; }
+  main { padding-top: 88px; }
+  .input-card { padding: 20px; }
+  .result-body { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="https://tomu-ai963.github.io/tomu-system/">とむ<span>SYSTEM</span></a>
+  <a class="nav-back" href="https://tomu-ai963.github.io/tomu-system/">Back to Apps</a>
+</nav>
+
+<main>
+  <!-- HERO -->
+  <section class="app-hero">
+    <div class="app-badge">
+      <span class="dot"></span>
+      English Practice
+    </div>
+    <h1>10秒<em>英会話</em></h1>
+    <p>シチュエーションを入力するだけ。<br>今すぐ使える英語フレーズを瞬時に。</p>
+  </section>
+
+  <!-- INPUT -->
+  <div class="input-card">
+    <div class="situation-label">よく使うシーン</div>
+    <div class="chips">
+      <span class="chip" onclick="setChip(this, 'カフェで注文する')">☕ カフェで注文</span>
+      <span class="chip" onclick="setChip(this, '道を聞く')">🗺 道を聞く</span>
+      <span class="chip" onclick="setChip(this, 'ホテルにチェックインする')">🏨 ホテル</span>
+      <span class="chip" onclick="setChip(this, '会議で意見を言う')">💼 会議</span>
+      <span class="chip" onclick="setChip(this, '友人に感謝を伝える')">🤝 感謝を伝える</span>
+      <span class="chip" onclick="setChip(this, 'お断りを丁寧に伝える')">🙏 断る</span>
+    </div>
+
+    <label for="situation">シチュエーションを入力</label>
+    <textarea id="situation" placeholder="例：空港で荷物が届かないことをスタッフに伝える"></textarea>
+
+    <button class="submit-btn" onclick="generatePhrase()" id="submitBtn">
+      <span id="btnText">フレーズを生成する</span>
+      <span class="arrow" id="btnArrow">→</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <span class="icon">✦</span>
+      Today's Phrase
+    </div>
+    <div class="result-body">
+      <div id="phraseDisplay"></div>
+      <div class="result-actions">
+        <button class="btn-copy" id="copyBtn" onclick="copyPhrase()">コピー</button>
+        <button class="btn-again" onclick="clearResult()">もう一度</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section" id="historySection">
+    <div class="history-title">履歴</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</main>
+
+<footer>
+  <a href="https://tomu-ai963.github.io/tomu-system/">とむSYSTEM</a> — Powered by Anthropic Claude
+</footer>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/";
+
+// セッション内履歴
+const history = [];
+let currentPhrase = "";
+
+// チップ選択
+function setChip(el, text) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('situation').value = text;
+  document.getElementById('situation').focus();
+}
+
+// フレーズ生成
+async function generatePhrase() {
+  const situation = document.getElementById('situation').value.trim();
+  if (!situation) {
+    showError('シチュエーションを入力してください。');
+    return;
+  }
+
+  setLoading(true);
+  hideError();
+  hideResult();
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appType: 'english',
+        input: situation
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const raw = data.result || '';
+    displayResult(raw, situation);
+    addHistory(situation, raw);
+
+  } catch (err) {
+    showError('エラーが発生しました。しばらくしてから再試行してください。');
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// 結果表示（フレーズ・和訳・カタカナを抽出して整形）
+function displayResult(raw, situation) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // フレーズ / 日本語訳 / カタカナを抽出するシンプルなパーサー
+  let phraseEn = '', phraseJa = '', phraseKana = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+
+    // 英語フレーズ行（英字が多く含まれる行）
+    if (!phraseEn && /[A-Za-z]{3,}/.test(l) && !/カタカナ|発音|Pronunciation/i.test(l)) {
+      // 「フレーズ：」などのプレフィックスを除去
+      phraseEn = l.replace(/^(フレーズ|英語|phrase|English)\s*[：:]\s*/i, '');
+    }
+    // 日本語訳行
+    if (!phraseJa && /日本語|和訳|意味|訳/.test(l)) {
+      phraseJa = l.replace(/^(日本語訳?|和訳|意味|訳)\s*[：:]\s*/i, '');
+    }
+    // カタカナ行
+    if (!phraseKana && /カタカナ|発音/.test(l)) {
+      phraseKana = l.replace(/^(カタカナ発音|カタカナ|発音)\s*[：:]\s*/i, '');
+    }
+    // 行自体がカタカナのみの場合
+    if (!phraseKana && /^[ァ-ヶー\s・]+$/.test(l) && l.length > 3) {
+      phraseKana = l;
+    }
+  }
+
+  // 全行を結合して日本語訳・カタカナをフォールバック抽出
+  if (!phraseJa || !phraseKana) {
+    lines.forEach(l => {
+      if (!phraseJa && /[^\x00-\x7F]/.test(l) && !/[A-Za-z]/.test(l) && !/^[ァ-ヶー\s・]+$/.test(l) && l.length > 2) {
+        phraseJa = l;
+      }
+      if (!phraseKana && /^[ァ-ヶー\s・]+$/.test(l) && l.length > 3) {
+        phraseKana = l;
+      }
+    });
+  }
+
+  const display = document.getElementById('phraseDisplay');
+
+  if (phraseEn) {
+    currentPhrase = phraseEn;
+    display.innerHTML = `
+      <div class="phrase-en">${escHtml(phraseEn)}</div>
+      ${phraseJa ? `<div class="phrase-ja">${escHtml(phraseJa)}</div>` : ''}
+      ${phraseKana ? `
+        <div class="phrase-katakana">
+          <span class="label">発音</span>
+          <span class="kana">${escHtml(phraseKana)}</span>
+        </div>
+      ` : ''}
+      <div class="divider"></div>
+      <div style="font-size:0.75rem;color:var(--muted);padding-left:16px;">
+        Scene: ${escHtml(situation)}
+      </div>
+    `;
+  } else {
+    // フォールバック：整形せずそのまま表示
+    currentPhrase = raw;
+    display.innerHTML = `<div class="raw-result">${escHtml(raw)}</div>`;
+  }
+
+  showResult();
+}
+
+// 履歴追加
+function addHistory(situation, raw) {
+  // 英語フレーズだけ抽出（最初の英字多い行）
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  let phrase = lines.find(l => /[A-Za-z]{3,}/.test(l)) || situation;
+  phrase = phrase.replace(/^(フレーズ|英語|phrase|English)\s*[：:]\s*/i, '');
+
+  history.unshift({ situation, phrase, raw });
+  if (history.length > 5) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const section = document.getElementById('historySection');
+  if (history.length === 0) { section.classList.remove('visible'); return; }
+
+  section.classList.add('visible');
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item" onclick="reloadHistory(${i})">
+      <span class="h-phrase">${escHtml(h.phrase)}</span>
+      <span class="h-situation">${escHtml(h.situation)}</span>
+    </div>
+  `).join('');
+}
+
+function reloadHistory(i) {
+  const h = history[i];
+  document.getElementById('situation').value = h.situation;
+  displayResult(h.raw, h.situation);
+}
+
+// UI helpers
+function setLoading(on) {
+  const btn = document.getElementById('submitBtn');
+  const txt = document.getElementById('btnText');
+  const arrow = document.getElementById('btnArrow');
+  const spinner = document.getElementById('spinner');
+  btn.disabled = on;
+  txt.textContent = on ? '生成中...' : 'フレーズを生成する';
+  arrow.style.display = on ? 'none' : '';
+  spinner.style.display = on ? 'block' : 'none';
+}
+
+function showResult() {
+  document.getElementById('resultCard').classList.add('visible');
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function hideResult() {
+  document.getElementById('resultCard').classList.remove('visible');
+}
+function clearResult() {
+  hideResult();
+  document.getElementById('situation').value = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('situation').focus();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('visible');
+}
+
+function copyPhrase() {
+  if (!currentPhrase) return;
+  navigator.clipboard.writeText(currentPhrase).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'コピーしました';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'コピー';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Enterキー送信（Shift+Enterは改行）
+document.getElementById('situation').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    generatePhrase();
+  }
+});
+</script>
+</body>
+</html>

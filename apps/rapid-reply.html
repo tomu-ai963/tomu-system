@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>爆速メール返信 — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --accent2: #7a9e7e;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --light-accent: #eedfc8;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ノイズテクスチャ */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== NAV ===== */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 18px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-back {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-back:hover { color: var(--accent); }
+
+/* ===== MAIN ===== */
+main {
+  padding-top: 100px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 80px;
+}
+
+/* ===== HERO ===== */
+.hero {
+  text-align: center;
+  padding: 60px 24px 40px;
+  max-width: 640px;
+}
+
+.hero-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 20px;
+  opacity: 0.85;
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.hero-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: var(--ink);
+}
+
+.hero-sub {
+  font-size: 0.82rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 40px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 20px;
+  box-shadow: 0 2px 20px rgba(26,22,18,0.06);
+  animation: slideUp 0.5s ease both;
+}
+
+@keyframes slideUp {
+  from { opacity:0; transform: translateY(20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ===== FORM ===== */
+.form-block {
+  margin-bottom: 28px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-weight: 400;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--warm);
+  border-radius: 2px;
+  padding: 14px 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: var(--ink);
+  resize: vertical;
+  transition: border-color .2s, box-shadow .2s;
+  line-height: 1.7;
+}
+
+textarea::placeholder { color: #bbb0a6; }
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(184,115,51,0.08);
+}
+
+/* ===== DIRECTION PILLS ===== */
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+}
+
+.pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ===== BUTTON ===== */
+.btn-generate {
+  width: 100%;
+  padding: 15px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 2px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-generate:hover { background: #2e2a26; }
+.btn-generate:active { transform: scale(0.99); }
+.btn-generate:disabled {
+  background: var(--border);
+  cursor: not-allowed;
+  color: var(--muted);
+}
+
+/* ===== LOADING ===== */
+.loading-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(247,243,238,0.3);
+  border-top-color: var(--paper);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== RESULT ===== */
+.result-card {
+  margin-top: 32px;
+  border-top: 1px solid var(--border);
+  padding-top: 28px;
+  animation: fadeIn 0.4s ease both;
+  display: none;
+}
+
+.result-card.visible { display: block; }
+
+@keyframes fadeIn {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.result-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--light-accent);
+}
+
+.result-text {
+  font-size: 0.9rem;
+  line-height: 1.85;
+  color: var(--ink);
+  white-space: pre-wrap;
+  padding: 20px;
+  background: var(--warm);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 2px 2px 0;
+  min-height: 60px;
+}
+
+/* ===== COPY BTN ===== */
+.btn-copy {
+  margin-top: 12px;
+  padding: 9px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .2s;
+  float: right;
+}
+
+.btn-copy:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+.btn-copy.copied {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+/* ===== ERROR ===== */
+.error-msg {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 2px;
+  font-size: 0.8rem;
+  color: #c0392b;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* ===== FOOTER ===== */
+footer {
+  text-align: center;
+  margin-top: 60px;
+  padding: 0 20px;
+}
+
+.footer-link {
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+}
+.footer-link:hover { color: var(--accent); }
+
+.footer-divider {
+  color: var(--border);
+  margin: 0 12px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  nav { padding: 16px 20px; }
+  .card { padding: 28px 20px; margin: 0 12px; }
+  .hero { padding: 40px 16px 32px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-logo">とむ<span>SYSTEM</span></a>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-back">← Apps</a>
+</nav>
+
+<main>
+  <div class="hero">
+    <svg class="hero-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="12" width="44" height="32" rx="2" stroke="#b87333" stroke-width="1.5"/>
+      <path d="M6 16l22 15 22-15" stroke="#b87333" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M34 30l10 8" stroke="#b87333" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+      <path d="M22 30l-10 8" stroke="#b87333" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+    </svg>
+    <p class="hero-label">App 08 — Rapid Reply</p>
+    <h1 class="hero-title">爆速メール返信</h1>
+    <p class="hero-sub">受信メールを貼るだけ。返信の方向性を選んで、即送れる文章を生成。</p>
+  </div>
+
+  <div class="card">
+    <!-- 受信メール入力 -->
+    <div class="form-block">
+      <label class="form-label" for="mailInput">受信メール本文</label>
+      <textarea
+        id="mailInput"
+        rows="7"
+        placeholder="返信したいメールの本文をここに貼り付けてください..."
+      ></textarea>
+    </div>
+
+    <!-- 返信方向性 -->
+    <div class="form-block">
+      <label class="form-label">返信の方向性</label>
+      <div class="pill-row" id="directionPills">
+        <button class="pill active" data-value="承諾">✓ 承諾する</button>
+        <button class="pill" data-value="断る">✗ 断る</button>
+        <button class="pill" data-value="確認する">？ 確認する</button>
+        <button class="pill" data-value="延期する">⏸ 延期する</button>
+        <button class="pill" data-value="感謝する">♡ 感謝する</button>
+        <button class="pill" data-value="催促する">⚡ 催促する</button>
+      </div>
+    </div>
+
+    <!-- 生成ボタン -->
+    <button class="btn-generate" id="generateBtn" onclick="generateReply()">
+      <span id="btnText">返信文を生成する</span>
+      <div class="loading-bar" id="loadingBar"></div>
+    </button>
+
+    <!-- エラー -->
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- 結果 -->
+    <div class="result-card" id="resultCard">
+      <div class="result-label">Generated Reply</div>
+      <div class="result-text" id="resultText"></div>
+      <button class="btn-copy" id="copyBtn" onclick="copyResult()">コピー</button>
+      <div style="clear:both"></div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://tomu-ai963.github.io/tomu-system/" class="footer-link">とむSYSTEM</a>
+    <span class="footer-divider">|</span>
+    <a href="https://tomu-ai963.github.io/portfolio/" class="footer-link">Portfolio</a>
+  </footer>
+</main>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/";
+
+let selectedDirection = "承諾";
+let loadingInterval = null;
+
+// ===== ピル選択 =====
+document.querySelectorAll('.pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    selectedDirection = pill.dataset.value;
+  });
+});
+
+// ===== 生成 =====
+async function generateReply() {
+  const input = document.getElementById('mailInput').value.trim();
+  if (!input) {
+    showError("メール本文を入力してください。");
+    return;
+  }
+
+  setLoading(true);
+  hideError();
+  hideResult();
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appType: "rapid-reply",
+        input: input,
+        extra: { direction: selectedDirection }
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data.result) {
+      showResult(data.result);
+    } else {
+      throw new Error("返信文が生成されませんでした。");
+    }
+  } catch (err) {
+    showError("エラー: " + err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ===== UI helpers =====
+function setLoading(on) {
+  const btn = document.getElementById('generateBtn');
+  const text = document.getElementById('btnText');
+  const bar = document.getElementById('loadingBar');
+
+  if (on) {
+    btn.disabled = true;
+    text.innerHTML = '<span class="spinner"></span>生成中...';
+    let w = 0;
+    loadingInterval = setInterval(() => {
+      w = Math.min(w + Math.random() * 8, 88);
+      bar.style.width = w + '%';
+    }, 150);
+  } else {
+    btn.disabled = false;
+    text.innerHTML = '返信文を生成する';
+    clearInterval(loadingInterval);
+    bar.style.width = '100%';
+    setTimeout(() => { bar.style.width = '0%'; }, 400);
+  }
+}
+
+function showResult(text) {
+  const card = document.getElementById('resultCard');
+  const el = document.getElementById('resultText');
+  el.textContent = text;
+  card.classList.add('visible');
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('copyBtn').textContent = 'コピー';
+  document.getElementById('copyBtn').classList.remove('copied');
+}
+
+function hideResult() {
+  document.getElementById('resultCard').classList.remove('visible');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('visible');
+}
+
+// ===== コピー =====
+function copyResult() {
+  const text = document.getElementById('resultText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ コピーしました';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'コピー';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// ===== Enter送信（Shift+Enter改行） =====
+document.getElementById('mailInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.metaKey) generateReply();
+});
+</script>
+
+</body>
+</html>
