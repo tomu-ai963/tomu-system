@@ -5,9 +5,7 @@
  */
 
 (function () {
-  const WORKER_URL = 'https://orange-sound-354b.b6815ad2ee3097cc0f9e79b8536776b9.workers.dev/';
-  const STORAGE_KEY = 'tomu_email';
-
+  const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/';  const STORAGE_KEY = 'tomu_email';
   const STRIPE_LINKS = {
     light:    'https://buy.stripe.com/3cI00i8nQf5Sd1c3T58Zq01',
     standard: 'https://buy.stripe.com/8x214mcE6f5S2my1KX8Zq02',
