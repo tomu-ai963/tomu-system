@@ -616,12 +616,17 @@ async function generatePhrase() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         appType: 'english',
-        input: situation
+        input: situation,
+        email: TomuAuth.getEmail()
       })
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    if (data.error === 'subscription_required' || data.error === 'login_required') {
+      TomuAuth.showOverlay();
+      return;
+    }
     if (data.error) throw new Error(data.error);
 
     const raw = data.result || '';
@@ -796,5 +801,8 @@ document.getElementById('situation').addEventListener('keydown', e => {
   }
 });
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>

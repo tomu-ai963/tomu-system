@@ -491,12 +491,17 @@ async function generateReply() {
       body: JSON.stringify({
         appType: "rapid-reply",
         input: input,
-        extra: { direction: selectedDirection }
+        extra: { direction: selectedDirection },
+        email: TomuAuth.getEmail()
       })
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      if (err.error === "subscription_required" || err.error === "login_required") {
+        TomuAuth.showOverlay();
+        return;
+      }
       throw new Error(err.error || `HTTP ${res.status}`);
     }
 
@@ -579,6 +584,9 @@ document.getElementById('mailInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.metaKey) generateReply();
 });
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 
 </body>
 </html>

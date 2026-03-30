@@ -581,12 +581,17 @@ async function fetchLucky() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         appType: "lucky-action",
-        input: inputText
+        input: inputText,
+        email: TomuAuth.getEmail()
       })
     });
 
     const data = await res.json();
 
+    if (data.error === "subscription_required" || data.error === "login_required") {
+      TomuAuth.showOverlay();
+      return;
+    }
     if (!res.ok || data.error) {
       throw new Error(data.error || "Worker error");
     }
@@ -607,5 +612,8 @@ async function fetchLucky() {
 submitBtn.addEventListener("click", fetchLucky);
 retryBtn.addEventListener("click", fetchLucky);
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>

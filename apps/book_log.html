@@ -553,11 +553,15 @@ async function generate() {
     const res = await fetch(WORKER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appType: "book-log", input }),
+      body: JSON.stringify({ appType: "book-log", input, email: TomuAuth.getEmail() }),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    if (data.error === "subscription_required" || data.error === "login_required") {
+      TomuAuth.showOverlay();
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const quote = data.result || "（結果を取得できませんでした）";
 
     currentQuote = quote;
@@ -664,5 +668,8 @@ document.getElementById("book-title").addEventListener("keydown", e => {
 // 初期化
 renderHistory();
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>

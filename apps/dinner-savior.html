@@ -492,11 +492,17 @@ async function generate() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         appType: 'dinner',
-        input: `食材1: ${ing1}、食材2: ${ing2}`
+        input: `食材1: ${ing1}、食材2: ${ing2}`,
+        email: TomuAuth.getEmail()
       })
     });
 
     if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (err.error === 'subscription_required' || err.error === 'login_required') {
+        TomuAuth.showOverlay();
+        return;
+      }
       throw new Error(`HTTP ${res.status}`);
     }
 
@@ -555,5 +561,8 @@ style.textContent = `
 }`;
 document.head.appendChild(style);
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>

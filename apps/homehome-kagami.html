@@ -62,7 +62,6 @@ textarea::placeholder{color:#c4a8c0;font-style:italic}
 </div>
 <script>
 const WORKER_URL = "https://orange-sound-354b.b6815ad2ee3097cc0f9e79b8536776b9.workers.dev";
-const SYSTEM_PROMPT = `あなたは「褒め褒め鏡」です。ユーザーが入力した内容を読んで、その人のことを心から褒めてください。やさしく、温かく、誠実に。具体的な内容に触れながら3〜5文で。最後に短い応援メッセージで締める。絵文字は1〜2個だけ。`;
 
 async function getPraise() {
   const input = document.getElementById("userInput").value.trim();
@@ -75,16 +74,19 @@ async function getPraise() {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        max_tokens: 300,
-        messages: [
-          {role: "system", content: SYSTEM_PROMPT},
-          {role: "user", content: input}
-        ]
+        appType: "praise",
+        input: input,
+        email: TomuAuth.getEmail()
       })
     });
     const data = await res.json();
-    const text = data.choices?.[0]?.message?.content || "あなたは素晴らしいです。✨";
+    if (data.error === "subscription_required" || data.error === "login_required") {
+      TomuAuth.showOverlay();
+      btn.textContent = "✨ 鏡に映す";
+      btn.disabled = false;
+      return;
+    }
+    const text = data.result || "あなたは素晴らしいです。✨";
     document.getElementById("praiseText").textContent = text;
     document.getElementById("input-section").classList.add("hidden");
     document.getElementById("praise-section").classList.remove("hidden");
@@ -103,5 +105,8 @@ function reset() {
   document.getElementById("praise-section").classList.add("hidden");
 }
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>

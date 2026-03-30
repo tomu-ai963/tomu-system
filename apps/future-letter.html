@@ -360,10 +360,16 @@ async function sendLetter() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         appType: 'future-letter',
-        input: input
+        input: input,
+        email: TomuAuth.getEmail()
       })
     });
     const data = await res.json();
+    if (data.error === 'subscription_required' || data.error === 'login_required') {
+      TomuAuth.showOverlay();
+      setPhase('idle');
+      return;
+    }
     fullLetter = data.result || '手紙を受け取れませんでした。';
   } catch(e) {
     fullLetter = '手紙を受け取れませんでした。もう一度試してください。';
@@ -406,5 +412,8 @@ function resetLetter() {
   setPhase('idle');
 }
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>

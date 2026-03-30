@@ -418,13 +418,17 @@ async function runAI() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         appType: "three-tasks",
-        input: input
+        input: input,
+        email: TomuAuth.getEmail()
       })
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
     const data = await res.json();
+    if (data.error === "subscription_required" || data.error === "login_required") {
+      TomuAuth.showOverlay();
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     if (data.error) throw new Error(data.error);
 
     renderTasks(data.result);
@@ -494,5 +498,8 @@ document.getElementById("input").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.ctrlKey) runAI();
 });
 </script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
 </body>
 </html>
