@@ -842,43 +842,44 @@ footer {
   </div>
   <div class="pricing-grid">
 
-    <div class="plan-card fade-up">
+    <div class="plan-card featured fade-up">
+      <div class="plan-badge">Now Available</div>
       <div class="plan-name">Light</div>
       <div class="plan-price"><sup>¥</sup>480<sub>/月</sub></div>
-      <div class="plan-desc">まずは試してみたい方へ。好きな3本を選んで、毎日の習慣を作り始める。</div>
+      <div class="plan-desc">まずは試してみたい方へ。全10本のアプリを使って、毎日の習慣を作り始める。</div>
       <ul class="plan-features">
-        <li class="plan-feature">好きなアプリ 3本を選択</li>
-        <li class="plan-feature">月間利用制限なし</li>
-        <li class="plan-feature">いつでもプラン変更可</li>
+        <li class="plan-feature">全10アプリ使い放題</li>
+        <li class="plan-feature">1日50回まで利用可能</li>
+        <li class="plan-feature">いつでも解約可</li>
       </ul>
       <button class="plan-btn" onclick="startCheckout('light')">はじめる</button>
     </div>
 
-    <div class="plan-card featured fade-up">
-      <div class="plan-badge">Most Popular</div>
+    <div class="plan-card fade-up" style="opacity:.5;pointer-events:none;">
+      <div class="plan-badge" style="background:#ccc;color:#fff;">Coming Soon</div>
       <div class="plan-name">Standard</div>
       <div class="plan-price"><sup>¥</sup>980<sub>/月</sub></div>
-      <div class="plan-desc">日常のあらゆるシーンをカバー。6本の組み合わせで、生活全体を底上げする。</div>
+      <div class="plan-desc">より多くのアプリと高い利用上限で、生活全体を底上げする。近日公開予定。</div>
       <ul class="plan-features">
-        <li class="plan-feature">好きなアプリ 6本を選択</li>
-        <li class="plan-feature">月間利用制限なし</li>
+        <li class="plan-feature">追加アプリへのアクセス</li>
+        <li class="plan-feature">1日200回まで利用可能</li>
         <li class="plan-feature">新アプリ優先アクセス</li>
-        <li class="plan-feature">いつでもプラン変更可</li>
+        <li class="plan-feature">いつでも解約可</li>
       </ul>
-      <button class="plan-btn" onclick="startCheckout('standard')">はじめる</button>
+      <button class="plan-btn" style="background:#ccc;cursor:not-allowed;" disabled>近日公開</button>
     </div>
 
-    <div class="plan-card fade-up">
+    <div class="plan-card fade-up" style="opacity:.5;pointer-events:none;">
       <div class="plan-name">Full</div>
       <div class="plan-price"><sup>¥</sup>1,480<sub>/月</sub></div>
-      <div class="plan-desc">全部使い放題。10本すべてのアプリで、生活のあらゆる瞬間をAIが支える。</div>
+      <div class="plan-desc">全アプリ無制限。士業・専門職向けアプリも含む、最上位プラン。近日公開予定。</div>
       <ul class="plan-features">
-        <li class="plan-feature">全アプリ 10本を使い放題</li>
-        <li class="plan-feature">月間利用制限なし</li>
-        <li class="plan-feature">新アプリ優先アクセス</li>
+        <li class="plan-feature">全アプリ完全使い放題</li>
+        <li class="plan-feature">利用回数無制限</li>
+        <li class="plan-feature">専門職向けアプリ含む</li>
         <li class="plan-feature">今後追加のアプリも含む</li>
       </ul>
-      <button class="plan-btn" onclick="startCheckout('full')">はじめる</button>
+      <button class="plan-btn" style="background:#ccc;cursor:not-allowed;" disabled>近日公開</button>
     </div>
 
   </div>
@@ -893,13 +894,13 @@ footer {
   <div class="flow-steps">
     <div class="flow-step fade-up">
       <div class="flow-num">1</div>
-      <h4>プランを選ぶ</h4>
-      <p>Light / Standard / Fullの3つから、ライフスタイルに合ったプランを。</p>
+      <h4>Lightプランを選ぶ</h4>
+      <p>月額¥480のLightプランで、全10本のアプリにアクセスできます。</p>
     </div>
     <div class="flow-step fade-up">
       <div class="flow-num">2</div>
-      <h4>アプリを選ぶ</h4>
-      <p>10本の中から、今の自分に必要なアプリだけをピックアップ。</p>
+      <h4>メールで登録</h4>
+      <p>Stripeで決済後、登録したメールアドレスでログインするだけ。アカウント作成は不要。</p>
     </div>
     <div class="flow-step fade-up">
       <div class="flow-num">3</div>
@@ -908,8 +909,8 @@ footer {
     </div>
     <div class="flow-step fade-up">
       <div class="flow-num">4</div>
-      <h4>好きに変える</h4>
-      <p>使うアプリはいつでも変更OK。飽きたら入れ替えて、常に自分に最適な組み合わせを。</p>
+      <h4>プランが増える</h4>
+      <p>StandardやFullプランも近日公開予定。新アプリが追加されるたびに、できることが広がります。</p>
     </div>
   </div>
 </section>
@@ -948,7 +949,7 @@ footer {
 <section class="cta-section">
   <div class="section-eyebrow">Get Started</div>
   <h2>今日から、<br><em>賢い習慣</em>をはじめよう。</h2>
-  <p>まずはLightプランで。気に入ったらいつでもアップグレードできます。</p>
+  <p>Lightプランで全10アプリを試せます。気に入ったら、新プランが増えるのをお楽しみに。</p>
   <a href="#pricing" class="btn-primary" style="font-size:.85rem;padding:16px 48px;">プランを選ぶ</a>
 </section>
 
@@ -996,6 +997,7 @@ const STRIPE_LINKS = {
 let selectedPlan = null;
 
 function startCheckout(plan) {
+  if (plan !== 'light') return; // StandardとFullは現在準備中
   selectedPlan = plan;
   document.getElementById('checkout-email').value = '';
   document.getElementById('checkout-error').style.display = 'none';
