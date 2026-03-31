@@ -10,6 +10,9 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
 };
 
+// ===== 日次リクエスト制限 =====
+const DAILY_LIMITS = { light: 50, standard: 200, full: 500 };
+
 // ===== システムプロンプト定義 =====
 function getSystemPrompt(appType, extra = {}) {
   switch (appType) {
@@ -84,23 +87,30 @@ export default {
         return new Response("Invalid signature", { status: 400 });
       }
 
-      const event = JSON.parse(body);
-      const subscription = event.data.object;
-      const email = subscription.metadata?.email || subscription.customer_email || "";
-      const priceId = subscription.items?.data?.[0]?.price?.id || "";
+      try {
+        const event = JSON.parse(body);
+        const subscription = event.data.object;
+        const email = subscription.metadata?.email || subscription.customer_email || "";
+        const priceId = subscription.items?.data?.[0]?.price?.id || "";
 
-      // プランを判定
-      let plan = "none";
-      if (priceId === "price_1TGWRtCr8aAPWdNlgoCuJsYi") plan = "light";
-      else if (priceId === "price_1TGWU0Cr8aAPWdNlZIKivWfc") plan = "standard";
-      else if (priceId === "price_1TGWVHCr8aAPWdNlxx2Yg39Q") plan = "full";
+        let plan = "none";
+        if (priceId === "price_1TGWRtCr8aAPWdNlgoCuJsYi") plan = "light";
+        else if (priceId === "price_1TGWU0Cr8aAPWdNlZIKivWfc") plan = "standard";
+        else if (priceId === "price_1TGWVHCr8aAPWdNlxx2Yg39Q") plan = "full";
 
-      if (email) {
-        if (event.type === "customer.subscription.created") {
-          await env.SUBSCRIPTIONS.put(email, plan);
-        } else if (event.type === "customer.subscription.deleted") {
-          await env.SUBSCRIPTIONS.delete(email);
+        if (email) {
+          if (
+            event.type === "customer.subscription.created" ||
+            event.type === "customer.subscription.updated"
+          ) {
+            await env.SUBSCRIPTIONS.put(email, plan);
+          } else if (event.type === "customer.subscription.deleted") {
+            await env.SUBSCRIPTIONS.delete(email);
+          }
         }
+      } catch (e) {
+        // パース失敗してもStripeには200を返す（リトライ防止）
+        console.error("Webhook parse error:", e.message);
       }
 
       return new Response("OK", { status: 200 });
@@ -156,7 +166,33 @@ export default {
       });
     }
 
-    // Anthropic APIを叩く
+    // ===== pingはplanを返して早期リターン =====
+    if (appType === "ping") {
+      return new Response(JSON.stringify({ ok: true, plan }), {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+
+    // ===== 日次リクエスト制限チェック =====
+    const today = new Date().toISOString().slice(0, 10); // "2026-03-31"
+    const countKey = `count:${email}:${today}`;
+    const currentCount = parseInt(await env.SUBSCRIPTIONS.get(countKey) || "0");
+    const limit = DAILY_LIMITS[plan] ?? 50;
+
+    if (currentCount >= limit) {
+      return new Response(JSON.stringify({ error: "daily_limit_exceeded", limit }), {
+        status: 429,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+
+    // カウントアップ（24時間で自動削除）
+    await env.SUBSCRIPTIONS.put(countKey, String(currentCount + 1), {
+      expirationTtl: 86400,
+    });
+
+    // ===== Anthropic API =====
     try {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
