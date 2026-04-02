@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家族旅行プランナー | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Kaisei+Opti:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #e8f4fd;
+    --horizon: #b8d9f0;
+    --sun: #f5a623;
+    --sun-light: #fde8b0;
+    --forest: #4a7c59;
+    --forest-light: #7db88a;
+    --sand: #f7f0e6;
+    --sand-dark: #e8d5b7;
+    --ink: #2c3e2d;
+    --ink-light: #5a6b5b;
+    --white: #fffef9;
+    --accent: #e05c2a;
+    --accent-soft: #f7d4c4;
+    --card-shadow: 0 4px 24px rgba(44,62,45,0.10);
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    background: var(--sky);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== 背景装飾 ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 260px;
+    background: linear-gradient(180deg, #c9e8f7 0%, #e8f4fd 100%);
+    z-index: 0;
+  }
+
+  .cloud {
+    position: fixed;
+    border-radius: 50px;
+    background: rgba(255,255,255,0.7);
+    z-index: 0;
+  }
+  .cloud-1 { width: 120px; height: 36px; top: 40px; left: 8%; animation: drift 18s linear infinite; }
+  .cloud-2 { width: 80px; height: 24px; top: 70px; left: 50%; animation: drift 25s linear infinite 4s; }
+  .cloud-3 { width: 100px; height: 30px; top: 25px; right: 12%; animation: drift 20s linear infinite 8s; }
+  @keyframes drift {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(20px); }
+    100% { transform: translateX(0); }
+  }
+
+  /* ===== レイアウト ===== */
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 16px 60px;
+  }
+
+  /* ===== ヘッダー ===== */
+  header {
+    text-align: center;
+    padding: 44px 0 28px;
+  }
+
+  .header-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 8px;
+    animation: bob 3s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  h1 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.9rem;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    letter-spacing: 0.03em;
+  }
+
+  /* ===== ログインバナー ===== */
+  #login-banner {
+    background: linear-gradient(135deg, var(--accent-soft), #fce8d5);
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.88rem;
+  }
+  #login-banner span { font-size: 1.5rem; }
+  #login-banner a {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* ===== カード共通 ===== */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 24px 22px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+    border: 1.5px solid rgba(255,255,255,0.9);
+    animation: slideUp 0.5s ease both;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--forest);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 16px;
+    background: var(--forest);
+    border-radius: 2px;
+  }
+
+  /* ===== フォーム要素 ===== */
+  .form-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 130px;
+  }
+
+  .form-group label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ink-light);
+    letter-spacing: 0.04em;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--sand-dark);
+    border-radius: 12px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 0.9rem;
+    background: var(--sand);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--forest-light);
+    box-shadow: 0 0 0 3px rgba(74,124,89,0.12);
+    background: var(--white);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+  }
+
+  /* ===== メンバー選択 ===== */
+  .member-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .member-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+  }
+
+  .member-chip input[type="checkbox"] { display: none; }
+
+  .chip-inner {
+    padding: 10px 16px;
+    border-radius: 30px;
+    border: 1.5px solid var(--sand-dark);
+    background: var(--sand);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ink-light);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .member-chip input:checked + .chip-inner {
+    background: var(--forest);
+    border-color: var(--forest);
+    color: white;
+    box-shadow: 0 2px 8px rgba(74,124,89,0.3);
+    transform: translateY(-1px);
+  }
+
+  .chip-icon { font-size: 1.1rem; }
+
+  /* ===== 子供年齢入力 ===== */
+  #children-ages-section {
+    display: none;
+    margin-top: 14px;
+    animation: fadeIn 0.3s ease;
+  }
+  #children-ages-section.visible { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ===== 予算スライダー ===== */
+  .budget-display {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.6rem;
+    color: var(--forest);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .budget-display span { font-size: 0.9rem; color: var(--ink-light); }
+
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--forest) 0%, var(--forest) var(--pct,50%), var(--sand-dark) var(--pct,50%), var(--sand-dark) 100%);
+    outline: none;
+    border: none;
+    -webkit-appearance: none;
+    padding: 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 3px solid var(--forest);
+    box-shadow: 0 2px 6px rgba(74,124,89,0.3);
+    cursor: pointer;
+  }
+
+  .budget-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--ink-light);
+    margin-top: 6px;
+  }
+
+  /* ===== 希望タグ ===== */
+  .wish-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .wish-tag {
+    cursor: pointer;
+  }
+  .wish-tag input[type="checkbox"] { display: none; }
+  .tag-label {
+    display: block;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--horizon);
+    background: var(--sky);
+    font-size: 0.82rem;
+    color: var(--ink);
+    transition: all 0.2s;
+  }
+  .wish-tag input:checked + .tag-label {
+    background: var(--sun-light);
+    border-color: var(--sun);
+    color: var(--ink);
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(245,166,35,0.25);
+  }
+
+  /* ===== 生成ボタン ===== */
+  .btn-generate {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--forest), #3a6b4a);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(74,124,89,0.35);
+  }
+  .btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(74,124,89,0.45);
+  }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled {
+    background: var(--sand-dark);
+    color: var(--ink-light);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-generate .shine {
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: shine 2.5s infinite;
+  }
+  @keyframes shine {
+    to { left: 200%; }
+  }
+
+  /* ===== ローディング ===== */
+  #loading {
+    display: none;
+    text-align: center;
+    padding: 32px;
+  }
+  #loading.visible { display: block; }
+
+  .travel-loader {
+    font-size: 2.5rem;
+    animation: travel 1.5s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes travel {
+    0% { transform: translateX(-30px); opacity: 0.5; }
+    50% { transform: translateX(30px); opacity: 1; }
+    100% { transform: translateX(-30px); opacity: 0.5; }
+  }
+
+  .loading-text {
+    margin-top: 12px;
+    color: var(--ink-light);
+    font-size: 0.88rem;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* ===== 結果表示 ===== */
+  #result-section {
+    display: none;
+    animation: slideUp 0.6s ease;
+  }
+  #result-section.visible { display: block; }
+
+  .result-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    border: 1.5px solid rgba(255,255,255,0.9);
+  }
+
+  .result-header {
+    background: linear-gradient(135deg, var(--forest), #3a6b4a);
+    padding: 20px 24px;
+    color: white;
+  }
+
+  .result-header h2 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .result-header .dest-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    margin-top: 6px;
+  }
+
+  .result-body {
+    padding: 24px;
+  }
+
+  /* Markdownっぽい出力のスタイル */
+  .result-body h2 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.05rem;
+    color: var(--forest);
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--sand-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .result-body h2:first-child { margin-top: 0; }
+
+  .result-body h3 {
+    font-size: 0.92rem;
+    color: var(--ink);
+    margin: 14px 0 6px;
+    font-weight: 700;
+  }
+
+  .result-body p {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .result-body ul, .result-body ol {
+    padding-left: 20px;
+    margin-bottom: 10px;
+  }
+  .result-body li {
+    font-size: 0.87rem;
+    line-height: 1.8;
+    color: var(--ink);
+    margin-bottom: 3px;
+  }
+
+  .result-body strong {
+    color: var(--forest);
+    font-weight: 700;
+  }
+
+  .result-body .day-block {
+    background: var(--sand);
+    border-left: 3px solid var(--sun);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  /* ===== アクションボタン ===== */
+  .result-actions {
+    display: flex;
+    gap: 10px;
+    padding: 0 24px 24px;
+    flex-wrap: wrap;
+  }
+
+  .btn-copy, .btn-reset {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px;
+    border-radius: 12px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-copy {
+    background: var(--sun-light);
+    border-color: var(--sun);
+    color: var(--ink);
+  }
+  .btn-copy:hover { background: var(--sun); color: white; }
+
+  .btn-reset {
+    background: var(--sky);
+    border-color: var(--horizon);
+    color: var(--ink-light);
+  }
+  .btn-reset:hover { background: var(--horizon); color: var(--ink); }
+
+  /* ===== エラー ===== */
+  .error-toast {
+    display: none;
+    background: #fff0ee;
+    border: 1.5px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--accent);
+    font-size: 0.87rem;
+    margin-bottom: 16px;
+    animation: slideUp 0.3s ease;
+  }
+  .error-toast.visible { display: block; }
+
+  /* ===== フッター ===== */
+  .footer-note {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--ink-light);
+    opacity: 0.6;
+    margin-top: 32px;
+  }
+
+  /* ===== ログインモーダル ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,62,45,0.35);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visible { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    width: 90%;
+    max-width: 360px;
+    box-shadow: 0 20px 60px rgba(44,62,45,0.2);
+    animation: slideUp 0.3s ease;
+  }
+  .modal h3 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+  .modal p {
+    font-size: 0.83rem;
+    color: var(--ink-light);
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+  .btn-modal-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--forest), #3a6b4a);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal-close {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: none;
+    border: 1.5px solid var(--sand-dark);
+    border-radius: 12px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    cursor: pointer;
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 1.55rem; }
+    .card { padding: 20px 16px; }
+    .result-body, .result-actions { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+<div class="cloud cloud-3"></div>
+
+<div class="container">
+
+  <header>
+    <span class="header-icon">🗺️</span>
+    <h1>家族旅行プランナー</h1>
+    <p class="subtitle">みんなが笑顔になる旅を、AIが一緒に考えます</p>
+  </header>
+
+  <!-- ログインバナー -->
+  <div id="login-banner">
+    <span>🔑</span>
+    <div>ご利用にはログインが必要です。<br><a onclick="showLoginModal()">メールアドレスを入力してはじめる →</a></div>
+  </div>
+
+  <!-- エラー表示 -->
+  <div class="error-toast" id="error-toast"></div>
+
+  <!-- 入力フォーム -->
+  <div id="form-section">
+
+    <!-- 旅行先 & 時期 -->
+    <div class="card" style="animation-delay:0.05s">
+      <div class="card-title">🏔️ 目的地と時期</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>旅行先（例：京都、沖縄）</label>
+          <input type="text" id="destination" placeholder="どこへ行きたい？" />
+        </div>
+        <div class="form-group" style="max-width:120px">
+          <label>泊数</label>
+          <select id="nights">
+            <option>日帰り</option>
+            <option selected>1泊2日</option>
+            <option>2泊3日</option>
+            <option>3泊4日</option>
+            <option>4泊5日以上</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group">
+          <label>時期・季節</label>
+          <input type="text" id="timing" placeholder="例：夏休み、GW、10月頃…" />
+        </div>
+        <div class="form-group" style="max-width:150px">
+          <label>移動手段</label>
+          <select id="transport">
+            <option>車</option>
+            <option>新幹線</option>
+            <option>飛行機</option>
+            <option>電車・バス</option>
+            <option>まだ未定</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 家族構成 -->
+    <div class="card" style="animation-delay:0.1s">
+      <div class="card-title">👨‍👩‍👧‍👦 家族構成</div>
+      <div class="member-grid">
+        <label class="member-chip">
+          <input type="checkbox" name="members" value="パパ" checked>
+          <span class="chip-inner"><span class="chip-icon">👨</span> パパ</span>
+        </label>
+        <label class="member-chip">
+          <input type="checkbox" name="members" value="ママ" checked>
+          <span class="chip-inner"><span class="chip-icon">👩</span> ママ</span>
+        </label>
+        <label class="member-chip" id="chip-children">
+          <input type="checkbox" name="members" value="子供" id="has-children">
+          <span class="chip-inner"><span class="chip-icon">🧒</span> 子供</span>
+        </label>
+        <label class="member-chip">
+          <input type="checkbox" name="members" value="祖父母">
+          <span class="chip-inner"><span class="chip-icon">👴</span> 祖父母</span>
+        </label>
+        <label class="member-chip">
+          <input type="checkbox" name="members" value="赤ちゃん">
+          <span class="chip-inner"><span class="chip-icon">👶</span> 赤ちゃん</span>
+        </label>
+      </div>
+
+      <div id="children-ages-section">
+        <div class="form-group" style="margin-top:0">
+          <label>子供の年齢（例：5歳, 8歳）</label>
+          <input type="text" id="children-ages" placeholder="何人か、何歳かを入力" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 予算 -->
+    <div class="card" style="animation-delay:0.15s">
+      <div class="card-title">💴 旅行予算（合計）</div>
+      <div class="budget-display" id="budget-display">10万円</div>
+      <input type="range" id="budget-slider" min="1" max="20" value="10"
+        oninput="updateBudget(this.value)">
+      <div class="budget-labels">
+        <span>〜5万</span><span>10万</span><span>15万</span><span>20万+</span>
+      </div>
+    </div>
+
+    <!-- 希望・テーマ -->
+    <div class="card" style="animation-delay:0.2s">
+      <div class="card-title">🎯 旅のテーマ（複数選択可）</div>
+      <div class="wish-tags">
+        <label class="wish-tag"><input type="checkbox" value="子供が楽しめる遊び場・テーマパーク"><span class="tag-label">🎢 遊び場・テーマパーク</span></label>
+        <label class="wish-tag"><input type="checkbox" value="温泉・宿でのんびり"><span class="tag-label">♨️ 温泉・のんびり宿</span></label>
+        <label class="wish-tag"><input type="checkbox" value="グルメ・食べ歩き"><span class="tag-label">🍜 グルメ・食べ歩き</span></label>
+        <label class="wish-tag"><input type="checkbox" value="自然・アウトドア体験"><span class="tag-label">🌿 自然・アウトドア</span></label>
+        <label class="wish-tag"><input type="checkbox" value="文化・歴史スポット"><span class="tag-label">⛩️ 文化・歴史</span></label>
+        <label class="wish-tag"><input type="checkbox" value="海・水遊び"><span class="tag-label">🏖️ 海・水遊び</span></label>
+        <label class="wish-tag"><input type="checkbox" value="体験・ワークショップ"><span class="tag-label">🎨 体験・ワークショップ</span></label>
+        <label class="wish-tag"><input type="checkbox" value="移動を最小限にゆったり旅"><span class="tag-label">😌 ゆったりペース</span></label>
+      </div>
+    </div>
+
+    <!-- 要望・懸念 -->
+    <div class="card" style="animation-delay:0.25s">
+      <div class="card-title">✏️ 特別な要望・懸念事項（任意）</div>
+      <textarea id="notes" placeholder="例：祖父母が足腰弱め、子供が乗り物酔いしやすい、ペット同伴、アレルギーあり…など何でも"></textarea>
+    </div>
+
+    <!-- 生成ボタン -->
+    <button class="btn-generate" id="generate-btn" onclick="generatePlan()">
+      <span class="shine"></span>
+      ✈️ 旅行プランを作成する
+    </button>
+
+  </div>
+
+  <!-- ローディング -->
+  <div id="loading">
+    <div class="travel-loader">🚗</div>
+    <p class="loading-text">AIが最高の旅行プランを考えています…</p>
+  </div>
+
+  <!-- 結果 -->
+  <div id="result-section">
+    <div class="result-card">
+      <div class="result-header">
+        <h2>🗺️ あなたの家族旅行プラン</h2>
+        <span class="dest-badge" id="result-dest-badge"></span>
+      </div>
+      <div class="result-body" id="result-body"></div>
+      <div class="result-actions">
+        <button class="btn-copy" onclick="copyResult()">📋 コピー</button>
+        <button class="btn-reset" onclick="resetForm()">🔄 最初から</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">とむSYSTEM — Standard Plan</p>
+
+</div>
+
+<!-- ログインモーダル -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal">
+    <h3>🔑 ログイン</h3>
+    <p>サブスクリプションに登録したメールアドレスを入力してください。</p>
+    <input type="email" id="email-input" placeholder="example@email.com" style="margin-bottom:14px">
+    <button class="btn-modal-login" onclick="doLogin()">ログインして使いはじめる</button>
+    <button class="modal-close" onclick="closeLoginModal()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev";
+
+let userEmail = localStorage.getItem("tomu_email") || "";
+let resultText = "";
+
+// 起動時にメール確認
+window.addEventListener("load", () => {
+  if (userEmail) {
+    document.getElementById("login-banner").style.display = "none";
+  }
+  updateBudget(10);
+  document.getElementById("has-children").addEventListener("change", function() {
+    const s = document.getElementById("children-ages-section");
+    if (this.checked) s.classList.add("visible");
+    else s.classList.remove("visible");
+  });
+});
+
+function showLoginModal() {
+  document.getElementById("login-modal").classList.add("visible");
+}
+function closeLoginModal() {
+  document.getElementById("login-modal").classList.remove("visible");
+}
+function doLogin() {
+  const email = document.getElementById("email-input").value.trim();
+  if (!email || !email.includes("@")) {
+    alert("正しいメールアドレスを入力してください");
+    return;
+  }
+  userEmail = email;
+  localStorage.setItem("tomu_email", email);
+  document.getElementById("login-banner").style.display = "none";
+  closeLoginModal();
+}
+
+function updateBudget(val) {
+  const slider = document.getElementById("budget-slider");
+  const display = document.getElementById("budget-display");
+  const v = parseInt(val);
+  const pct = ((v - 1) / 19 * 100).toFixed(1);
+  slider.style.setProperty("--pct", pct + "%");
+  if (v <= 5) display.innerHTML = `〜5万円 <span>/ 家族全体</span>`;
+  else if (v <= 10) display.innerHTML = `${v}万円 <span>/ 家族全体</span>`;
+  else if (v <= 19) display.innerHTML = `${v}万円 <span>/ 家族全体</span>`;
+  else display.innerHTML = `20万円以上 <span>/ 家族全体</span>`;
+}
+
+function showError(msg) {
+  const el = document.getElementById("error-toast");
+  el.textContent = "⚠️ " + msg;
+  el.classList.add("visible");
+  setTimeout(() => el.classList.remove("visible"), 5000);
+}
+
+async function generatePlan() {
+  if (!userEmail) { showLoginModal(); return; }
+
+  const dest = document.getElementById("destination").value.trim();
+  if (!dest) { showError("旅行先を入力してください"); return; }
+
+  // 家族構成
+  const members = Array.from(document.querySelectorAll('input[name="members"]:checked')).map(c => c.value);
+  if (members.length === 0) { showError("家族構成を選択してください"); return; }
+
+  const nights = document.getElementById("nights").value;
+  const timing = document.getElementById("timing").value.trim() || "未定";
+  const transport = document.getElementById("transport").value;
+  const budget = document.getElementById("budget-display").textContent.replace(/\s+/g, "");
+  const childrenAges = document.getElementById("children-ages").value.trim();
+  const themes = Array.from(document.querySelectorAll('.wish-tags input:checked')).map(c => c.value);
+  const notes = document.getElementById("notes").value.trim();
+
+  // UI切り替え
+  document.getElementById("form-section").style.display = "none";
+  document.getElementById("result-section").classList.remove("visible");
+  document.getElementById("loading").classList.add("visible");
+  document.getElementById("generate-btn").disabled = true;
+
+  const memberStr = members.join("・") + (childrenAges ? `（子供：${childrenAges}）` : "");
+  const themeStr = themes.length > 0 ? themes.join("、") : "特になし";
+
+  const systemPrompt = `あなたは家族旅行のプロのプランナーです。
+提供された条件をもとに、家族全員が楽しめる具体的な旅行プランを作成してください。
+
+## 出力フォーマット（必ずこの構成で）
+
+## ✅ プランの概要
+（旅行の特徴を2〜3文で）
+
+## 🏨 宿泊先の提案
+（宿のタイプ・特徴・選ぶポイント）
+
+## 📅 日程プラン
+（日数に合わせて、朝〜夜の流れを箇条書きで）
+
+## 🍽️ グルメ・食事アドバイス
+（地元グルメや子連れに便利なポイント）
+
+## 💡 家族旅行の裏ワザ・注意点
+（この家族構成・条件に特化した実用的アドバイス3〜5点）
+
+## 💴 予算の使い方イメージ
+（交通・宿・食事・観光の目安配分）
+
+わかりやすく、温かい文体で。絵文字を適度に使い、読んでワクワクする文章で。`;
+
+  const userMessage = `以下の条件で家族旅行プランを作ってください：
+- 目的地：${dest}
+- 泊数：${nights}
+- 時期：${timing}
+- 家族構成：${memberStr}
+- 移動手段：${transport}
+- 予算：${budget}
+- 旅のテーマ：${themeStr}
+${notes ? `- 特別な要望・懸念：${notes}` : ""}`;
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+        max_tokens: 1800,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errMap = {
+        login_required: "ログインが必要です",
+        subscription_required: "サブスクリプション登録が必要です",
+        plan_upgrade_required: "Standardプラン以上が必要です",
+        daily_limit_exceeded: "本日の利用上限に達しました。明日またお試しください",
+      };
+      throw new Error(errMap[data.error] || data.error || "エラーが発生しました");
+    }
+
+    const text = data.content?.[0]?.text || "";
+    resultText = text;
+
+    // マークダウン→HTML変換（簡易）
+    const html = convertMarkdown(text);
+    document.getElementById("result-body").innerHTML = html;
+    document.getElementById("result-dest-badge").textContent = `${dest} / ${nights}`;
+
+    document.getElementById("loading").classList.remove("visible");
+    document.getElementById("result-section").classList.add("visible");
+
+  } catch (err) {
+    document.getElementById("loading").classList.remove("visible");
+    document.getElementById("form-section").style.display = "block";
+    document.getElementById("generate-btn").disabled = false;
+    showError(err.message);
+  }
+}
+
+function convertMarkdown(text) {
+  return text
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^[-・] (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/g, "<ul>$&</ul>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/^(?!<[hup])/gm, "")
+    .replace(/\n/g, "<br>");
+}
+
+function copyResult() {
+  if (!resultText) return;
+  navigator.clipboard.writeText(resultText).then(() => {
+    const btn = document.querySelector(".btn-copy");
+    btn.textContent = "✅ コピーしました！";
+    setTimeout(() => btn.textContent = "📋 コピー", 2000);
+  });
+}
+
+function resetForm() {
+  document.getElementById("result-section").classList.remove("visible");
+  document.getElementById("form-section").style.display = "block";
+  document.getElementById("generate-btn").disabled = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+</script>
+</body>
+</html>

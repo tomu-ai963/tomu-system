@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名もなき家事 分担リスト | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Kaisei+Opti:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAF8F3;
+    --warm-white: #FFFEF9;
+    --linen: #EDE8DF;
+    --bark: #8B7355;
+    --moss: #6B7C5A;
+    --clay: #C4956A;
+    --deep: #2C2420;
+    --shadow: rgba(44,36,32,0.10);
+    --person-a: #D4856A;
+    --person-b: #6A8BA4;
+    --person-c: #7A9B6F;
+    --unassigned: #B0A898;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    background: var(--cream);
+    color: var(--deep);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* 背景テクスチャ */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(196,149,106,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(107,124,90,0.05) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 Q35 30 30 60 Q25 30 30 0Z' fill='%238B7355' fill-opacity='0.015'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ========== ログイン ========== */
+  #login-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    position: relative; z-index: 1;
+  }
+
+  .login-card {
+    background: var(--warm-white);
+    border: 1px solid var(--linen);
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 8px 40px var(--shadow);
+    text-align: center;
+  }
+
+  .login-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .login-card h1 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.6rem;
+    color: var(--bark);
+    margin-bottom: 0.5rem;
+  }
+
+  .login-card p {
+    font-size: 0.85rem;
+    color: var(--bark);
+    opacity: 0.7;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    border: 1.5px solid var(--linen);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--cream);
+    color: var(--deep);
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .input-field:focus { border-color: var(--clay); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 1rem;
+    background: var(--clay);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-primary:hover { background: var(--bark); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* ========== メインアプリ ========== */
+  #app-section {
+    display: none;
+    position: relative; z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.2rem 4rem;
+  }
+
+  .app-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-top: 1.5rem;
+  }
+
+  .app-header h1 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.9rem;
+    color: var(--bark);
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .app-header p {
+    font-size: 0.85rem;
+    color: var(--bark);
+    opacity: 0.65;
+  }
+
+  .user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--linen);
+    border-radius: 20px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.78rem;
+    color: var(--bark);
+    margin-top: 0.8rem;
+  }
+
+  /* ========== ステップ1: 家族設定 ========== */
+  .step-card {
+    background: var(--warm-white);
+    border: 1px solid var(--linen);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+
+  .step-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--clay);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.25rem 0.8rem;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+  }
+
+  .step-card h2 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.2rem;
+    color: var(--deep);
+    margin-bottom: 0.4rem;
+  }
+
+  .step-card .hint {
+    font-size: 0.82rem;
+    color: var(--bark);
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  /* 家族メンバー入力 */
+  .members-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  @media (max-width: 480px) { .members-grid { grid-template-columns: 1fr; } }
+
+  .member-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--cream);
+    border: 1.5px solid var(--linen);
+    border-radius: 12px;
+    padding: 0.6rem 0.9rem;
+    transition: border-color 0.2s;
+  }
+
+  .member-input-wrap:focus-within { border-color: var(--clay); }
+
+  .member-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .member-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--deep);
+    outline: none;
+  }
+
+  /* 状況テキストエリア */
+  .situation-area {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    border: 1.5px solid var(--linen);
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--deep);
+    background: var(--cream);
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.7;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .situation-area:focus { border-color: var(--clay); }
+
+  .char-count {
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--bark);
+    opacity: 0.5;
+    margin-top: 0.4rem;
+  }
+
+  /* ========== 生成ボタン ========== */
+  .generate-btn {
+    width: 100%;
+    padding: 1.1rem;
+    background: linear-gradient(135deg, var(--moss), #4A6B3F);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.05rem;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 2rem;
+  }
+
+  .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(107,124,90,0.3); }
+  .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ローディング */
+  .loading-dots {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .loading-dots span {
+    width: 7px; height: 7px;
+    background: #fff;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* ========== 結果エリア ========== */
+  #result-section { display: none; }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+
+  .result-title {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1.3rem;
+    color: var(--bark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .reset-btn {
+    padding: 0.5rem 1.2rem;
+    background: transparent;
+    border: 1.5px solid var(--linen);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--bark);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover { border-color: var(--clay); color: var(--clay); }
+
+  /* チョアカード */
+  .chore-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .chore-item {
+    background: var(--warm-white);
+    border: 1px solid var(--linen);
+    border-radius: 16px;
+    padding: 1rem 1.3rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: all 0.2s;
+    animation: slideIn 0.4s ease backwards;
+  }
+
+  .chore-item:hover { box-shadow: 0 4px 16px var(--shadow); transform: translateX(3px); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chore-emoji {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 0.1rem;
+  }
+
+  .chore-content { flex: 1; min-width: 0; }
+
+  .chore-name {
+    font-weight: 700;
+    font-size: 0.97rem;
+    color: var(--deep);
+    margin-bottom: 0.3rem;
+  }
+
+  .chore-detail {
+    font-size: 0.82rem;
+    color: var(--bark);
+    opacity: 0.75;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+
+  .chore-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.73rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .badge.freq {
+    background: var(--linen);
+    color: var(--bark);
+  }
+
+  .badge.assign {
+    color: #fff;
+  }
+
+  .badge.assign[data-person="A"] { background: var(--person-a); }
+  .badge.assign[data-person="B"] { background: var(--person-b); }
+  .badge.assign[data-person="C"] { background: var(--person-c); }
+  .badge.assign[data-person="−"] { background: var(--unassigned); }
+
+  /* まとめボックス */
+  .summary-box {
+    background: linear-gradient(135deg, #F5F0E8, #EDE8DF);
+    border: 1px solid var(--linen);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-box h3 {
+    font-family: 'Kaisei Opti', serif;
+    font-size: 1rem;
+    color: var(--bark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .share-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .share-item {
+    background: var(--warm-white);
+    border-radius: 12px;
+    padding: 0.9rem;
+    text-align: center;
+  }
+
+  .share-item .person-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    margin: 0 auto 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .share-item .person-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--deep);
+    margin-bottom: 0.2rem;
+  }
+
+  .share-item .person-count {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--bark);
+    line-height: 1;
+  }
+
+  .share-item .person-label {
+    font-size: 0.7rem;
+    color: var(--bark);
+    opacity: 0.6;
+  }
+
+  /* 提案コメント */
+  .ai-comment {
+    background: var(--warm-white);
+    border-left: 3px solid var(--clay);
+    border-radius: 0 12px 12px 0;
+    padding: 1rem 1.3rem;
+    font-size: 0.88rem;
+    color: var(--deep);
+    line-height: 1.7;
+  }
+
+  /* フッター */
+  .footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--bark);
+    opacity: 0.4;
+    margin-top: 3rem;
+  }
+
+  /* エラー */
+  .error-msg {
+    background: #FDF0EE;
+    border: 1px solid #E8B4AC;
+    border-radius: 12px;
+    padding: 1rem 1.3rem;
+    font-size: 0.87rem;
+    color: #9B4A3A;
+    margin-bottom: 1rem;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- ログイン -->
+<section id="login-section">
+  <div class="login-card">
+    <span class="login-icon">🏠</span>
+    <h1>名もなき家事<br>分担リスト</h1>
+    <p>気づいた人だけが損をする、<br>あの「見えない家事」を見える化して<br>公平に分担しましょう。</p>
+    <input type="email" class="input-field" id="email-input" placeholder="メールアドレス" autocomplete="email">
+    <button class="btn-primary" id="login-btn">はじめる</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</section>
+
+<!-- メインアプリ -->
+<section id="app-section">
+  <div class="app-header">
+    <h1>🏠 名もなき家事<br>分担リスト</h1>
+    <p>見えない家事を洗い出して、公平に分担</p>
+    <div class="user-badge">
+      <span>✉️</span>
+      <span id="user-email-display"></span>
+      <span style="opacity:0.5">｜</span>
+      <span id="user-plan-display"></span>
+    </div>
+  </div>
+
+  <!-- Step 1: 家族構成 -->
+  <div class="step-card">
+    <div class="step-label">STEP 1</div>
+    <h2>家族メンバーを入力</h2>
+    <p class="hint">担当者の名前（ニックネームOK）を入力してください。最大3名まで。</p>
+    <div class="members-grid">
+      <div class="member-input-wrap">
+        <span class="member-dot" style="background:var(--person-a)"></span>
+        <input type="text" class="member-input" id="member-a" placeholder="例：わたし" maxlength="10">
+      </div>
+      <div class="member-input-wrap">
+        <span class="member-dot" style="background:var(--person-b)"></span>
+        <input type="text" class="member-input" id="member-b" placeholder="例：パートナー" maxlength="10">
+      </div>
+      <div class="member-input-wrap">
+        <span class="member-dot" style="background:var(--person-c)"></span>
+        <input type="text" class="member-input" id="member-c" placeholder="例：子ども（任意）" maxlength="10">
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: 状況説明 -->
+  <div class="step-card">
+    <div class="step-label">STEP 2</div>
+    <h2>家庭の状況を教えてください</h2>
+    <p class="hint">現在の生活スタイル・不満・困っていることを自由に書いてください。<br>「〇〇だけが家事をやっている」「子育て中で時間がない」など何でもOK。</p>
+    <textarea class="situation-area" id="situation-input"
+      placeholder="例：共働きで2人とも仕事が忙しい。夕飯の準備と後片付けはほぼ私（妻）担当。夫はゴミ出しだけやってる感じ。掃除は週末にどちらかがやるけど、トイレ掃除や洗面台は誰もやらないまま…。子どもは小3なので少し手伝えると思うけど、どこまでお願いしていいか迷っています。"
+      maxlength="500" oninput="updateCharCount(this, 'char-count-1', 500)"></textarea>
+    <div class="char-count" id="char-count-1">0 / 500</div>
+  </div>
+
+  <!-- エラー表示 -->
+  <div class="error-msg" id="app-error"></div>
+
+  <!-- 生成ボタン -->
+  <button class="generate-btn" id="generate-btn" onclick="generateList()">
+    <span id="btn-text">🔍 名もなき家事を洗い出す</span>
+    <div class="loading-dots" id="loading-dots" style="display:none">
+      <span></span><span></span><span></span>
+    </div>
+  </button>
+
+  <!-- 結果 -->
+  <div id="result-section">
+    <div class="result-header">
+      <div class="result-title">📋 分担リスト</div>
+      <button class="reset-btn" onclick="resetForm()">🔄 やり直す</button>
+    </div>
+
+    <!-- 担当割合サマリー -->
+    <div class="summary-box">
+      <h3>👥 担当件数のバランス</h3>
+      <div class="share-grid" id="share-grid"></div>
+    </div>
+
+    <!-- 家事リスト -->
+    <div class="chore-list" id="chore-list"></div>
+
+    <!-- AIコメント -->
+    <div class="ai-comment" id="ai-comment"></div>
+  </div>
+
+  <div class="footer">とむSYSTEM — Standard Plan</div>
+</section>
+
+<script>
+// ========== 設定 ==========
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev";
+const PERSON_COLORS = ['A', 'B', 'C'];
+const BG_COLORS = {
+  A: 'var(--person-a)',
+  B: 'var(--person-b)',
+  C: 'var(--person-c)',
+  '−': 'var(--unassigned)'
+};
+
+let currentEmail = '';
+let currentPlan = '';
+let memberNames = {};
+let conversationHistory = [];
+
+// ========== ログイン ==========
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('email-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const email = document.getElementById('email-input').value.trim();
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (!email || !email.includes('@')) {
+    showError(errEl, '正しいメールアドレスを入力してください。');
+    return;
+  }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = '確認中…';
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appType: 'ping', input: 'ping', email })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      const msgs = {
+        login_required: 'ログインが必要です。',
+        subscription_required: 'サブスクリプションが必要です。',
+        plan_upgrade_required: 'Standardプラン以上が必要です。'
+      };
+      showError(errEl, msgs[data.error] || 'エラーが発生しました。');
+      btn.disabled = false;
+      btn.textContent = 'はじめる';
+      return;
+    }
+
+    currentEmail = email;
+    currentPlan = data.plan;
+    document.getElementById('user-email-display').textContent = email;
+    document.getElementById('user-plan-display').textContent = data.plan.toUpperCase() + ' プラン';
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('app-section').style.display = 'block';
+
+  } catch (e) {
+    showError(errEl, '通信エラーが発生しました。');
+    btn.disabled = false;
+    btn.textContent = 'はじめる';
+  }
+}
+
+// ========== 家事リスト生成 ==========
+async function generateList() {
+  const memberA = document.getElementById('member-a').value.trim() || 'わたし';
+  const memberB = document.getElementById('member-b').value.trim() || 'パートナー';
+  const memberC = document.getElementById('member-c').value.trim();
+  const situation = document.getElementById('situation-input').value.trim();
+
+  const errEl = document.getElementById('app-error');
+  errEl.style.display = 'none';
+
+  if (!situation) {
+    showError(errEl, '状況を入力してください。');
+    return;
+  }
+
+  memberNames = { A: memberA, B: memberB };
+  if (memberC) memberNames.C = memberC;
+
+  const memberList = [memberA, memberB, ...(memberC ? [memberC] : [])];
+  const memberStr = memberList.map((n, i) => `${PERSON_COLORS[i]}: ${n}`).join('、');
+
+  const system = `あなたは家事分担の専門家AIです。
+
+【家族メンバー】${memberStr}
+
+ユーザーの家庭状況を聞いて、"名もなき家事"を含む家事リストを生成してください。
+名もなき家事とは「トイレットペーパーの補充確認」「詰め替え用品の在庫管理」「子供の書類確認」など、普段見えにくいが誰かがやっている家事のことです。
+
+以下のJSON形式のみで返してください（説明文・マークダウン不要）：
+
+{
+  "chores": [
+    {
+      "emoji": "🚽",
+      "name": "家事名（10文字以内）",
+      "detail": "具体的な内容（30文字以内）",
+      "frequency": "毎日/週1/月1など",
+      "assignedTo": "A or B or C or −（未割当）",
+      "isNameless": true or false
+    }
+  ],
+  "comment": "全体へのアドバイス（100文字以内、温かいトーンで）"
+}
+
+・家事は12〜16個生成
+・名もなき家事（isNameless:true）を40%以上含める
+・現状の不満を考慮して公平な分担を提案
+・未成年の子どもには無理のない家事のみ割り当て`;
+
+  conversationHistory = [{ role: 'user', content: situation }];
+
+  setLoading(true);
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: currentEmail,
+        system,
+        messages: conversationHistory,
+        max_tokens: 1500
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      const msgs = {
+        daily_limit_exceeded: `本日の利用上限（${data.limit}回）に達しました。`,
+        plan_upgrade_required: 'このアプリはStandard以上のプランが必要です。',
+        subscription_required: '有効なサブスクリプションが必要です。'
+      };
+      showError(errEl, msgs[data.error] || 'エラーが発生しました。しばらくしてからお試しください。');
+      setLoading(false);
+      return;
+    }
+
+    const rawText = data.content && data.content[0] ? data.content[0].text : '';
+    renderResult(rawText);
+
+  } catch (e) {
+    showError(errEl, '通信エラーが発生しました。');
+  }
+
+  setLoading(false);
+}
+
+// ========== 結果レンダリング ==========
+function renderResult(rawText) {
+  let parsed;
+  try {
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    parsed = JSON.parse(clean);
+  } catch {
+    document.getElementById('app-error').textContent = 'AI応答の解析に失敗しました。もう一度お試しください。';
+    document.getElementById('app-error').style.display = 'block';
+    return;
+  }
+
+  const chores = parsed.chores || [];
+  const comment = parsed.comment || '';
+
+  // 担当件数集計
+  const counts = { A: 0, B: 0, C: 0, '−': 0 };
+  chores.forEach(c => {
+    const k = c.assignedTo || '−';
+    if (counts[k] !== undefined) counts[k]++;
+    else counts['−']++;
+  });
+
+  // サマリー
+  const shareGrid = document.getElementById('share-grid');
+  shareGrid.innerHTML = '';
+  Object.entries(memberNames).forEach(([key, name]) => {
+    const count = counts[key] || 0;
+    const color = BG_COLORS[key];
+    shareGrid.innerHTML += `
+      <div class="share-item">
+        <div class="person-dot" style="background:${color}">${name[0]}</div>
+        <div class="person-name">${name}</div>
+        <div class="person-count">${count}</div>
+        <div class="person-label">件担当</div>
+      </div>`;
+  });
+
+  // 家事リスト
+  const listEl = document.getElementById('chore-list');
+  listEl.innerHTML = '';
+  chores.forEach((c, i) => {
+    const assignKey = c.assignedTo || '−';
+    const assignName = memberNames[assignKey] || '未割当';
+    const namelessBadge = c.isNameless
+      ? `<span class="badge freq" style="background:#FFF0E0;color:#C4956A;">👁 名もなき</span>` : '';
+    const item = document.createElement('div');
+    item.className = 'chore-item';
+    item.style.animationDelay = `${i * 0.05}s`;
+    item.innerHTML = `
+      <div class="chore-emoji">${c.emoji || '🏠'}</div>
+      <div class="chore-content">
+        <div class="chore-name">${c.name || ''}</div>
+        <div class="chore-detail">${c.detail || ''}</div>
+        <div class="chore-meta">
+          <span class="badge freq">🔁 ${c.frequency || ''}</span>
+          <span class="badge assign" data-person="${assignKey}" style="background:${BG_COLORS[assignKey]||BG_COLORS['−']}">👤 ${assignName}</span>
+          ${namelessBadge}
+        </div>
+      </div>`;
+    listEl.appendChild(item);
+  });
+
+  // コメント
+  document.getElementById('ai-comment').textContent = `💬 ${comment}`;
+
+  // 表示
+  document.getElementById('result-section').style.display = 'block';
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ========== ユーティリティ ==========
+function setLoading(on) {
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = on;
+  document.getElementById('btn-text').style.display = on ? 'none' : 'inline';
+  document.getElementById('loading-dots').style.display = on ? 'inline-flex' : 'none';
+}
+
+function showError(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function resetForm() {
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('situation-input').value = '';
+  document.getElementById('char-count-1').textContent = '0 / 500';
+  document.getElementById('app-error').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateCharCount(el, countId, max) {
+  document.getElementById(countId).textContent = `${el.value.length} / ${max}`;
+}
+</script>
+</body>
+</html>

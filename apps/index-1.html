@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>武器化ノート | とむSYSTEM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Shippori+Mincho:wght@400;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #1a1410;
+    --ink-light: #3d2f22;
+    --parchment: #f5f0e8;
+    --parchment-dark: #ede5d0;
+    --sepia: #c8a96e;
+    --sepia-light: #e8d5a8;
+    --vermillion: #c0392b;
+    --mist: #8a7a6a;
+    --gold: #b8952a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: #0f0c08;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(30, 18, 8, 0.9) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(40, 25, 10, 0.7) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    min-height: 100vh;
+    font-family: 'Noto Serif JP', serif;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* ── 書き割り背景 ── */
+  .desk {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+  }
+
+  /* ── ノート本体 ── */
+  .notebook {
+    background: var(--parchment);
+    background-image:
+      repeating-linear-gradient(
+        transparent,
+        transparent 31px,
+        rgba(140, 110, 70, 0.12) 31px,
+        rgba(140, 110, 70, 0.12) 32px
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    border-radius: 2px 12px 12px 2px;
+    box-shadow:
+      -8px 0 0 #8a6840,
+      -12px 0 0 #7a5830,
+      -14px 0 0 #6a4820,
+      4px 4px 20px rgba(0,0,0,0.6),
+      8px 8px 40px rgba(0,0,0,0.4);
+    overflow: hidden;
+    animation: openBook 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    transform-origin: left center;
+  }
+
+  @keyframes openBook {
+    from { opacity: 0; transform: perspective(800px) rotateY(-15deg) translateX(-20px); }
+    to   { opacity: 1; transform: perspective(800px) rotateY(0deg) translateX(0); }
+  }
+
+  /* ── 赤い縦線（ノート左マージン） ── */
+  .notebook::before {
+    content: '';
+    position: absolute;
+    left: 52px;
+    top: 0; bottom: 0;
+    width: 1.5px;
+    background: rgba(192, 57, 43, 0.35);
+    z-index: 1;
+  }
+
+  /* ── ヘッダー部 ── */
+  .nb-header {
+    padding: 32px 36px 24px 64px;
+    border-bottom: 1px solid rgba(140, 110, 70, 0.25);
+    position: relative;
+  }
+
+  .nb-label {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--vermillion);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.75;
+  }
+
+  .nb-title {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+  }
+
+  .nb-subtitle {
+    font-size: 12px;
+    color: var(--mist);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── フォームエリア ── */
+  .nb-body {
+    padding: 24px 36px 28px 64px;
+  }
+
+  .field-group {
+    margin-bottom: 18px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .field-group:nth-child(1) { animation-delay: 0.3s; }
+  .field-group:nth-child(2) { animation-delay: 0.45s; }
+  .field-group:nth-child(3) { animation-delay: 0.6s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .field-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--mist);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+  }
+
+  .field-input, .field-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(140, 110, 70, 0.4);
+    padding: 6px 2px 8px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.7;
+  }
+
+  .field-input::placeholder,
+  .field-textarea::placeholder {
+    color: rgba(100, 80, 55, 0.4);
+    font-style: italic;
+  }
+
+  .field-input:focus,
+  .field-textarea:focus {
+    border-bottom-color: var(--sepia);
+  }
+
+  .field-textarea {
+    resize: none;
+    min-height: 80px;
+  }
+
+  /* ── 実行ボタン ── */
+  .btn-run {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 12px 28px;
+    background: var(--ink);
+    color: var(--sepia-light);
+    border: none;
+    border-radius: 2px;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+    opacity: 0;
+    animation: fadeUp 0.5s 0.75s ease forwards;
+  }
+  .btn-run:hover { background: var(--ink-light); transform: translateY(-1px); }
+  .btn-run:active { transform: translateY(0); }
+  .btn-run:disabled { opacity: 0.5; cursor: default; }
+
+  .btn-icon { font-size: 16px; }
+
+  /* ── ローディング ── */
+  .loading-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 36px 0 64px;
+    color: var(--mist);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    font-style: italic;
+  }
+  .loading-row.visible { display: flex; }
+
+  .quill {
+    display: inline-block;
+    font-size: 18px;
+    animation: quillDip 0.8s ease-in-out infinite alternate;
+    transform-origin: bottom right;
+  }
+  @keyframes quillDip {
+    from { transform: rotate(-10deg) translateY(0); }
+    to   { transform: rotate(5deg) translateY(3px); }
+  }
+
+  /* ── 結果エリア ── */
+  .result-area {
+    display: none;
+    padding: 0 36px 32px 64px;
+    animation: fadeUp 0.6s ease;
+  }
+  .result-area.visible { display: block; }
+
+  .result-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(140,110,70,0.4), transparent);
+    margin-bottom: 22px;
+  }
+
+  .result-section {
+    margin-bottom: 22px;
+  }
+
+  .result-section-label {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--vermillion);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.8;
+  }
+
+  .result-text {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 2.0;
+    white-space: pre-wrap;
+  }
+
+  .result-motto {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.8;
+    letter-spacing: 0.06em;
+    border-left: 3px solid var(--vermillion);
+    padding-left: 14px;
+    margin-top: 4px;
+  }
+
+  .result-actions-list {
+    list-style: none;
+    padding: 0;
+  }
+  .result-actions-list li {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.8;
+    padding: 7px 0 7px 18px;
+    position: relative;
+    border-bottom: 1px dashed rgba(140,110,70,0.2);
+  }
+  .result-actions-list li:last-child { border-bottom: none; }
+  .result-actions-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    color: var(--gold);
+    top: 11px;
+  }
+
+  /* ── エラー ── */
+  .error-msg {
+    display: none;
+    padding: 10px 36px 0 64px;
+    font-size: 12px;
+    color: var(--vermillion);
+    letter-spacing: 0.05em;
+  }
+  .error-msg.visible { display: block; }
+
+  /* ── フッター ── */
+  .nb-footer {
+    padding: 12px 36px 14px 64px;
+    border-top: 1px solid rgba(140,110,70,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nb-footer-brand {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(100,80,55,0.45);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── ログインUI（tomu-login） ── */
+  #login-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,7,4,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #login-overlay.visible { display: flex; }
+
+  .login-card {
+    background: var(--parchment);
+    border-radius: 4px;
+    padding: 36px 40px;
+    width: 320px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: fadeUp 0.4s ease;
+  }
+  .login-card h2 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .login-card p {
+    font-size: 12px;
+    color: var(--mist);
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+  .login-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(140,110,70,0.4);
+    border-radius: 2px;
+    background: transparent;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .login-input:focus { border-color: var(--sepia); }
+  .login-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--ink);
+    color: var(--sepia-light);
+    border: none;
+    border-radius: 2px;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-btn:hover { background: var(--ink-light); }
+  .login-err { font-size: 11px; color: var(--vermillion); margin-top: 8px; text-align: center; }
+
+  @media (max-width: 500px) {
+    .nb-header, .nb-body, .result-area, .loading-row,
+    .error-msg, .nb-footer { padding-left: 40px; padding-right: 20px; }
+    .notebook::before { left: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ログインオーバーレイ -->
+<div id="login-overlay">
+  <div class="login-card">
+    <h2>ログイン</h2>
+    <p>Standardプラン以上のメールアドレスで<br>ログインしてください。</p>
+    <input class="login-input" id="login-email" type="email" placeholder="your@email.com">
+    <button class="login-btn" id="login-btn">ログイン</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<div class="desk">
+  <div class="notebook">
+
+    <!-- ヘッダー -->
+    <div class="nb-header">
+      <div class="nb-label">Standard</div>
+      <div class="nb-title">読書・動画 武器化ノート</div>
+      <div class="nb-subtitle">学びをアクションに変える知的抽出エンジン</div>
+    </div>
+
+    <!-- フォーム -->
+    <div class="nb-body">
+      <div class="field-group">
+        <label class="field-label" for="inp-title">書籍 / 動画タイトル</label>
+        <input class="field-input" id="inp-title" type="text" placeholder="例）FACTFULNESS、人を動かす、など">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="inp-url">URL（任意）</label>
+        <input class="field-input" id="inp-url" type="url" placeholder="https://... YouTube・記事のURLも可">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="inp-memo">メモ・感想・気になった箇所</label>
+        <textarea class="field-textarea" id="inp-memo" rows="4" placeholder="印象に残ったこと、疑問、引用など、思ったままに書いてください"></textarea>
+      </div>
+
+      <button class="btn-run" id="btn-run">
+        <span class="btn-icon">✍️</span> 武器化する
+      </button>
+    </div>
+
+    <!-- ローディング -->
+    <div class="loading-row" id="loading-row">
+      <span class="quill">🪶</span>
+      <span>知を抽出しています...</span>
+    </div>
+
+    <!-- エラー -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- 結果 -->
+    <div class="result-area" id="result-area">
+      <div class="result-divider"></div>
+
+      <div class="result-section" id="sec-core">
+        <div class="result-section-label">核心メッセージ</div>
+        <div class="result-text" id="out-core"></div>
+      </div>
+
+      <div class="result-section" id="sec-actions">
+        <div class="result-section-label">今すぐ使える武器（3選）</div>
+        <ul class="result-actions-list" id="out-actions"></ul>
+      </div>
+
+      <div class="result-section">
+        <div class="result-section-label">あなたの座右の銘</div>
+        <div class="result-motto" id="out-motto"></div>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="nb-footer">
+      <div class="nb-footer-brand">とむSYSTEM</div>
+      <div class="nb-footer-brand" id="footer-email" style="cursor:pointer;text-decoration:underline dotted;">ログイン</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── 定数 ──
+const WORKER = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat";
+const KV_PLAN_KEY = "tomu_plan";
+const KV_EMAIL_KEY = "tomu_email";
+
+// ── 状態 ──
+let userEmail = localStorage.getItem(KV_EMAIL_KEY) || "";
+let userPlan  = localStorage.getItem(KV_PLAN_KEY) || "";
+
+// ── DOM ──
+const loginOverlay = document.getElementById("login-overlay");
+const loginEmailEl = document.getElementById("login-email");
+const loginBtnEl   = document.getElementById("login-btn");
+const loginErrEl   = document.getElementById("login-err");
+const footerEmail  = document.getElementById("footer-email");
+const btnRun       = document.getElementById("btn-run");
+const loadingRow   = document.getElementById("loading-row");
+const errorMsg     = document.getElementById("error-msg");
+const resultArea   = document.getElementById("result-area");
+
+// ── ログイン状態表示 ──
+function updateUI() {
+  if (userEmail) {
+    footerEmail.textContent = userEmail;
+  } else {
+    footerEmail.textContent = "ログイン";
+  }
+}
+updateUI();
+
+footerEmail.addEventListener("click", () => {
+  showLogin();
+});
+
+function showLogin() {
+  loginOverlay.classList.add("visible");
+  loginEmailEl.focus();
+}
+function hideLogin() {
+  loginOverlay.classList.remove("visible");
+  loginErrEl.textContent = "";
+}
+
+// ── ログイン処理 ──
+loginBtnEl.addEventListener("click", async () => {
+  const email = loginEmailEl.value.trim();
+  if (!email) { loginErrEl.textContent = "メールアドレスを入力してください"; return; }
+
+  loginBtnEl.textContent = "確認中...";
+  loginBtnEl.disabled = true;
+
+  try {
+    const res = await fetch(
+      "https://orange-sound-354b.inverted-triangle-leef.workers.dev/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appType: "ping", input: "ping", email })
+      }
+    );
+    const data = await res.json();
+    if (data.ok) {
+      userEmail = email;
+      userPlan  = data.plan;
+      localStorage.setItem(KV_EMAIL_KEY, email);
+      localStorage.setItem(KV_PLAN_KEY, data.plan);
+      updateUI();
+      hideLogin();
+    } else {
+      loginErrEl.textContent =
+        data.error === "subscription_required" ? "このメールアドレスのサブスクリプションが見つかりません" :
+        data.error === "login_required"         ? "メールアドレスが必要です" :
+        "ログインエラー: " + (data.error || "不明");
+    }
+  } catch(e) {
+    loginErrEl.textContent = "接続エラー。しばらくしてお試しください。";
+  } finally {
+    loginBtnEl.textContent = "ログイン";
+    loginBtnEl.disabled = false;
+  }
+});
+
+loginEmailEl.addEventListener("keydown", e => { if (e.key === "Enter") loginBtnEl.click(); });
+
+// ── 起動時にログイン確認 ──
+window.addEventListener("DOMContentLoaded", () => {
+  if (!userEmail) showLogin();
+});
+
+// ── メイン処理 ──
+btnRun.addEventListener("click", async () => {
+  const title = document.getElementById("inp-title").value.trim();
+  const url   = document.getElementById("inp-url").value.trim();
+  const memo  = document.getElementById("inp-memo").value.trim();
+
+  if (!title && !memo) {
+    showError("タイトルまたはメモを入力してください。");
+    return;
+  }
+  if (!userEmail) { showLogin(); return; }
+
+  // プラン確認（standard以上）
+  const planRank = { light: 1, standard: 2, full: 3 };
+  if ((planRank[userPlan] || 0) < 2) {
+    showError("このアプリはStandardプラン以上が必要です。");
+    return;
+  }
+
+  hideResult();
+  hideError();
+  setLoading(true);
+
+  const userContent = [
+    title ? `タイトル：${title}` : "",
+    url   ? `URL：${url}` : "",
+    memo  ? `メモ・感想：\n${memo}` : "",
+  ].filter(Boolean).join("\n");
+
+  const systemPrompt = `あなたは「読書・動画 武器化ノート」のAIです。
+ユーザーが本・動画・記事のメモや感想を入力します。それを分析して、以下のJSON形式のみで返してください。
+前置きや説明文は一切不要です。JSONのみを返してください。
+
+{
+  "core": "この作品の核心メッセージを2〜3文で（著者の主張の本質）",
+  "actions": [
+    "今すぐ実行できる具体的な行動1（1文）",
+    "今すぐ実行できる具体的な行動2（1文）",
+    "今すぐ実行できる具体的な行動3（1文）"
+  ],
+  "motto": "この作品からユーザーへ贈る、一生使える座右の銘（15〜25文字の日本語、名言調）"
+}`;
+
+  try {
+    const res = await fetch(WORKER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        max_tokens: 600,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userContent }]
+      })
+    });
+
+    const raw = await res.json();
+
+    if (!res.ok || raw.error) {
+      const e = raw.error;
+      if (e === "plan_upgrade_required") showError("このアプリはStandardプラン以上が必要です。");
+      else if (e === "daily_limit_exceeded") showError(`本日の利用上限（${raw.limit}回）に達しました。明日またどうぞ。`);
+      else if (e === "login_required") { showError("再ログインが必要です。"); showLogin(); }
+      else showError("エラー: " + (e || "不明なエラー"));
+      return;
+    }
+
+    // Anthropicレスポンスからテキスト取得
+    const text = raw.content && raw.content[0] ? raw.content[0].text : "";
+    const clean = text.replace(/```json|```/g, "").trim();
+
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch(_) {
+      // JSONパース失敗時はテキストそのまま表示
+      document.getElementById("out-core").textContent = text;
+      document.getElementById("out-actions").innerHTML = "";
+      document.getElementById("out-motto").textContent = "";
+      showResult();
+      return;
+    }
+
+    document.getElementById("out-core").textContent = parsed.core || "";
+    const ul = document.getElementById("out-actions");
+    ul.innerHTML = "";
+    (parsed.actions || []).forEach(a => {
+      const li = document.createElement("li");
+      li.textContent = a;
+      ul.appendChild(li);
+    });
+    document.getElementById("out-motto").textContent = parsed.motto || "";
+
+    showResult();
+
+  } catch(e) {
+    showError("通信エラーが発生しました。しばらくしてお試しください。");
+  } finally {
+    setLoading(false);
+  }
+});
+
+function setLoading(v) {
+  btnRun.disabled = v;
+  loadingRow.classList.toggle("visible", v);
+}
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.add("visible");
+}
+function hideError() { errorMsg.classList.remove("visible"); }
+function showResult() { resultArea.classList.add("visible"); }
+function hideResult() { resultArea.classList.remove("visible"); }
+</script>
+</body>
+</html>

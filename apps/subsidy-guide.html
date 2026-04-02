@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>補助金・ふるさと納税ガイド | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Zen+Old+Mincho:wght@400;700&family=BIZ+UDPGothic&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --parchment: #f5f0e8;
+    --gold: #b8960c;
+    --gold-light: #d4af37;
+    --vermilion: #c0392b;
+    --seal: #8b1a1a;
+    --shadow: rgba(26,18,8,0.15);
+    --paper: #ede8dc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'BIZ UDPGothic', sans-serif;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* 和紙テクスチャ風背景 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(184,150,12,0.05) 24px, rgba(184,150,12,0.05) 25px),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(184,150,12,0.03) 24px, rgba(184,150,12,0.03) 25px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 縦のアクセントライン */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--gold), var(--vermilion), var(--gold));
+    opacity: 0.7;
+    z-index: 1;
+  }
+
+  /* ===== ヘッダー ===== */
+  header {
+    position: relative;
+    z-index: 2;
+    padding: 32px 24px 20px 36px;
+    border-bottom: 2px solid var(--gold);
+    background: linear-gradient(to right, rgba(184,150,12,0.1), transparent);
+  }
+
+  .header-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .header-seal {
+    width: 52px;
+    height: 52px;
+    border: 2px solid var(--seal);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(139,26,26,0.08);
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 11px;
+    color: var(--seal);
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+    animation: seal-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes seal-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139,26,26,0.2); }
+    50% { box-shadow: 0 0 0 6px rgba(139,26,26,0); }
+  }
+
+  .header-text h1 {
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+  }
+
+  .header-text p {
+    font-size: 12px;
+    color: #6b5a3e;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .plan-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    background: var(--gold);
+    color: white;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    margin-top: 6px;
+    font-family: 'BIZ UDPGothic', sans-serif;
+  }
+
+  /* ===== ログイン状態表示 ===== */
+  #login-status {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 100;
+    font-size: 11px;
+    color: #6b5a3e;
+    background: rgba(245,240,232,0.95);
+    padding: 4px 10px;
+    border: 1px solid rgba(184,150,12,0.3);
+    border-radius: 2px;
+  }
+
+  /* ===== メイン ===== */
+  main {
+    position: relative;
+    z-index: 2;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 28px 20px 60px 36px;
+  }
+
+  /* ===== ログインパネル ===== */
+  #login-panel {
+    background: var(--paper);
+    border: 1px solid rgba(184,150,12,0.4);
+    border-radius: 4px;
+    padding: 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #login-panel::before {
+    content: '申請';
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 64px;
+    color: rgba(184,150,12,0.06);
+    font-weight: 700;
+    letter-spacing: -2px;
+    user-select: none;
+  }
+
+  #login-panel h2 {
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 17px;
+    margin-bottom: 8px;
+    color: var(--ink);
+    letter-spacing: 0.1em;
+  }
+
+  #login-panel p {
+    font-size: 12px;
+    color: #6b5a3e;
+    margin-bottom: 20px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  input[type="email"] {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid rgba(184,150,12,0.5);
+    background: white;
+    font-family: 'BIZ UDPGothic', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="email"]:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(184,150,12,0.1);
+  }
+
+  /* ===== ボタン共通 ===== */
+  .btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white;
+    border: none;
+    border-radius: 2px;
+    font-family: 'BIZ UDPGothic', sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+  }
+
+  .btn:active::after { width: 200px; height: 200px; }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(184,150,12,0.35);
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 6px 14px;
+    font-size: 11px;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(184,150,12,0.08);
+    box-shadow: 0 2px 8px rgba(184,150,12,0.15);
+  }
+
+  /* ===== アプリ本体 ===== */
+  #app-panel { display: none; }
+
+  /* セクションタイトル */
+  .section-title {
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(184,150,12,0.4), transparent);
+  }
+
+  /* ===== タブ切り替え ===== */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: rgba(184,150,12,0.08);
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(184,150,12,0.2);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    font-family: 'BIZ UDPGothic', sans-serif;
+    font-size: 13px;
+    color: #7a6540;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .tab-btn.active {
+    background: white;
+    color: var(--ink);
+    font-weight: bold;
+    box-shadow: 0 1px 4px rgba(26,18,8,0.1);
+  }
+
+  .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.5); }
+
+  /* タブパネル */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ===== フォームカード ===== */
+  .form-card {
+    background: var(--paper);
+    border: 1px solid rgba(184,150,12,0.3);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  /* フォームグループ */
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: #6b5a3e;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .form-group label span {
+    font-size: 10px;
+    background: var(--vermilion);
+    color: white;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  .form-group label span.opt {
+    background: #aaa;
+  }
+
+  select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(184,150,12,0.4);
+    background: white;
+    font-family: 'BIZ UDPGothic', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23b8960c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  select:focus, textarea:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(184,150,12,0.1);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+  }
+
+  /* チェックボックスグループ */
+  .checkbox-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border: 1px solid rgba(184,150,12,0.2);
+    border-radius: 2px;
+    background: white;
+    transition: all 0.15s;
+  }
+
+  .check-item:hover { border-color: var(--gold); background: rgba(184,150,12,0.04); }
+
+  .check-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--gold);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* スライダー */
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--gold);
+    margin: 8px 0 4px;
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #7a6540;
+  }
+
+  .range-value {
+    text-align: center;
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 18px;
+    color: var(--gold);
+    font-weight: 700;
+    margin: 2px 0 8px;
+  }
+
+  .range-value span {
+    font-size: 12px;
+    color: #7a6540;
+    font-family: 'BIZ UDPGothic', sans-serif;
+    font-weight: normal;
+  }
+
+  /* ===== 送信ボタン ===== */
+  .submit-wrap {
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .submit-btn {
+    padding: 14px 48px;
+    font-size: 15px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+    background-size: 200% 100%;
+    letter-spacing: 0.15em;
+    border-radius: 3px;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .submit-btn:hover {
+    background-position: 100% 0;
+    box-shadow: 0 6px 20px rgba(184,150,12,0.4);
+  }
+
+  .submit-btn.loading {
+    pointer-events: none;
+  }
+
+  /* ===== 結果表示 ===== */
+  #result-area {
+    display: none;
+    margin-top: 24px;
+    animation: result-appear 0.5s ease;
+  }
+
+  @keyframes result-appear {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-card {
+    background: white;
+    border: 1px solid rgba(184,150,12,0.35);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(26,18,8,0.08);
+  }
+
+  .result-header {
+    background: linear-gradient(135deg, rgba(184,150,12,0.12), rgba(184,150,12,0.04));
+    border-bottom: 1px solid rgba(184,150,12,0.2);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .result-header .seal-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--seal);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 10px;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .result-header h3 {
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 14px;
+    color: var(--ink);
+    letter-spacing: 0.1em;
+  }
+
+  .result-body {
+    padding: 24px;
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+
+  .result-footer {
+    padding: 12px 20px;
+    border-top: 1px solid rgba(184,150,12,0.15);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* ===== ローディング ===== */
+  .loading-wrap {
+    display: none;
+    text-align: center;
+    padding: 32px;
+    color: #7a6540;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+  }
+
+  .loading-brushes {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .loading-brushes span {
+    width: 4px;
+    height: 28px;
+    background: var(--gold);
+    border-radius: 2px;
+    animation: brush-wave 1.2s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+
+  .loading-brushes span:nth-child(2) { animation-delay: 0.15s; background: var(--gold-light); }
+  .loading-brushes span:nth-child(3) { animation-delay: 0.3s; }
+  .loading-brushes span:nth-child(4) { animation-delay: 0.45s; background: var(--gold-light); }
+  .loading-brushes span:nth-child(5) { animation-delay: 0.6s; }
+
+  @keyframes brush-wave {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+    50% { transform: scaleY(1); opacity: 1; }
+  }
+
+  /* ===== エラー ===== */
+  .error-msg {
+    display: none;
+    background: rgba(192,57,43,0.08);
+    border: 1px solid rgba(192,57,43,0.3);
+    border-radius: 3px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--vermilion);
+    margin-top: 16px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ===== 注意事項バナー ===== */
+  .notice-banner {
+    background: rgba(184,150,12,0.08);
+    border: 1px solid rgba(184,150,12,0.25);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: #7a6540;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+  }
+
+  .notice-banner::before { content: '⚠'; font-size: 13px; flex-shrink: 0; }
+
+  /* ===== フッター ===== */
+  footer {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 20px;
+    font-size: 11px;
+    color: #9a8a6e;
+    border-top: 1px solid rgba(184,150,12,0.15);
+    letter-spacing: 0.05em;
+  }
+
+  /* ===== レスポンシブ ===== */
+  @media (max-width: 480px) {
+    main { padding: 20px 16px 50px 24px; }
+    .checkbox-group { grid-template-columns: 1fr; }
+    .header-text h1 { font-size: 18px; }
+    .tab-btn { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-status">未ログイン</div>
+
+<!-- ヘッダー -->
+<header>
+  <div class="header-inner">
+    <div class="header-seal">補助金<br>案内</div>
+    <div class="header-text">
+      <h1>補助金・ふるさと納税ガイド</h1>
+      <p>あなたの状況に合わせた制度を、AIが丁寧に案内します</p>
+      <span class="plan-badge">STANDARD</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ログインパネル -->
+  <div id="login-panel">
+    <h2>メールアドレスでログイン</h2>
+    <p>Standardプラン以上のご契約が必要です</p>
+    <div class="input-row">
+      <input type="email" id="email-input" placeholder="your@email.com">
+      <button class="btn" onclick="doLogin()">確認する</button>
+    </div>
+    <p id="login-error" style="color:var(--vermilion);font-size:12px;margin-top:10px;display:none;"></p>
+  </div>
+
+  <!-- アプリ本体 -->
+  <div id="app-panel">
+
+    <div class="notice-banner">
+      本サービスはAIによる参考情報の提供です。実際の申請・手続きは各自治体・公式サイトでご確認ください。
+    </div>
+
+    <!-- タブ -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('subsidy')">🏛 補助金・助成金</button>
+      <button class="tab-btn" onclick="switchTab('furusato')">🗾 ふるさと納税</button>
+      <button class="tab-btn" onclick="switchTab('both')">🔍 まとめて相談</button>
+    </div>
+
+    <!-- ===== 補助金タブ ===== -->
+    <div id="tab-subsidy" class="tab-panel active">
+      <div class="section-title">あなたのプロフィール</div>
+      <div class="form-card">
+
+        <div class="form-group">
+          <label>お住まいの地域 <span>必須</span></label>
+          <select id="s-region">
+            <option value="">選択してください</option>
+            <option>北海道</option><option>青森県</option><option>岩手県</option><option>宮城県</option>
+            <option>秋田県</option><option>山形県</option><option>福島県</option><option>茨城県</option>
+            <option>栃木県</option><option>群馬県</option><option>埼玉県</option><option>千葉県</option>
+            <option>東京都</option><option>神奈川県</option><option>新潟県</option><option>富山県</option>
+            <option>石川県</option><option>福井県</option><option>山梨県</option><option>長野県</option>
+            <option>岐阜県</option><option>静岡県</option><option>愛知県</option><option>三重県</option>
+            <option>滋賀県</option><option>京都府</option><option>大阪府</option><option>兵庫県</option>
+            <option>奈良県</option><option>和歌山県</option><option>鳥取県</option><option>島根県</option>
+            <option>岡山県</option><option>広島県</option><option>山口県</option><option>徳島県</option>
+            <option>香川県</option><option>愛媛県</option><option>高知県</option><option>福岡県</option>
+            <option>佐賀県</option><option>長崎県</option><option>熊本県</option><option>大分県</option>
+            <option>宮崎県</option><option>鹿児島県</option><option>沖縄県</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>世帯の状況 <span>必須</span></label>
+          <select id="s-household">
+            <option value="">選択してください</option>
+            <option>単身（独身）</option>
+            <option>夫婦のみ（子なし）</option>
+            <option>子育て世帯（子ども1人）</option>
+            <option>子育て世帯（子ども2人以上）</option>
+            <option>介護中の家族がいる</option>
+            <option>高齢者のみの世帯</option>
+            <option>その他</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>関心のある分野 <span>必須</span>（複数選択可）</label>
+          <div class="checkbox-group">
+            <label class="check-item"><input type="checkbox" name="interest" value="住宅リフォーム・省エネ"> 住宅リフォーム・省エネ</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="子育て・教育"> 子育て・教育</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="起業・副業支援"> 起業・副業支援</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="農業・林業"> 農業・林業</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="介護・福祉"> 介護・福祉</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="再生可能エネルギー"> 再生可能エネルギー</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="IT・デジタル化"> IT・デジタル化</label>
+            <label class="check-item"><input type="checkbox" name="interest" value="その他全般"> その他全般</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>具体的な状況や質問 <span class="opt">任意</span></label>
+          <textarea id="s-detail" rows="3" placeholder="例：太陽光パネルの設置を検討中、住宅ローン控除について知りたい、など"></textarea>
+        </div>
+
+        <div class="submit-wrap">
+          <button class="btn submit-btn" onclick="submitQuery('subsidy')">補助金情報を調べる　→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ふるさと納税タブ ===== -->
+    <div id="tab-furusato" class="tab-panel">
+      <div class="section-title">控除上限額を確認</div>
+      <div class="form-card">
+
+        <div class="form-group">
+          <label>年収の目安 <span>必須</span></label>
+          <input type="range" id="f-income" min="200" max="2000" step="50" value="500" oninput="updateIncome(this.value)">
+          <div class="range-value" id="income-display">500<span>万円</span></div>
+          <div class="range-labels"><span>200万円</span><span>2,000万円以上</span></div>
+        </div>
+
+        <div class="form-group">
+          <label>家族構成 <span>必須</span></label>
+          <select id="f-family">
+            <option value="独身">独身</option>
+            <option value="夫婦（共働き）">夫婦（共働き）</option>
+            <option value="夫婦（片働き）">夫婦（片働き）</option>
+            <option value="夫婦＋子ども1人">夫婦＋子ども1人</option>
+            <option value="夫婦＋子ども2人">夫婦＋子ども2人</option>
+            <option value="夫婦＋子ども3人以上">夫婦＋子ども3人以上</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>住宅ローン控除の有無 <span>必須</span></label>
+          <select id="f-loan">
+            <option value="なし">なし</option>
+            <option value="あり（1年目〜13年目）">あり（1年目〜13年目）</option>
+            <option value="あり（14年目以降）">あり（14年目以降）</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>希望する返礼品カテゴリ <span class="opt">任意</span></label>
+          <select id="f-category">
+            <option value="">特に指定なし</option>
+            <option>食品（肉・魚・野菜・果物）</option>
+            <option>お酒・ドリンク</option>
+            <option>工芸品・日用品</option>
+            <option>旅行・宿泊券</option>
+            <option>電化製品・家電</option>
+            <option>米・お米</option>
+            <option>海鮮・魚介類</option>
+          </select>
+        </div>
+
+        <div class="submit-wrap">
+          <button class="btn submit-btn" onclick="submitQuery('furusato')">ふるさと納税を試算する　→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== まとめて相談タブ ===== -->
+    <div id="tab-both" class="tab-panel">
+      <div class="section-title">自由に相談する</div>
+      <div class="form-card">
+        <div class="form-group">
+          <label>お住まいの地域 <span class="opt">任意</span></label>
+          <select id="b-region">
+            <option value="未指定">未指定</option>
+            <option>北海道</option><option>東北地方</option><option>関東地方</option>
+            <option>中部地方</option><option>近畿地方</option><option>中国地方</option>
+            <option>四国地方</option><option>九州・沖縄</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>相談内容 <span>必須</span></label>
+          <textarea id="b-query" rows="5" placeholder="例：
+・山林を持っているが何か活用できる補助金はあるか
+・今年度のふるさと納税の限度額を教えてほしい
+・子どもが生まれたので使える制度を知りたい
+・太陽光発電と蓄電池の補助金について
+などご自由にどうぞ"></textarea>
+        </div>
+        <div class="submit-wrap">
+          <button class="btn submit-btn" onclick="submitQuery('both')">AIに相談する　→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ローディング -->
+    <div class="loading-wrap" id="loading">
+      <div class="loading-brushes">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      資料を調査中です…
+    </div>
+
+    <!-- エラー -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- 結果 -->
+    <div id="result-area">
+      <div class="result-card">
+        <div class="result-header">
+          <div class="seal-icon">案内</div>
+          <h3>AIガイドの回答</h3>
+        </div>
+        <div class="result-body" id="result-text"></div>
+        <div class="result-footer">
+          <button class="btn btn-secondary" onclick="copyResult()">コピー</button>
+          <button class="btn btn-secondary" onclick="resetResult()">もう一度</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app-panel -->
+
+</main>
+
+<footer>
+  とむSYSTEM — Standardプラン専用 ｜ 情報は参考用です。最終確認は公式窓口でお願いします。
+</footer>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat';
+let userEmail = '';
+
+// ===== ログイン =====
+async function doLogin() {
+  const email = document.getElementById('email-input').value.trim();
+  if (!email || !email.includes('@')) {
+    showLoginError('メールアドレスを正しく入力してください');
+    return;
+  }
+
+  // Workerでプラン確認（pingエンドポイント利用）
+  try {
+    const res = await fetch('https://orange-sound-354b.inverted-triangle-leef.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appType: 'ping', input: 'check', email })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const planOk = data.plan === 'standard' || data.plan === 'full';
+      if (!planOk) {
+        showLoginError('Standardプラン以上のご契約が必要です（現在：' + data.plan + '）');
+        return;
+      }
+      userEmail = email;
+      document.getElementById('login-panel').style.display = 'none';
+      document.getElementById('app-panel').style.display = 'block';
+      document.getElementById('login-status').textContent = email + '　▸　' + data.plan.toUpperCase();
+    } else {
+      showLoginError('ログインに失敗しました：' + (data.error || '不明なエラー'));
+    }
+  } catch (e) {
+    showLoginError('通信エラーが発生しました');
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ===== タブ切り替え =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['subsidy', 'furusato', 'both'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  resetResult();
+}
+
+// ===== スライダー更新 =====
+function updateIncome(v) {
+  document.getElementById('income-display').innerHTML = v + '<span>万円</span>';
+}
+
+// ===== クエリ送信 =====
+async function submitQuery(mode) {
+  hideError();
+  resetResult();
+
+  let systemPrompt = '';
+  let userMessage = '';
+
+  if (mode === 'subsidy') {
+    const region = document.getElementById('s-region').value;
+    const household = document.getElementById('s-household').value;
+    const interests = [...document.querySelectorAll('input[name="interest"]:checked')].map(c => c.value);
+    const detail = document.getElementById('s-detail').value.trim();
+
+    if (!region || !household || interests.length === 0) {
+      showError('地域・世帯状況・関心分野を選択してください');
+      return;
+    }
+
+    systemPrompt = `あなたは日本の補助金・助成金・公的支援制度に詳しいアドバイザーです。
+ユーザーのプロフィールを基に、利用できる可能性のある補助金や助成金を具体的に案内してください。
+以下のフォーマットで回答してください：
+
+【活用できる主な制度】
+各制度について「制度名 / 概要 / 対象 / 金額目安 / 問い合わせ先」を箇条書きで3〜5件
+
+【アドバイス】
+申請時のポイントや注意点を2〜3行
+
+【参考サイト】
+関連する公式サイトを1〜2件
+
+情報は2024年以降の最新情報を基に回答し、必ず「詳細は各公式窓口でご確認ください」と最後に付記してください。`;
+
+    userMessage = `【地域】${region}
+【世帯状況】${household}
+【関心分野】${interests.join('、')}
+${detail ? '【補足】' + detail : ''}`;
+
+  } else if (mode === 'furusato') {
+    const income = document.getElementById('f-income').value;
+    const family = document.getElementById('f-family').value;
+    const loan = document.getElementById('f-loan').value;
+    const category = document.getElementById('f-category').value;
+
+    systemPrompt = `あなたはふるさと納税の専門アドバイザーです。
+ユーザーの情報を基に、以下の内容を回答してください：
+
+【ふるさと納税の控除上限額の目安】
+計算根拠と共に金額を示す
+
+【ワンストップ特例 vs 確定申告】
+どちらが向いているか
+
+【おすすめの活用方法】
+返礼品カテゴリの希望がある場合は具体的な活用方法
+
+【注意点】
+住宅ローン控除との関係など
+
+計算はあくまで目安として提示し、「正確な金額は総務省のシミュレーターや税務署でご確認ください」と付記してください。`;
+
+    userMessage = `【年収】約${income}万円
+【家族構成】${family}
+【住宅ローン控除】${loan}
+${category ? '【希望返礼品】' + category : ''}`;
+
+  } else {
+    const region = document.getElementById('b-region').value;
+    const query = document.getElementById('b-query').value.trim();
+
+    if (!query) {
+      showError('相談内容を入力してください');
+      return;
+    }
+
+    systemPrompt = `あなたは日本の補助金・助成金・ふるさと納税・各種公的支援制度に精通したAIアドバイザーです。
+ユーザーからの相談に対して、以下の点に注意して丁寧に回答してください：
+- 具体的な制度名・金額・対象条件を明示する
+- 地域が特定されている場合は地域の制度も案内する
+- 申請のステップや注意点を含める
+- 公式サイトや問い合わせ先を案内する
+- 最後に必ず「詳細は公式窓口でご確認ください」と付記する
+回答は読みやすいよう見出しと箇条書きを適切に使ってください。`;
+
+    userMessage = `【地域】${region}\n【相談内容】\n${query}`;
+  }
+
+  showLoading();
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Customer-Email': userEmail
+      },
+      body: JSON.stringify({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+        email: userEmail,
+        max_tokens: 1200
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errMap = {
+        'login_required': 'ログインが必要です',
+        'subscription_required': 'サブスクリプションが必要です',
+        'plan_upgrade_required': 'Standardプラン以上が必要です',
+        'daily_limit_exceeded': '本日の利用上限に達しました（明日またご利用ください）',
+      };
+      showError(errMap[data.error] || 'エラーが発生しました：' + data.error);
+      return;
+    }
+
+    const text = data.content && data.content[0] ? data.content[0].text : '';
+    if (!text) {
+      showError('回答を取得できませんでした');
+      return;
+    }
+
+    showResult(text);
+
+  } catch (e) {
+    showError('通信エラーが発生しました。しばらくしてからお試しください。');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ===== UI ユーティリティ =====
+function showLoading() {
+  document.getElementById('loading').style.display = 'block';
+}
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('error-msg').style.display = 'none';
+}
+function showResult(text) {
+  document.getElementById('result-text').textContent = text;
+  document.getElementById('result-area').style.display = 'block';
+  document.getElementById('result-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function resetResult() {
+  document.getElementById('result-area').style.display = 'none';
+  document.getElementById('result-text').textContent = '';
+  hideError();
+}
+function copyResult() {
+  const text = document.getElementById('result-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'コピー済み！';
+    setTimeout(() => btn.textContent = 'コピー', 1500);
+  });
+}
+
+// Enter キーでログイン
+document.getElementById('email-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>

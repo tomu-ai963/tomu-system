@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>議事録 → アクションプラン | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8842a;
+    --accent-light: #e8a84a;
+    --muted: #8a7f6e;
+    --line: #d4c9b0;
+    --white: #faf8f4;
+    --red: #c0392b;
+    --green: #27ae60;
+    --blue: #2471a3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* 和紙テクスチャ風背景 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(180,160,120,0.12) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(180,160,120,0.05) 28px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 左側の赤い縦線（ノート風） */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 72px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(192, 57, 43, 0.25);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 32px 80px 88px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ヘッダー */
+  .header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    background: rgba(200, 132, 42, 0.12);
+    padding: 2px 8px;
+    border: 1px solid rgba(200, 132, 42, 0.3);
+    border-radius: 2px;
+  }
+
+  h1 {
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    margin-bottom: 36px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ログインバナー */
+  #login-banner {
+    background: var(--cream);
+    border: 1.5px solid var(--line);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--ink);
+    border-radius: 2px;
+  }
+
+  #login-banner button {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+
+  #login-banner button:hover { background: var(--accent-light); }
+
+  /* メインフォーム */
+  .form-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* 議事録テキストエリア */
+  #minutes-input {
+    width: 100%;
+    min-height: 220px;
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 16px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    line-height: 2;
+    color: var(--ink);
+    resize: vertical;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  #minutes-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(200, 132, 42, 0.1);
+  }
+
+  #minutes-input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+    font-style: italic;
+  }
+
+  /* オプション行 */
+  .options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .option-group label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  select, input[type="text"] {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 10px 12px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  select:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  .select-wrap {
+    position: relative;
+  }
+
+  .select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  /* 実行ボタン */
+  #run-btn {
+    width: 100%;
+    padding: 16px 32px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  #run-btn:hover:not(:disabled) {
+    background: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(200, 132, 42, 0.3);
+  }
+
+  #run-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  #run-btn .btn-spinner {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 8px;
+  }
+
+  #run-btn.loading .btn-spinner { display: inline-block; }
+  #run-btn.loading .btn-text::before { content: '変換中...'; }
+  #run-btn:not(.loading) .btn-text::before { content: '▶  議事録を変換する'; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #run-btn span.btn-text { display: flex; align-items: center; justify-content: center; }
+
+  /* 結果エリア */
+  #result-section {
+    display: none;
+    margin-top: 40px;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .result-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .result-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+  }
+
+  .result-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--green);
+    background: rgba(39, 174, 96, 0.1);
+    border: 1px solid rgba(39, 174, 96, 0.3);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  #copy-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  #copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* アクションプランカード */
+  .action-output {
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 28px 28px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .action-output::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  }
+
+  /* パース済みコンテンツ */
+  .action-content {
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--ink);
+  }
+
+  .action-content .section-h {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .action-content .section-h:first-child { margin-top: 0; }
+
+  .action-content .action-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 14px;
+    margin: 6px 0;
+    background: var(--cream);
+    border-radius: 2px;
+    border-left: 3px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .action-content .action-item:hover {
+    border-left-color: var(--accent);
+  }
+
+  .action-content .item-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 24px;
+    font-weight: 500;
+  }
+
+  .action-content .item-body {
+    flex: 1;
+  }
+
+  .action-content .item-main {
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--ink);
+  }
+
+  .action-content .item-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .action-content .priority-high {
+    border-left-color: var(--red) !important;
+  }
+
+  .action-content .priority-high .item-num { color: var(--red); }
+
+  .action-content .raw-text {
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 2;
+    color: var(--ink);
+  }
+
+  /* エラー */
+  .error-msg {
+    background: rgba(192, 57, 43, 0.08);
+    border: 1px solid rgba(192, 57, 43, 0.3);
+    border-left: 4px solid var(--red);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--red);
+    border-radius: 2px;
+    margin-top: 20px;
+    display: none;
+  }
+
+  /* カウンター */
+  .char-counter {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  /* フッター */
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  .back-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .back-link:hover { color: var(--accent); }
+
+  /* ログインモーダル */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 46, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 4px;
+    padding: 36px;
+    width: min(400px, 90vw);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    position: relative;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+
+  .modal input[type="email"] {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 12px 14px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .modal input[type="email"]:focus { border-color: var(--accent); }
+
+  .modal-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+
+  .modal-btn:hover { background: var(--accent); }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  /* 入力モード切替タブ */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+    border-bottom: 1.5px solid var(--line);
+  }
+
+  .tab-btn {
+    padding: 8px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+
+  .tab-btn.active {
+    color: var(--ink);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1.5px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 32px 16px 60px 32px; }
+    body::after { left: 24px; }
+    .options-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ログインモーダル -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2>ログイン</h2>
+    <p>Standardプランのメールアドレスを入力してください。</p>
+    <input type="email" id="email-input" placeholder="your@email.com" autocomplete="email">
+    <button class="modal-btn" onclick="doLogin()">ログイン</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ヘッダー -->
+  <div class="header">
+    <span class="header-label">Standard — 03</span>
+  </div>
+  <h1>議事録 → アクションプラン</h1>
+  <p class="subtitle">minutes to action / powered by claude haiku</p>
+
+  <!-- ログインバナー -->
+  <div id="login-banner">
+    <span>🔒 このアプリはStandardプラン以上で利用できます。</span>
+    <button onclick="openModal()">ログイン</button>
+  </div>
+
+  <!-- 入力タブ -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-text" onclick="switchTab('text')">テキスト入力</button>
+    <button class="tab-btn" id="tab-tips" onclick="switchTab('tips')">入力のコツ</button>
+  </div>
+
+  <!-- テキスト入力パネル -->
+  <div id="panel-text">
+    <div class="form-section">
+      <textarea id="minutes-input"
+        placeholder="議事録・メモ・会議の書き起こしをここにペーストしてください。
+
+例）
+2025/04/01 企画会議
+参加者：田中、鈴木、山本
+・新機能のリリースは4月末を目標にする
+・UI担当は田中さんが引き続き対応
+・テストは鈴木さんと山本さんで分担
+・次回定例は4/8 14:00〜
+・予算の見直しについては来週末までに各自確認する"></textarea>
+      <div class="char-counter"><span id="char-count">0</span> 文字</div>
+    </div>
+
+    <div class="options-row">
+      <div class="option-group">
+        <label>出力スタイル</label>
+        <div class="select-wrap">
+          <select id="style-select">
+            <option value="standard">標準（担当者・期限付き）</option>
+            <option value="simple">シンプル（箇条書き）</option>
+            <option value="priority">優先度順</option>
+          </select>
+        </div>
+      </div>
+      <div class="option-group">
+        <label>チーム / プロジェクト名（任意）</label>
+        <input type="text" id="team-input" placeholder="例：開発チーム">
+      </div>
+    </div>
+
+    <button id="run-btn" onclick="runConvert()">
+      <span class="btn-text"></span>
+      <span class="btn-spinner" style="display:none;"></span>
+    </button>
+  </div>
+
+  <!-- コツパネル -->
+  <div id="panel-tips" style="display:none;">
+    <div class="action-output" style="margin-bottom: 24px;">
+      <div class="action-content raw-text">📋 より精度の高いアクションプランを出すために
+
+① 参加者名を書いておくと、担当者の割り当て精度が上がります。
+
+② 日時・期限が含まれていると、「いつまでに」が明確になります。
+   例）来週月曜／4/8までに／今月末
+
+③ 「誰が何をする」という構造が含まれていると最もよく抽出できます。
+   例）「田中さんがUIを担当する」「鈴木と山本でテストを分担」
+
+④ 箇条書き・会話の書き起こし・メモ書きなど、どんな形式でもOKです。
+
+⑤ 長い議事録（2000文字程度）も処理できます。</div>
+    </div>
+  </div>
+
+  <!-- エラー -->
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- 結果 -->
+  <div id="result-section">
+    <div class="result-header">
+      <div class="result-header-left">
+        <div class="result-title">アクションプラン</div>
+        <div class="result-badge">DONE</div>
+      </div>
+      <button id="copy-btn" onclick="copyResult()">コピー</button>
+    </div>
+    <div class="action-output">
+      <div class="action-content" id="result-content"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-left">とむSYSTEM © 2025</span>
+    <a class="back-link" href="https://tomu-ai963.github.io/portfolio/">← portfolio</a>
+  </div>
+</div>
+
+<script src="https://tomu-ai963.github.io/tomu-login.js"></script>
+<script>
+  const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat";
+
+  // 文字カウント
+  const minutesInput = document.getElementById('minutes-input');
+  const charCount = document.getElementById('char-count');
+  minutesInput.addEventListener('input', () => {
+    charCount.textContent = minutesInput.value.length;
+  });
+
+  // タブ切替
+  function switchTab(tab) {
+    document.getElementById('panel-text').style.display = tab === 'text' ? 'block' : 'none';
+    document.getElementById('panel-tips').style.display = tab === 'tips' ? 'block' : 'none';
+    document.getElementById('tab-text').classList.toggle('active', tab === 'text');
+    document.getElementById('tab-tips').classList.toggle('active', tab === 'tips');
+  }
+
+  // ログイン
+  const loginBanner = document.getElementById('login-banner');
+  let userEmail = null;
+
+  function initLogin() {
+    userEmail = localStorage.getItem('tomu_email') || null;
+    if (!userEmail) loginBanner.style.display = 'flex';
+  }
+
+  function openModal() { document.getElementById('modal-overlay').classList.add('show'); }
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+  async function doLogin() {
+    const email = document.getElementById('email-input').value.trim();
+    if (!email) return;
+    localStorage.setItem('tomu_email', email);
+    userEmail = email;
+    loginBanner.style.display = 'none';
+    closeModal();
+  }
+
+  // システムプロンプト生成
+  function buildSystem(style, team) {
+    const teamPart = team ? `チーム/プロジェクト：${team}。` : '';
+    const styleGuides = {
+      standard: `以下の形式でアクションプランを作成してください：
+【アクション一覧】
+- 各アクションについて「担当者：〇〇 / 期限：〇〇 / 内容：〇〇」の形式で箇条書き
+- 担当者・期限が不明な場合は「未定」と記載
+
+【確認事項】
+- 次回までに確認・決定が必要な事項を3件以内で列挙`,
+      simple: `議事録から決定事項・タスクを抽出し、番号付き箇条書きで出力してください。各項目は1〜2行で簡潔に。`,
+      priority: `議事録から全タスクを抽出し、重要度順（高・中・低）に分類して出力してください。
+形式：
+【優先度：高】
+- タスク内容
+【優先度：中】
+- タスク内容
+【優先度：低】
+- タスク内容`,
+    };
+    return `あなたはビジネス議事録の専門アナリストです。${teamPart}${styleGuides[style]}
+余計な前置きや感想は不要です。アクションプランのみ出力してください。`;
+  }
+
+  // 変換実行
+  async function runConvert() {
+    const text = minutesInput.value.trim();
+    if (!text) { showError('議事録を入力してください。'); return; }
+    if (text.length < 20) { showError('もう少し詳しく入力してください（20文字以上）。'); return; }
+
+    if (!userEmail) { openModal(); return; }
+
+    const btn = document.getElementById('run-btn');
+    const style = document.getElementById('style-select').value;
+    const team = document.getElementById('team-input').value.trim();
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    hideError();
+    document.getElementById('result-section').style.display = 'none';
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          system: buildSystem(style, team),
+          messages: [{ role: 'user', content: `以下の議事録を分析してアクションプランを作成してください：\n\n${text}` }],
+          max_tokens: 800,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.error === 'login_required') { showError('ログインが必要です。'); openModal(); return; }
+        if (data.error === 'subscription_required') { showError('Standardプランへの登録が必要です。'); return; }
+        if (data.error === 'plan_upgrade_required') { showError('このアプリはStandardプラン以上が必要です。'); return; }
+        if (data.error === 'daily_limit_exceeded') { showError(`本日の利用上限（${data.limit}回）に達しました。明日またご利用ください。`); return; }
+        throw new Error(data.detail || data.error || 'Unknown error');
+      }
+
+      const resultText = data.content?.[0]?.text || '';
+      renderResult(resultText);
+      document.getElementById('result-section').style.display = 'block';
+      document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (e) {
+      showError('エラーが発生しました：' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+
+  // 結果レンダリング（Markdownライク）
+  function renderResult(text) {
+    const container = document.getElementById('result-content');
+    // シンプルにpre形式で表示しつつ、セクションヘッダーを装飾
+    const html = text
+      .replace(/【(.+?)】/g, '<div class="section-h">$1</div>')
+      .replace(/^[-・]\s*(.+)$/gm, (_, body) => {
+        const isPriHigh = body.includes('優先度：高') || body.includes('重要');
+        return `<div class="action-item${isPriHigh ? ' priority-high' : ''}">
+          <span class="item-num">→</span>
+          <div class="item-body"><div class="item-main">${body}</div></div>
+        </div>`;
+      })
+      .replace(/^(\d+)\.\s*(.+)$/gm, (_, n, body) => {
+        return `<div class="action-item">
+          <span class="item-num">${n}.</span>
+          <div class="item-body"><div class="item-main">${body}</div></div>
+        </div>`;
+      });
+    container.innerHTML = html || `<div class="raw-text">${text}</div>`;
+    window._lastResult = text;
+  }
+
+  // コピー
+  async function copyResult() {
+    try {
+      await navigator.clipboard.writeText(window._lastResult || '');
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✓ コピー完了';
+      setTimeout(() => { btn.textContent = 'コピー'; }, 2000);
+    } catch { }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  // キーボードショートカット
+  minutesInput.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') runConvert();
+  });
+
+  // init
+  document.addEventListener('DOMContentLoaded', initLogin);
+</script>
+</body>
+</html>

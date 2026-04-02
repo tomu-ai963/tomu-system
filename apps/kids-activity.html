@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>習い事コンパス | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Kosugi+Maru&display=swap" rel="stylesheet">
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+<style>
+  :root {
+    --sky: #e8f4fd;
+    --sky2: #cce8f8;
+    --sun: #ffd166;
+    --sun2: #ffb703;
+    --green: #06d6a0;
+    --green2: #05c091;
+    --coral: #ef476f;
+    --ink: #1a1a2e;
+    --ink2: #3a3a5c;
+    --white: #ffffff;
+    --cloud: #f7fbff;
+    --bubble-user: #ffd166;
+    --bubble-ai: #ffffff;
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    background: linear-gradient(160deg, #d0eaff 0%, #e8f8f0 50%, #fff9e6 100%);
+    min-height: 100vh;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    width: 100%;
+    max-width: 680px;
+    padding: 28px 20px 0;
+    text-align: center;
+  }
+  .header-icon {
+    font-size: 3rem;
+    display: block;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 8px 0 4px;
+    letter-spacing: 0.04em;
+  }
+  .subtitle {
+    font-size: 0.82rem;
+    color: var(--ink2);
+    opacity: 0.7;
+  }
+
+  /* ── ログイン ── */
+  #login-area {
+    width: 100%;
+    max-width: 400px;
+    margin: 40px auto;
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    box-shadow: 0 8px 32px rgba(0,100,200,0.10);
+    text-align: center;
+  }
+  #login-area p { font-size: 0.9rem; color: var(--ink2); margin-bottom: 16px; }
+  .input-field {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--sky2);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 12px;
+  }
+  .input-field:focus { border-color: var(--green); }
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(6,214,160,.35); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── チャットエリア ── */
+  #app-area { display: none; width: 100%; max-width: 680px; padding: 0 16px 32px; }
+
+  .user-badge {
+    text-align: right;
+    font-size: 0.78rem;
+    color: var(--ink2);
+    padding: 8px 4px 12px;
+    opacity: 0.7;
+  }
+
+  /* ── チャット ── */
+  #chat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 300px;
+    padding: 4px 0 8px;
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    animation: fadeUp .3s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .msg.ai .avatar { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+  .msg.user .avatar { background: var(--sun); }
+
+  .bubble {
+    max-width: calc(100% - 56px);
+    padding: 13px 16px;
+    border-radius: 18px;
+    line-height: 1.65;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.ai .bubble {
+    background: var(--bubble-ai);
+    border-top-left-radius: 4px;
+    box-shadow: 0 3px 12px rgba(0,100,200,0.09);
+  }
+  .msg.user .bubble {
+    background: var(--bubble-user);
+    border-top-right-radius: 4px;
+    color: var(--ink);
+  }
+
+  /* ── 結果カード ── */
+  .result-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px 20px 16px;
+    box-shadow: 0 4px 20px rgba(6,214,160,0.15);
+    border-left: 5px solid var(--green);
+    margin-top: 4px;
+    font-size: 0.9rem;
+  }
+  .result-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green2);
+    margin-bottom: 10px;
+  }
+  .result-card ul { padding-left: 18px; line-height: 1.9; }
+  .result-card p { margin-top: 10px; line-height: 1.7; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag {
+    background: var(--sky);
+    color: var(--ink2);
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .tag.green { background: #d4f7ee; color: var(--green2); }
+  .tag.yellow { background: #fff3cd; color: #8a6a00; }
+
+  /* ── タイピング ── */
+  .typing .bubble {
+    padding: 14px 18px;
+  }
+  .dots { display: inline-flex; gap: 5px; }
+  .dots span {
+    width: 8px; height: 8px;
+    background: var(--ink2);
+    border-radius: 50%;
+    animation: dot .9s ease-in-out infinite;
+    opacity: .4;
+  }
+  .dots span:nth-child(2) { animation-delay: .2s; }
+  .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes dot { 0%,80%,100%{transform:scale(1);opacity:.4} 40%{transform:scale(1.3);opacity:1} }
+
+  /* ── ステップ進捗 ── */
+  .progress-bar {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 12px 0 4px;
+  }
+  .progress-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--sky2);
+    transition: background .3s, transform .3s;
+  }
+  .progress-dot.active { background: var(--green); transform: scale(1.3); }
+  .progress-dot.done   { background: var(--sun2); }
+
+  /* ── 入力エリア ── */
+  .input-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-top: 12px;
+  }
+  #user-input {
+    flex: 1;
+    padding: 13px 16px;
+    border: 2px solid var(--sky2);
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 0.93rem;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    max-height: 120px;
+    transition: border-color .2s;
+    background: white;
+  }
+  #user-input:focus { border-color: var(--green); }
+  #send-btn {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform .15s, box-shadow .15s;
+  }
+  #send-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(6,214,160,.4); }
+  #send-btn:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
+  #send-btn svg { width: 20px; height: 20px; fill: white; }
+
+  /* ── クイック返信 ── */
+  .quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .qr-btn {
+    padding: 7px 14px;
+    background: white;
+    border: 2px solid var(--sky2);
+    border-radius: 99px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--ink2);
+    transition: all .15s;
+    font-weight: 500;
+  }
+  .qr-btn:hover { border-color: var(--green); color: var(--green2); background: #f0fdf8; }
+
+  /* ── リセット ── */
+  #reset-btn {
+    display: block;
+    margin: 16px auto 0;
+    padding: 9px 22px;
+    background: transparent;
+    border: 2px solid var(--sky2);
+    border-radius: 99px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  #reset-btn:hover { border-color: var(--coral); color: var(--coral); }
+
+  /* ── エラー ── */
+  .error-msg { color: var(--coral); font-size: 0.82rem; text-align: center; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="header-icon">🎨</span>
+  <h1>習い事コンパス</h1>
+  <p class="subtitle">お子さんにぴったりの習い事を一緒に見つけましょう</p>
+</header>
+
+<!-- ログインエリア -->
+<div id="login-area">
+  <p>Standardプランのメールアドレスでログインしてください</p>
+  <input type="email" id="email-input" class="input-field" placeholder="your@email.com">
+  <button class="btn-primary" onclick="doLogin()">ログインして始める</button>
+  <div id="login-error" class="error-msg"></div>
+</div>
+
+<!-- アプリ本体 -->
+<div id="app-area">
+  <div class="user-badge" id="user-badge"></div>
+
+  <!-- 進捗ドット -->
+  <div class="progress-bar" id="progress-bar">
+    <div class="progress-dot active" id="dot-0"></div>
+    <div class="progress-dot" id="dot-1"></div>
+    <div class="progress-dot" id="dot-2"></div>
+    <div class="progress-dot" id="dot-3"></div>
+    <div class="progress-dot" id="dot-4"></div>
+  </div>
+
+  <!-- チャット -->
+  <div id="chat-box"></div>
+
+  <!-- クイック返信 -->
+  <div class="quick-replies" id="quick-replies"></div>
+
+  <!-- 入力欄 -->
+  <div class="input-wrap">
+    <textarea id="user-input" placeholder="ここに入力…" rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+  <div id="chat-error" class="error-msg"></div>
+
+  <button id="reset-btn" onclick="resetChat()">🔄 最初からやり直す</button>
+</div>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat";
+
+// ── 会話ステート ──
+let userEmail = "";
+let messages  = [];   // APIに渡す会話履歴
+let step      = 0;    // 0〜4 の質問ステップ
+let answers   = {};   // 集めた回答
+
+// ── ステップ定義 ──
+const STEPS = [
+  {
+    key: "age",
+    question: "お子さんは何歳ですか？\nまた、男の子・女の子どちらですか？",
+    quick: ["3〜5歳・男の子","3〜5歳・女の子","6〜9歳・男の子","6〜9歳・女の子","10〜12歳・男の子","10〜12歳・女の子"],
+  },
+  {
+    key: "character",
+    question: "お子さんの性格に近いものはどれですか？",
+    quick: ["活発・体を動かすのが好き","ものづくりや工作が好き","音楽やリズムが好き","じっくり考えるのが得意","社交的・人と話すのが好き","内向的・一人で集中できる"],
+  },
+  {
+    key: "goal",
+    question: "習い事で一番叶えたいことは何ですか？",
+    quick: ["体力・健康づくり","集中力を高めたい","友達を増やしたい","将来の選択肢を広げたい","自己表現力をつけたい","楽しく続けてほしい"],
+  },
+  {
+    key: "condition",
+    question: "通える環境や条件を教えてください。\n（例：週1回・送迎なし・月謝1万円以内 など）",
+    quick: ["週1回・近所で通える","週2回以上OK","オンラインでもOK","費用は月5000円以内","費用は月1万円以内"],
+  },
+  {
+    key: "concern",
+    question: "最後に、習い事を選ぶ上で気になることや不安なことはありますか？\n（なければ「特になし」とどうぞ）",
+    quick: ["飽きてしまわないか心配","親の負担が大きくないか","友達ができるか心配","子どもが嫌がらないか","特になし"],
+  },
+];
+
+// ── ログイン ──
+async function doLogin() {
+  const email = document.getElementById("email-input").value.trim();
+  if (!email) return;
+  const err = document.getElementById("login-error");
+  err.textContent = "";
+  try {
+    const r = await fetch("https://orange-sound-354b.inverted-triangle-leef.workers.dev/", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({appType:"ping", input:"ping", email})
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) {
+      err.textContent = d.error === "subscription_required"
+        ? "Standardプラン以上のご登録が必要です"
+        : "メールアドレスを確認してください";
+      return;
+    }
+    if (!["standard","full"].includes(d.plan)) {
+      err.textContent = "このアプリはStandard/Fullプラン専用です";
+      return;
+    }
+    userEmail = email;
+    document.getElementById("login-area").style.display = "none";
+    document.getElementById("app-area").style.display = "block";
+    document.getElementById("user-badge").textContent = `✉️ ${email}`;
+    startChat();
+  } catch(e) {
+    err.textContent = "通信エラーが発生しました";
+  }
+}
+
+// ── チャット開始 ──
+function startChat() {
+  messages = [];
+  step = 0;
+  answers = {};
+  document.getElementById("chat-box").innerHTML = "";
+  updateProgress();
+  // 最初の挨拶 + 質問
+  const greeting = "こんにちは！🌟\nお子さんにぴったりの習い事を一緒に探しましょう。\nいくつか質問させてください。";
+  addMsg("ai", greeting);
+  setTimeout(() => askStep(0), 600);
+}
+
+// ── ステップごとの質問 ──
+function askStep(i) {
+  if (i >= STEPS.length) { generateResult(); return; }
+  addMsg("ai", STEPS[i].question);
+  setQuickReplies(STEPS[i].quick);
+  updateProgress();
+}
+
+// ── メッセージ追加 ──
+function addMsg(role, text, isCard = false) {
+  const box = document.getElementById("chat-box");
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + role;
+
+  const av = document.createElement("div");
+  av.className = "avatar";
+  av.textContent = role === "ai" ? "🧭" : "👤";
+
+  const bub = document.createElement("div");
+  if (isCard) {
+    bub.innerHTML = text;
+    bub.className = "result-card";
+    wrap.appendChild(av);
+    wrap.appendChild(bub);
+  } else {
+    bub.className = "bubble";
+    bub.textContent = text;
+    wrap.appendChild(av);
+    wrap.appendChild(bub);
+  }
+
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  return wrap;
+}
+
+// ── タイピング表示 ──
+function showTyping() {
+  const box = document.getElementById("chat-box");
+  const wrap = document.createElement("div");
+  wrap.className = "msg ai typing";
+  wrap.id = "typing-indicator";
+  wrap.innerHTML = `<div class="avatar">🧭</div><div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+function removeTyping() {
+  const el = document.getElementById("typing-indicator");
+  if (el) el.remove();
+}
+
+// ── クイック返信 ──
+function setQuickReplies(options) {
+  const qr = document.getElementById("quick-replies");
+  qr.innerHTML = "";
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "qr-btn";
+    btn.textContent = opt;
+    btn.onclick = () => { sendText(opt); };
+    qr.appendChild(btn);
+  });
+}
+
+// ── 送信 ──
+function sendMessage() {
+  const input = document.getElementById("user-input");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  input.style.height = "";
+  sendText(text);
+}
+
+function sendText(text) {
+  if (step > STEPS.length) return;
+  document.getElementById("quick-replies").innerHTML = "";
+  addMsg("user", text);
+
+  if (step < STEPS.length) {
+    answers[STEPS[step].key] = text;
+    messages.push({ role: "user", content: text });
+    step++;
+    updateProgress();
+    if (step < STEPS.length) {
+      setTimeout(() => askStep(step), 500);
+    } else {
+      setTimeout(() => generateResult(), 500);
+    }
+  }
+}
+
+// ── 進捗更新 ──
+function updateProgress() {
+  for (let i = 0; i < 5; i++) {
+    const d = document.getElementById("dot-" + i);
+    if (i < step) { d.className = "progress-dot done"; }
+    else if (i === step) { d.className = "progress-dot active"; }
+    else { d.className = "progress-dot"; }
+  }
+}
+
+// ── 結果生成（AIに一括送信）──
+async function generateResult() {
+  addMsg("ai", "情報が揃いました！最適な習い事を分析しています…✨");
+  showTyping();
+  setSendDisabled(true);
+
+  const system = `あなたは子育て経験豊富な習い事アドバイザーです。
+保護者から収集した子どもの情報をもとに、最適な習い事を3〜5つ提案してください。
+
+## 出力フォーマット（必ずこの形式で）
+### 🎯 おすすめの習い事
+
+1. **[習い事名]**
+   - 理由：[この子に合う理由を1〜2文]
+   - 月謝目安：[相場]
+   - ポイント：[選ぶ際のコツや注意点]
+
+（2〜5も同様）
+
+### 💡 選ぶときのヒント
+[条件・懸念点を踏まえた具体的なアドバイスを2〜3文]
+
+### ⚠️ 注意点
+[保護者が気をつけるべきことを1〜2文]
+
+回答は親しみやすく、でも具体的に。絵文字を適度に使ってください。`;
+
+  const userSummary = `以下の情報をもとに習い事を提案してください。
+
+年齢・性別：${answers.age || "不明"}
+性格：${answers.character || "不明"}
+目標：${answers.goal || "不明"}
+条件：${answers.condition || "不明"}
+懸念：${answers.concern || "特になし"}`;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        email: userEmail,
+        system,
+        messages: [{ role: "user", content: userSummary }],
+        max_tokens: 1200
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if (!res.ok || data.error) {
+      const errMap = {
+        login_required: "ログインが必要です",
+        subscription_required: "Standardプラン以上が必要です",
+        plan_upgrade_required: "Standardプラン以上が必要です",
+        daily_limit_exceeded: "本日の利用上限に達しました（明日また使えます）",
+      };
+      addMsg("ai", errMap[data.error] || "エラーが発生しました: " + data.error);
+      setSendDisabled(false);
+      return;
+    }
+
+    const text = (data.content && data.content[0]) ? data.content[0].text : "";
+    const html = markdownToHtml(text);
+    addMsg("ai", `<h3>📋 習い事レポート</h3>${html}`, true);
+
+    // 再提案ボタン
+    setQuickReplies(["別の条件で探す 🔄", "もう少し費用を抑えたい 💰", "オンラインでできるものだけ教えて 💻"]);
+    step = 99; // 結果表示後は自由会話モードへ
+
+  } catch(e) {
+    removeTyping();
+    addMsg("ai", "通信エラーが発生しました。もう一度お試しください。");
+  }
+  setSendDisabled(false);
+}
+
+// ── Markdown簡易変換 ──
+function markdownToHtml(text) {
+  return text
+    .replace(/### (.+)/g, '<h3 style="margin:14px 0 6px;font-size:.95rem;color:#05c091;">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^(\d+)\. /gm, '<br><strong>$1.</strong> ')
+    .replace(/^   - (.+)/gm, '<div style="padding-left:14px;color:#3a3a5c;font-size:.87rem;">・$1</div>')
+    .replace(/\n/g, ' ');
+}
+
+// ── 送信ボタン制御 ──
+function setSendDisabled(v) {
+  document.getElementById("send-btn").disabled = v;
+  document.getElementById("user-input").disabled = v;
+}
+
+// ── リセット ──
+function resetChat() {
+  startChat();
+}
+
+// ── テキストエリア自動伸縮 ──
+document.addEventListener("DOMContentLoaded", () => {
+  const ta = document.getElementById("user-input");
+  ta.addEventListener("input", function() {
+    this.style.height = "";
+    this.style.height = Math.min(this.scrollHeight, 120) + "px";
+  });
+  ta.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+});
+</script>
+</body>
+</html>

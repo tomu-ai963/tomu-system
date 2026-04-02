@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>週次内省コーチ | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1f3a;
+    --deep: #0d1128;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --fog: #8b95b8;
+    --paper: #f4f0e8;
+    --paper-warm: #ede8dc;
+    --accent: #4a7fa5;
+    --glow: rgba(201,168,76,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--paper);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 星空背景 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(74,127,165,0.3) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 20%, rgba(201,168,76,0.1) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 微細なノイズ感 */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* ヘッダー */
+  header {
+    text-align: center;
+    padding: 50px 0 30px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .moon-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 16px;
+    opacity: 0.9;
+  }
+
+  header h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 0.12em;
+    line-height: 1.3;
+  }
+
+  header p.subtitle {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: var(--fog);
+    letter-spacing: 0.05em;
+  }
+
+  /* 週表示バー */
+  .week-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 24px 0;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .week-label {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+  }
+
+  .week-streak {
+    font-size: 0.78rem;
+    color: var(--fog);
+    background: rgba(201,168,76,0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ログインセクション */
+  #login-section {
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(139,149,184,0.2);
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(8px);
+  }
+
+  .card-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: var(--gold);
+    border-radius: 2px;
+    opacity: 0.7;
+  }
+
+  input[type="email"] {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(139,149,184,0.3);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--paper);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="email"]:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--glow);
+  }
+
+  input[type="email"]::placeholder { color: var(--fog); }
+
+  .btn-primary {
+    width: 100%;
+    margin-top: 14px;
+    background: linear-gradient(135deg, var(--gold) 0%, #a07c30 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--deep);
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* メインセクション（非表示 → 表示） */
+  #main-section { display: none; }
+  #main-section.visible {
+    display: block;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  /* 過去の内省サマリー */
+  .past-reflection {
+    background: rgba(74,127,165,0.08);
+    border: 1px solid rgba(74,127,165,0.25);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .past-label {
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .past-text {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.9rem;
+    color: var(--fog);
+    line-height: 1.8;
+  }
+
+  /* 内省フォーム */
+  .question-block {
+    margin-bottom: 20px;
+  }
+
+  .question-label {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.92rem;
+    color: var(--gold-light);
+    margin-bottom: 10px;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+  }
+
+  .question-num {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background: var(--gold);
+    color: var(--deep);
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 22px;
+    text-align: center;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(139,149,184,0.25);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--paper);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-height: 90px;
+  }
+
+  textarea:focus {
+    border-color: rgba(201,168,76,0.5);
+    box-shadow: 0 0 0 3px var(--glow);
+  }
+
+  textarea::placeholder { color: rgba(139,149,184,0.6); }
+
+  /* AIレスポンスエリア */
+  #ai-response {
+    display: none;
+    margin-top: 24px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .response-card {
+    background: linear-gradient(135deg, rgba(26,31,58,0.9) 0%, rgba(13,17,40,0.9) 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 18px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .response-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .response-label {
+    font-size: 0.75rem;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+
+  .response-text {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.95rem;
+    line-height: 2;
+    color: var(--paper-warm);
+    white-space: pre-wrap;
+  }
+
+  .response-affirmation {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.05rem;
+    color: var(--gold-light);
+    line-height: 1.8;
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+
+  /* ローディング */
+  .loading-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* 保存済みバッジ */
+  .saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(74,127,165,0.15);
+    border: 1px solid rgba(74,127,165,0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    color: #7eb5d6;
+    margin-top: 16px;
+  }
+
+  /* エラー表示 */
+  .error-msg {
+    background: rgba(180,60,60,0.15);
+    border: 1px solid rgba(180,60,60,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.84rem;
+    color: #e8a0a0;
+    margin-top: 12px;
+  }
+
+  /* フッター */
+  footer {
+    text-align: center;
+    padding: 40px 0 20px;
+    font-size: 0.75rem;
+    color: rgba(139,149,184,0.4);
+    letter-spacing: 0.05em;
+  }
+
+  /* アニメーション */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* スクロールバー */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--deep); }
+  ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <svg class="moon-icon" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M38 26c0 9.941-8.059 18-18 18A18 18 0 0 1 8.42 14.2C10.73 11.55 14.17 10 18 10c.5 0 1 .03 1.5.08A13.98 13.98 0 0 0 24 22c0 6.627 4.625 12.15 10.836 13.51A17.96 17.96 0 0 0 38 26z" fill="#c9a84c" opacity="0.85"/>
+      <circle cx="36" cy="10" r="1.5" fill="#e8c97a" opacity="0.6"/>
+      <circle cx="44" cy="18" r="1" fill="#e8c97a" opacity="0.4"/>
+      <circle cx="42" cy="6" r="1.2" fill="#e8c97a" opacity="0.5"/>
+    </svg>
+    <h1>週次内省コーチ</h1>
+    <p class="subtitle">一週間の自分と、静かに向き合う時間</p>
+  </header>
+
+  <!-- 週表示 -->
+  <div class="week-bar" id="week-bar">
+    <span class="week-label" id="week-label">今週の内省</span>
+    <span class="week-streak" id="streak-label">読み込み中…</span>
+  </div>
+
+  <!-- ログインセクション -->
+  <div id="login-section">
+    <div class="card">
+      <div class="card-title">メールアドレスを入力</div>
+      <input type="email" id="email-input" placeholder="your@email.com" autocomplete="email">
+      <button class="btn-primary" id="login-btn" onclick="handleLogin()">内省を始める</button>
+      <div id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- メインセクション -->
+  <div id="main-section">
+
+    <!-- 先週のコーチからのメッセージ -->
+    <div id="past-section" style="display:none;">
+      <div class="past-reflection">
+        <div class="past-label">📖 先週のコーチより</div>
+        <div class="past-text" id="past-text"></div>
+      </div>
+    </div>
+
+    <!-- 内省フォーム -->
+    <div class="card" id="form-card">
+      <div class="card-title">今週の振り返り</div>
+
+      <div class="question-block">
+        <div class="question-label">
+          <span class="question-num">1</span>今週、小さくても「できた」と感じたことは？
+        </div>
+        <textarea id="q1" placeholder="どんな些細なことでも構いません…" rows="3"></textarea>
+      </div>
+
+      <div class="question-block">
+        <div class="question-label">
+          <span class="question-num">2</span>今週、難しかったこと・消耗したことは？
+        </div>
+        <textarea id="q2" placeholder="正直に書いてみてください…" rows="3"></textarea>
+      </div>
+
+      <div class="question-block">
+        <div class="question-label">
+          <span class="question-num">3</span>来週、一つだけ変えたいこと・試したいことは？
+        </div>
+        <textarea id="q3" placeholder="小さな一歩でOKです…" rows="3"></textarea>
+      </div>
+
+      <button class="btn-primary" id="submit-btn" onclick="submitReflection()">コーチに送る</button>
+      <div id="form-error"></div>
+    </div>
+
+    <!-- AIレスポンス -->
+    <div id="ai-response">
+      <div class="response-card">
+        <div class="response-label">✦ コーチより</div>
+        <div class="loading-dots" id="loading-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+        <div class="response-text" id="response-main" style="display:none;"></div>
+        <div class="response-affirmation" id="response-affirmation" style="display:none;"></div>
+        <div class="saved-badge" id="saved-badge" style="display:none;">
+          ✓ 今週の内省を保存しました
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-section -->
+
+  <footer>とむSYSTEM — Standard Plan</footer>
+</div>
+
+<!-- tomu-login.js -->
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+let userEmail = '';
+
+// 週ラベル計算
+function getWeekLabel() {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `${now.getFullYear()}年 第${weekNum}週`;
+}
+
+document.getElementById('week-label').textContent = getWeekLabel();
+
+// ログイン処理
+async function handleLogin() {
+  const email = document.getElementById('email-input').value.trim();
+  if (!email) return;
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = '確認中…';
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appType: 'ping', input: 'ping', email })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError('login-error', data.error === 'subscription_required'
+        ? 'Standardプラン以上が必要です。'
+        : 'メールアドレスを確認してください。');
+      btn.disabled = false;
+      btn.textContent = '内省を始める';
+      return;
+    }
+
+    if (!['standard','full'].includes(data.plan)) {
+      showError('login-error', 'このアプリはStandard/Fullプラン専用です。');
+      btn.disabled = false;
+      btn.textContent = '内省を始める';
+      return;
+    }
+
+    userEmail = email;
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('main-section').classList.add('visible');
+    await loadPastReflection();
+
+  } catch(e) {
+    showError('login-error', 'エラーが発生しました。再度お試しください。');
+    btn.disabled = false;
+    btn.textContent = '内省を始める';
+  }
+}
+
+// 過去の内省を取得（KVから）
+async function loadPastReflection() {
+  try {
+    const res = await fetch(WORKER_URL + '/api/reflection/load', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.lastCoachMessage) {
+        document.getElementById('past-text').textContent = data.lastCoachMessage;
+        document.getElementById('past-section').style.display = 'block';
+        document.getElementById('streak-label').textContent =
+          `🔥 ${data.streakWeeks || 1}週連続`;
+      } else {
+        document.getElementById('streak-label').textContent = '初回の内省';
+      }
+    }
+  } catch(e) {
+    document.getElementById('streak-label').textContent = '初回の内省';
+  }
+}
+
+// 内省を送信
+async function submitReflection() {
+  const q1 = document.getElementById('q1').value.trim();
+  const q2 = document.getElementById('q2').value.trim();
+  const q3 = document.getElementById('q3').value.trim();
+
+  if (!q1 && !q2 && !q3) {
+    showError('form-error', '少なくとも1つ記入してください。');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'コーチが読んでいます…';
+
+  document.getElementById('ai-response').style.display = 'block';
+  document.getElementById('loading-dots').style.display = 'flex';
+  document.getElementById('response-main').style.display = 'none';
+  document.getElementById('response-affirmation').style.display = 'none';
+  document.getElementById('saved-badge').style.display = 'none';
+
+  document.getElementById('ai-response').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const userInput = `【今週できたこと】\n${q1 || '（未記入）'}\n\n【難しかったこと】\n${q2 || '（未記入）'}\n\n【来週変えたいこと】\n${q3 || '（未記入）'}`;
+
+  const systemPrompt = `あなたは「週次内省コーチ」です。ユーザーの一週間の振り返りを受け取り、深く共感しながら洞察を与えてください。
+
+以下の構成で日本語で返してください：
+1. 今週の「できたこと」を温かく認める（2〜3文）
+2. 「難しかったこと」に対して、建設的な視点を一つ提案する（2〜3文）
+3. 「来週変えたいこと」を肯定し、具体的な小さな一歩を添える（2〜3文）
+4. 最後に「---」を挿入し、その後に一週間を締めくくる詩的な一文を書く
+
+全体を通して、批判せず、急かさず、静かに伴走するコーチのトーンで。合計300〜400文字を目安に。`;
+
+  try {
+    const res = await fetch(WORKER_URL + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: userEmail,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userInput }],
+        max_tokens: 600,
+        save_reflection: true,
+        reflection_input: userInput
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      showError('form-error', err.error === 'daily_limit_exceeded'
+        ? '本日の利用上限に達しました。明日またご利用ください。'
+        : 'エラーが発生しました。');
+      document.getElementById('ai-response').style.display = 'none';
+      btn.disabled = false;
+      btn.textContent = 'コーチに送る';
+      return;
+    }
+
+    const data = await res.json();
+    const fullText = data.content[0].text;
+
+    // --- で分割
+    const parts = fullText.split('---');
+    const mainText = parts[0].trim();
+    const affirmation = parts[1] ? parts[1].trim() : '';
+
+    document.getElementById('loading-dots').style.display = 'none';
+    document.getElementById('response-main').style.display = 'block';
+    document.getElementById('response-affirmation').style.display = affirmation ? 'block' : 'none';
+
+    // タイプライター風表示
+    await typeWrite('response-main', mainText);
+    if (affirmation) {
+      document.getElementById('response-affirmation').textContent = affirmation;
+    }
+    document.getElementById('saved-badge').style.display = 'inline-flex';
+
+    // フォームを非表示（再送信防止）
+    document.getElementById('form-card').style.display = 'none';
+    btn.disabled = false;
+
+  } catch(e) {
+    showError('form-error', 'エラーが発生しました。再度お試しください。');
+    document.getElementById('ai-response').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'コーチに送る';
+  }
+}
+
+// タイプライター
+async function typeWrite(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  for (let i = 0; i < text.length; i++) {
+    el.textContent += text[i];
+    if (i % 3 === 0) await sleep(18);
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<div class="error-msg">${msg}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 5000);
+}
+
+// Enterキーでログイン
+document.getElementById('email-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleLogin();
+});
+</script>
+</body>
+</html>

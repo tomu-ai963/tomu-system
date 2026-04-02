@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健診結果パーサー｜とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --bg2: #ede8dc;
+    --ink: #1c1a14;
+    --ink2: #4a4535;
+    --ink3: #7a7460;
+    --accent: #8b4513;
+    --accent2: #c4863a;
+    --green: #3a6b4a;
+    --amber: #c4863a;
+    --red: #8b2020;
+    --border: #d4cdb8;
+    --shadow: rgba(28,26,20,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 15% 20%, rgba(139,69,19,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 85% 80%, rgba(196,134,58,0.05) 0%, transparent 60%);
+  }
+
+  /* ===== ヘッダー ===== */
+  header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(245,242,235,0.85);
+    backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header-text h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.05em; }
+  .header-text p { font-size: 11px; color: var(--ink3); margin-top: 1px; font-family: 'DM Mono', monospace; }
+  .plan-badge {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--accent2);
+    border-radius: 20px;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+  }
+
+  /* ===== メインコンテナ ===== */
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* ===== ヒーロー ===== */
+  .hero {
+    text-align: center;
+    padding: 40px 0 36px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 2px 4px rgba(139,69,19,0.15));
+  }
+  .hero h2 {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .hero p {
+    font-size: 13px;
+    color: var(--ink2);
+    line-height: 1.9;
+  }
+
+  /* ===== 入力カード ===== */
+  .card {
+    background: rgba(255,255,250,0.6);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px var(--shadow);
+    animation: fadeUp 0.6s ease both;
+  }
+  .card-title {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em;
+    color: var(--ink3);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 20px; height: 1px;
+    background: var(--accent2);
+  }
+
+  /* ===== グリッド入力 ===== */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .input-group.full { grid-column: 1 / -1; }
+  label {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink2);
+    letter-spacing: 0.06em;
+  }
+  .unit { font-size: 10px; color: var(--ink3); }
+
+  input[type="number"], input[type="text"], select, textarea {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(196,134,58,0.12);
+  }
+  input::placeholder { color: var(--ink3); font-size: 12px; }
+  textarea { resize: none; line-height: 1.6; font-size: 12px; }
+
+  /* ===== 送信ボタン ===== */
+  .submit-btn {
+    width: 100%;
+    padding: 15px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .submit-btn:hover { background: #a0521c; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled {
+    background: var(--border);
+    color: var(--ink3);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ===== ローディング ===== */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .loading.show { display: block; }
+  .pulse-ring {
+    width: 52px; height: 52px;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--accent2);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 1.2s linear infinite;
+  }
+  .loading p { font-size: 13px; color: var(--ink2); line-height: 1.8; }
+
+  /* ===== 結果エリア ===== */
+  .result-area {
+    display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+  .result-area.show { display: block; }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .result-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .result-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink3);
+  }
+
+  /* サマリーバー */
+  .summary-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .summary-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .chip-normal  { background: rgba(58,107,74,0.1);  color: var(--green); border: 1px solid rgba(58,107,74,0.2); }
+  .chip-caution { background: rgba(196,134,58,0.12); color: var(--amber); border: 1px solid rgba(196,134,58,0.25); }
+  .chip-high    { background: rgba(139,32,32,0.1);   color: var(--red);   border: 1px solid rgba(139,32,32,0.2); }
+  .chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* 結果テキスト本文 */
+  .result-text {
+    background: rgba(255,255,250,0.7);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 20px;
+    font-size: 13px;
+    line-height: 2.1;
+    color: var(--ink);
+    white-space: pre-wrap;
+    font-family: 'Noto Serif JP', serif;
+  }
+
+  /* 免責事項 */
+  .disclaimer {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(139,69,19,0.04);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 6px 6px 0;
+    font-size: 11px;
+    color: var(--ink2);
+    line-height: 1.8;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* リセットボタン */
+  .reset-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--ink3);
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ===== エラー ===== */
+  .error-box {
+    display: none;
+    padding: 14px 16px;
+    background: rgba(139,32,32,0.06);
+    border: 1px solid rgba(139,32,32,0.2);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--red);
+    margin-bottom: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+  .error-box.show { display: block; }
+
+  /* ===== ログイン画面 ===== */
+  #login-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .login-card {
+    width: 100%; max-width: 380px;
+    background: rgba(255,255,250,0.8);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 28px;
+    text-align: center;
+    box-shadow: 0 8px 40px var(--shadow);
+  }
+  .login-card h2 { font-size: 20px; margin-bottom: 8px; }
+  .login-card p { font-size: 12px; color: var(--ink2); margin-bottom: 24px; line-height: 1.8; }
+  .login-input {
+    width: 100%;
+    padding: 11px 14px;
+    margin-bottom: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    text-align: left;
+  }
+  .login-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(196,134,58,0.12); }
+  .login-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-btn:hover { background: #a0521c; }
+  .login-error { font-size: 11px; color: var(--red); margin-top: 10px; min-height: 16px; font-family: 'DM Mono', monospace; }
+
+  /* ===== アニメ ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card:nth-child(1) { animation-delay: 0.1s; }
+  .card:nth-child(2) { animation-delay: 0.18s; }
+  .card:nth-child(3) { animation-delay: 0.26s; }
+</style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="login-screen">
+  <div class="login-card">
+    <span style="font-size:40px;display:block;margin-bottom:16px;">🩺</span>
+    <h2>健診結果パーサー</h2>
+    <p>メールアドレスを入力して<br>Standardプランでログインしてください</p>
+    <input class="login-input" type="email" id="login-email" placeholder="your@email.com" />
+    <button class="login-btn" onclick="doLogin()">ログイン</button>
+    <p class="login-error" id="login-error"></p>
+  </div>
+</div>
+
+<!-- メインUI -->
+<header>
+  <div class="logo-mark">🩺</div>
+  <div class="header-text">
+    <h1>健診結果パーサー</h1>
+    <p>kenshin-parser · tomu-system</p>
+  </div>
+  <span class="plan-badge" id="plan-badge">STANDARD</span>
+</header>
+
+<div class="container">
+
+  <div class="hero">
+    <span class="hero-icon">📋</span>
+    <h2>健診結果を、言葉で理解する</h2>
+    <p>検査数値を入力するだけで、AIが読み解き方と<br>日常生活への活かし方をやさしく解説します。</p>
+  </div>
+
+  <!-- エラーボックス -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- 入力フォーム -->
+  <div id="input-section">
+
+    <!-- 基本情報 -->
+    <div class="card">
+      <div class="card-title">基本情報</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label>年齢 <span class="unit">歳</span></label>
+          <input type="number" id="age" placeholder="40" min="1" max="120">
+        </div>
+        <div class="input-group">
+          <label>性別</label>
+          <select id="gender">
+            <option value="">選択</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 血圧・BMI -->
+    <div class="card">
+      <div class="card-title">血圧 / BMI</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label>収縮期血圧 <span class="unit">mmHg</span></label>
+          <input type="number" id="sbp" placeholder="120" min="50" max="250">
+        </div>
+        <div class="input-group">
+          <label>拡張期血圧 <span class="unit">mmHg</span></label>
+          <input type="number" id="dbp" placeholder="80" min="30" max="180">
+        </div>
+        <div class="input-group">
+          <label>BMI <span class="unit">kg/m²</span></label>
+          <input type="number" id="bmi" placeholder="22.0" step="0.1" min="10" max="60">
+        </div>
+        <div class="input-group">
+          <label>腹囲 <span class="unit">cm（任意）</span></label>
+          <input type="number" id="waist" placeholder="85" min="40" max="200">
+        </div>
+      </div>
+    </div>
+
+    <!-- 血液検査 -->
+    <div class="card">
+      <div class="card-title">血液検査</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label>血糖 <span class="unit">mg/dL</span></label>
+          <input type="number" id="glucose" placeholder="95" min="30" max="600">
+        </div>
+        <div class="input-group">
+          <label>HbA1c <span class="unit">%（任意）</span></label>
+          <input type="number" id="hba1c" placeholder="5.5" step="0.1" min="3" max="15">
+        </div>
+        <div class="input-group">
+          <label>総コレステロール <span class="unit">mg/dL</span></label>
+          <input type="number" id="tc" placeholder="200" min="50" max="500">
+        </div>
+        <div class="input-group">
+          <label>HDL-C <span class="unit">mg/dL</span></label>
+          <input type="number" id="hdl" placeholder="60" min="10" max="200">
+        </div>
+        <div class="input-group">
+          <label>LDL-C <span class="unit">mg/dL</span></label>
+          <input type="number" id="ldl" placeholder="120" min="30" max="400">
+        </div>
+        <div class="input-group">
+          <label>中性脂肪 <span class="unit">mg/dL</span></label>
+          <input type="number" id="tg" placeholder="100" min="20" max="2000">
+        </div>
+        <div class="input-group">
+          <label>AST(GOT) <span class="unit">U/L</span></label>
+          <input type="number" id="ast" placeholder="25" min="0" max="2000">
+        </div>
+        <div class="input-group">
+          <label>ALT(GPT) <span class="unit">U/L</span></label>
+          <input type="number" id="alt" placeholder="25" min="0" max="2000">
+        </div>
+        <div class="input-group">
+          <label>γ-GTP <span class="unit">U/L</span></label>
+          <input type="number" id="ggt" placeholder="30" min="0" max="2000">
+        </div>
+        <div class="input-group">
+          <label>尿酸 <span class="unit">mg/dL（任意）</span></label>
+          <input type="number" id="ua" placeholder="5.5" step="0.1" min="1" max="20">
+        </div>
+        <div class="input-group">
+          <label>クレアチニン <span class="unit">mg/dL（任意）</span></label>
+          <input type="number" id="cr" placeholder="0.9" step="0.01" min="0.1" max="20">
+        </div>
+        <div class="input-group">
+          <label>eGFR <span class="unit">（任意）</span></label>
+          <input type="number" id="egfr" placeholder="80" min="1" max="200">
+        </div>
+      </div>
+    </div>
+
+    <!-- 気になること -->
+    <div class="card">
+      <div class="card-title">気になること（任意）</div>
+      <div class="input-group">
+        <textarea id="concern" rows="3" placeholder="例：去年より中性脂肪が増えた、飲酒量が増えた気がする、疲れやすいなど…"></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="analyze()">
+      🔍　健診結果を解析する
+    </button>
+
+  </div><!-- /input-section -->
+
+  <!-- ローディング -->
+  <div class="loading" id="loading">
+    <div class="pulse-ring"></div>
+    <p>AIが検査数値を読み解いています…<br>少々お待ちください</p>
+  </div>
+
+  <!-- 結果表示 -->
+  <div class="result-area" id="result-area">
+    <div class="result-header">
+      <h3>解析レポート</h3>
+      <span class="result-date" id="result-date"></span>
+    </div>
+    <div class="summary-bar" id="summary-bar"></div>
+    <div class="result-text" id="result-text"></div>
+    <div class="disclaimer">
+      ⚠️ このレポートはAIによる参考情報です。医療診断ではありません。<br>
+      気になる数値・症状がある場合は必ず医師にご相談ください。
+    </div>
+    <button class="reset-btn" onclick="resetForm()">← 入力に戻る</button>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ===== 設定 =====
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev";
+let userEmail = "";
+
+// ===== ログイン =====
+async function doLogin() {
+  const email = document.getElementById("login-email").value.trim();
+  const errEl = document.getElementById("login-error");
+  errEl.textContent = "";
+
+  if (!email || !email.includes("@")) {
+    errEl.textContent = "メールアドレスを正しく入力してください";
+    return;
+  }
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appType: "ping", input: "ping", email })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      if (!["standard", "full"].includes(data.plan)) {
+        errEl.textContent = "このアプリはStandard以上のプランが必要です";
+        return;
+      }
+      userEmail = email;
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("plan-badge").textContent = data.plan.toUpperCase();
+    } else {
+      const msg = {
+        login_required: "メールアドレスが未入力です",
+        subscription_required: "有効なサブスクリプションが見つかりません",
+        plan_upgrade_required: "Standardプラン以上が必要です",
+      };
+      errEl.textContent = msg[data.error] || "ログインに失敗しました";
+    }
+  } catch (e) {
+    errEl.textContent = "接続エラー。しばらくしてから再試行してください";
+  }
+}
+
+// ===== Enter でログイン =====
+document.getElementById("login-email").addEventListener("keydown", e => {
+  if (e.key === "Enter") doLogin();
+});
+
+// ===== 解析実行 =====
+async function analyze() {
+  const errBox = document.getElementById("error-box");
+  errBox.classList.remove("show");
+
+  // 値収集
+  const f = id => document.getElementById(id).value;
+  const age     = f("age");
+  const gender  = f("gender");
+  const sbp     = f("sbp");
+  const dbp     = f("dbp");
+  const bmi     = f("bmi");
+  const waist   = f("waist");
+  const glucose = f("glucose");
+  const hba1c   = f("hba1c");
+  const tc      = f("tc");
+  const hdl     = f("hdl");
+  const ldl     = f("ldl");
+  const tg      = f("tg");
+  const ast     = f("ast");
+  const alt     = f("alt");
+  const ggt     = f("ggt");
+  const ua      = f("ua");
+  const cr      = f("cr");
+  const egfr    = f("egfr");
+  const concern = f("concern");
+
+  // 最低限チェック
+  if (!age || !gender) {
+    showError("年齢と性別を入力してください");
+    return;
+  }
+  if (!sbp && !glucose && !tc) {
+    showError("血圧、血糖、コレステロールのいずれかを入力してください");
+    return;
+  }
+
+  // UI切替
+  document.getElementById("input-section").style.display = "none";
+  document.getElementById("loading").classList.add("show");
+  document.getElementById("submit-btn").disabled = true;
+
+  // プロンプト構築
+  const lines = [`【基本情報】年齢:${age}歳 性別:${gender}`];
+  if (sbp || dbp) lines.push(`【血圧】収縮期:${sbp||"--"} / 拡張期:${dbp||"--"} mmHg`);
+  if (bmi)   lines.push(`【BMI】${bmi} kg/m²`);
+  if (waist) lines.push(`【腹囲】${waist} cm`);
+  if (glucose) lines.push(`【血糖】${glucose} mg/dL`);
+  if (hba1c)   lines.push(`【HbA1c】${hba1c} %`);
+  if (tc)  lines.push(`【総コレステロール】${tc} mg/dL`);
+  if (hdl) lines.push(`【HDL-C】${hdl} mg/dL`);
+  if (ldl) lines.push(`【LDL-C】${ldl} mg/dL`);
+  if (tg)  lines.push(`【中性脂肪】${tg} mg/dL`);
+  if (ast) lines.push(`【AST(GOT)】${ast} U/L`);
+  if (alt) lines.push(`【ALT(GPT)】${alt} U/L`);
+  if (ggt) lines.push(`【γ-GTP】${ggt} U/L`);
+  if (ua)  lines.push(`【尿酸】${ua} mg/dL`);
+  if (cr)  lines.push(`【クレアチニン】${cr} mg/dL`);
+  if (egfr) lines.push(`【eGFR】${egfr}`);
+  if (concern) lines.push(`【気になること】${concern}`);
+
+  const userInput = lines.join("\n");
+
+  const system = `あなたは「健診結果パーサー」です。ユーザーが入力した健康診断の検査数値を分析し、以下の構成でやさしく解説してください。
+
+1. **全体サマリー（2〜3文）** — 全体的な健康状態を端的に説明
+2. **各項目の読み方** — 入力された数値ごとに基準値と照らし合わせて説明（要注意項目は🔴、少し注意は🟡、良好は🟢で始める）
+3. **特に気をつけること（1〜3点）** — 具体的な生活習慣アドバイス
+4. **ポジティブな点** — 良好な数値や継続すべき習慣を1点以上
+
+【重要な注意事項】
+- 「〜の疑いがあります」「〜病です」などの医療診断は行わない
+- 「医師にご相談ください」を適切に含める
+- 専門用語には必ず平易な補足を添える
+- 全体で600〜800文字程度`;
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        system: system,
+        messages: [{ role: "user", content: userInput }],
+        max_tokens: 1200
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = {
+        login_required: "ログインが必要です",
+        subscription_required: "有効なサブスクリプションがありません",
+        plan_upgrade_required: "Standardプラン以上が必要です",
+        daily_limit_exceeded: "本日の利用上限に達しました（明日リセットされます）"
+      };
+      showError(msg[data.error] || `エラー: ${data.error}`);
+      resetUI();
+      return;
+    }
+
+    const text = (data.content && data.content[0]) ? data.content[0].text : "";
+    showResult(text, userInput);
+
+  } catch (e) {
+    showError("通信エラーが発生しました。しばらくしてから再試行してください");
+    resetUI();
+  }
+}
+
+// ===== 結果表示 =====
+function showResult(text, inputSummary) {
+  document.getElementById("loading").classList.remove("show");
+
+  // サマリーバー生成
+  const greenCount = (text.match(/🟢/g) || []).length;
+  const yellowCount = (text.match(/🟡/g) || []).length;
+  const redCount = (text.match(/🔴/g) || []).length;
+
+  const bar = document.getElementById("summary-bar");
+  bar.innerHTML = "";
+  if (greenCount > 0) bar.innerHTML += `<span class="summary-chip chip-normal"><span class="chip-dot"></span>良好 ${greenCount}項目</span>`;
+  if (yellowCount > 0) bar.innerHTML += `<span class="summary-chip chip-caution"><span class="chip-dot"></span>注意 ${yellowCount}項目</span>`;
+  if (redCount > 0) bar.innerHTML += `<span class="summary-chip chip-high"><span class="chip-dot"></span>要確認 ${redCount}項目</span>`;
+
+  document.getElementById("result-text").textContent = text;
+  document.getElementById("result-date").textContent = new Date().toLocaleDateString("ja-JP");
+  document.getElementById("result-area").classList.add("show");
+}
+
+// ===== リセット =====
+function resetForm() {
+  document.getElementById("result-area").classList.remove("show");
+  document.getElementById("input-section").style.display = "block";
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("error-box").classList.remove("show");
+}
+
+function resetUI() {
+  document.getElementById("loading").classList.remove("show");
+  document.getElementById("input-section").style.display = "block";
+  document.getElementById("submit-btn").disabled = false;
+}
+
+function showError(msg) {
+  const el = document.getElementById("error-box");
+  el.textContent = "⚠️ " + msg;
+  el.classList.add("show");
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+</script>
+</body>
+</html>
