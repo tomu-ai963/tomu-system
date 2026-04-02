@@ -1,6 +1,7 @@
 /**
- * tomu-login.js — とむSYSTEM 共通認証モジュール v1.1
+ * tomu-login.js — とむSYSTEM 共通認証モジュール v1.2
  * 使い方: <script src="../tomu-login.js"></script> を</body>直前に追加
+ * Standardアプリは直前に <script>window.TOMU_REQUIRED_PLAN = 'standard';</script> を追加
  * 各アプリのfetch呼び出しでemailを渡すには TomuAuth.getEmail() を使う
  * プラン取得: TomuAuth.getPlan() → "light" | "standard" | "full" | null
  */
@@ -9,17 +10,24 @@
   const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/';
   const STORAGE_KEY = 'tomu_email';
   const PLAN_KEY = 'tomu_plan';
+  const REQUIRED_PLAN = window.TOMU_REQUIRED_PLAN || 'light';
+
+  const PLAN_RANK = { light: 1, standard: 2, full: 3 };
+
+  function planMeetsRequirement(userPlan, required) {
+    return (PLAN_RANK[userPlan] || 0) >= (PLAN_RANK[required] || 1);
+  }
+
   const STRIPE_LINKS = {
     light:    'https://buy.stripe.com/3cI00i8nQf5Sd1c3T58Zq01',
     standard: 'https://buy.stripe.com/8x214mcE6f5S2my1KX8Zq02',
     full:     'https://buy.stripe.com/3cIcN4dIag9W2my4X98Zq03',
   };
 
-  // プランの公開状態（falseはグレーアウト）
-  const PLAN_AVAILABLE = {
-    light:    true,
-    standard: false, // 近日公開
-    full:     false, // 近日公開
+  const PLAN_LABELS = {
+    light:    { name: 'Light — 全10アプリ',    price: '¥480/月' },
+    standard: { name: 'Standard — 全20アプリ', price: '¥980/月' },
+    full:     { name: 'Full — 完全無制限',      price: '¥1,480/月' },
   };
 
   // ============================================================
@@ -27,7 +35,6 @@
   // ============================================================
   const style = document.createElement('style');
   style.textContent = `
-    /* ===== とむSYSTEM ログインオーバーレイ ===== */
     #tomu-auth-overlay {
       display: none;
       position: fixed;
@@ -53,7 +60,6 @@
       box-shadow: 0 32px 80px rgba(26,22,18,0.18);
       animation: tomuModalIn 0.3s cubic-bezier(0.16,1,0.3,1);
     }
-
     @keyframes tomuModalIn {
       from { opacity:0; transform: translateY(16px) scale(0.97); }
       to   { opacity:1; transform: translateY(0) scale(1); }
@@ -79,14 +85,12 @@
       margin-bottom: 8px;
       line-height: 1.3;
     }
-
     #tomu-auth-modal .tomu-modal-sub {
       font-size: 0.78rem;
       color: #8a7e72;
       line-height: 1.8;
       margin-bottom: 32px;
     }
-
     #tomu-auth-modal label {
       display: block;
       font-size: 0.68rem;
@@ -95,7 +99,6 @@
       color: #8a7e72;
       margin-bottom: 8px;
     }
-
     #tomu-auth-modal input[type="email"] {
       width: 100%;
       padding: 14px 16px;
@@ -131,19 +134,14 @@
     #tomu-auth-btn:hover { background: #2e2820; }
     #tomu-auth-btn:active { transform: scale(0.99); }
     #tomu-auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
     #tomu-auth-btn .tomu-btn-loading {
-      display: none;
-      gap: 4px;
-      justify-content: center;
-      align-items: center;
+      display: none; gap: 4px;
+      justify-content: center; align-items: center;
     }
     #tomu-auth-btn.loading .tomu-btn-text { display: none; }
     #tomu-auth-btn.loading .tomu-btn-loading { display: flex; }
-
     #tomu-auth-btn .tomu-btn-loading span {
-      width: 5px; height: 5px;
-      border-radius: 50%;
+      width: 5px; height: 5px; border-radius: 50%;
       background: #f7f3ee;
       animation: tomuDot 1.2s ease-in-out infinite;
     }
@@ -167,7 +165,7 @@
     }
     #tomu-auth-error.visible { display: block; }
 
-    /* 決済案内パネル */
+    /* プランアップグレード案内 */
     #tomu-pricing-panel {
       display: none;
       margin-top: 24px;
@@ -175,7 +173,6 @@
       border-top: 1px solid #ddd5c8;
     }
     #tomu-pricing-panel.visible { display: block; }
-
     #tomu-pricing-panel .tomu-pricing-title {
       font-size: 0.7rem;
       letter-spacing: 0.2em;
@@ -184,7 +181,6 @@
       margin-bottom: 12px;
       text-align: center;
     }
-
     .tomu-plan-btn {
       display: flex;
       align-items: center;
@@ -206,29 +202,19 @@
     }
     .tomu-plan-btn:last-child { margin-bottom: 0; }
     .tomu-plan-btn:hover:not(.tomu-plan-disabled) { border-color: #b87333; background: #fdf8f3; }
+    .tomu-plan-btn.tomu-plan-required { border-color: #b87333; background: #fdf8f3; }
     .tomu-plan-btn .tomu-plan-name { font-weight: 400; letter-spacing: 0.05em; }
     .tomu-plan-btn .tomu-plan-price { color: #b87333; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1rem; }
-
-    /* グレーアウト（近日公開）プラン */
     .tomu-plan-disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      pointer-events: none;
-      background: #f0ece7;
+      opacity: 0.4; cursor: not-allowed; pointer-events: none; background: #f0ece7;
     }
     .tomu-plan-disabled .tomu-plan-price { color: #aaa; }
-    .tomu-plan-coming {
-      font-size: 0.65rem;
-      color: #aaa;
-      letter-spacing: 0.1em;
-    }
 
     /* ログイン済みバッジ */
     #tomu-user-badge {
       display: none;
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 20px; right: 20px;
       z-index: 9000;
       background: #f7f3ee;
       border: 1px solid #ddd5c8;
@@ -247,29 +233,16 @@
     #tomu-user-badge.active { display: flex; }
     #tomu-user-badge:hover { border-color: #b87333; }
     #tomu-user-badge .tomu-badge-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #7a9e7e;
-      flex-shrink: 0;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #7a9e7e; flex-shrink: 0;
     }
 
-    /* アプリコンテンツのブロック */
-    #tomu-app-blocked {
-      display: none;
-      pointer-events: none;
-      filter: blur(3px);
-      opacity: 0.4;
-      user-select: none;
-      transition: all .3s;
-    }
-    body.tomu-locked #tomu-app-blocked { display: block; }
     body.tomu-locked .tomu-lockable {
       pointer-events: none;
       filter: blur(3px);
       opacity: 0.4;
       user-select: none;
     }
-
     @media (max-width: 480px) {
       #tomu-auth-modal { padding: 36px 24px 32px; }
     }
@@ -295,18 +268,7 @@
       <div id="tomu-auth-error"></div>
       <div id="tomu-pricing-panel">
         <p class="tomu-pricing-title">プランを選んで始める</p>
-        <a class="tomu-plan-btn" id="tomu-plan-light" href="${STRIPE_LINKS.light}" target="_blank" rel="noopener">
-          <span class="tomu-plan-name">Light — 全10アプリ</span>
-          <span class="tomu-plan-price">¥480/月</span>
-        </a>
-        <div class="tomu-plan-btn tomu-plan-disabled" id="tomu-plan-standard">
-          <span class="tomu-plan-name">Standard</span>
-          <span class="tomu-plan-coming">近日公開 / ¥980/月</span>
-        </div>
-        <div class="tomu-plan-btn tomu-plan-disabled" id="tomu-plan-full">
-          <span class="tomu-plan-name">Full</span>
-          <span class="tomu-plan-coming">近日公開 / ¥1,480/月</span>
-        </div>
+        <div id="tomu-plan-buttons"></div>
       </div>
     </div>
   `;
@@ -319,38 +281,49 @@
   document.body.appendChild(badge);
 
   // ============================================================
+  // プランボタンを動的生成（必要プラン以上を強調）
+  // ============================================================
+  function renderPlanButtons(email) {
+    const container = document.getElementById('tomu-plan-buttons');
+    container.innerHTML = '';
+    ['light', 'standard', 'full'].forEach(plan => {
+      const meetsReq = planMeetsRequirement(plan, REQUIRED_PLAN);
+      const label = PLAN_LABELS[plan];
+      if (meetsReq) {
+        const a = document.createElement('a');
+        a.className = 'tomu-plan-btn' + (plan === REQUIRED_PLAN ? ' tomu-plan-required' : '');
+        a.href = `${STRIPE_LINKS[plan]}?prefilled_email=${encodeURIComponent(email)}`;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.innerHTML = `<span class="tomu-plan-name">${label.name}</span><span class="tomu-plan-price">${label.price}</span>`;
+        container.appendChild(a);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'tomu-plan-btn tomu-plan-disabled';
+        div.innerHTML = `<span class="tomu-plan-name">${label.name}</span><span class="tomu-plan-price">${label.price}</span>`;
+        container.appendChild(div);
+      }
+    });
+  }
+
+  // ============================================================
   // ロジック
   // ============================================================
   const TomuAuth = {
     _email: null,
     _plan: null,
 
-    getEmail() {
-      return this._email || localStorage.getItem(STORAGE_KEY) || null;
-    },
+    getEmail() { return this._email || localStorage.getItem(STORAGE_KEY) || null; },
+    getPlan()  { return this._plan  || localStorage.getItem(PLAN_KEY)    || null; },
 
-    getPlan() {
-      return this._plan || localStorage.getItem(PLAN_KEY) || null;
-    },
-
-    _setEmail(email) {
-      this._email = email;
-      localStorage.setItem(STORAGE_KEY, email);
-    },
-
-    _setPlan(plan) {
-      this._plan = plan;
-      localStorage.setItem(PLAN_KEY, plan);
-    },
-
+    _setEmail(email) { this._email = email; localStorage.setItem(STORAGE_KEY, email); },
+    _setPlan(plan)   { this._plan  = plan;  localStorage.setItem(PLAN_KEY, plan); },
     _clear() {
-      this._email = null;
-      this._plan = null;
+      this._email = null; this._plan = null;
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(PLAN_KEY);
     },
 
-    // Worker に email を送ってサブスク確認。planも返ってくる。
     async _checkSubscription(email) {
       const res = await fetch(WORKER_URL, {
         method: 'POST',
@@ -360,7 +333,6 @@
       const data = await res.json().catch(() => ({}));
       if (res.status === 403 && data.error === 'subscription_required') return { status: 'unsubscribed' };
       if (res.status === 401) return { status: 'no_email' };
-      // planをlocalStorageに保存
       if (data.plan) this._setPlan(data.plan);
       return { status: 'ok', plan: data.plan };
     },
@@ -376,9 +348,10 @@
       document.body.classList.remove('tomu-locked');
     },
 
-    showBadge(email) {
+    showBadge(email, plan) {
       const label = document.getElementById('tomu-badge-label');
-      if (label) label.textContent = email;
+      const planText = plan ? ` | ${plan.toUpperCase()}プラン` : '';
+      if (label) label.textContent = email + planText;
       badge.classList.add('active');
     },
 
@@ -387,14 +360,34 @@
       if (saved) {
         const result = await this._checkSubscription(saved);
         if (result.status === 'ok') {
-          this._email = saved;
-          this.showBadge(saved);
-          return;
+          // プランが要件を満たすか確認
+          if (planMeetsRequirement(result.plan, REQUIRED_PLAN)) {
+            this._email = saved;
+            this.showBadge(saved, result.plan);
+            return;
+          } else {
+            // プラン不足 → オーバーレイ表示（キャッシュはクリアしない）
+            this._showPlanUpgradeError(saved, result.plan);
+            this.showOverlay();
+            return;
+          }
         } else {
           this._clear();
         }
       }
       this.showOverlay();
+    },
+
+    _showPlanUpgradeError(email, currentPlan) {
+      document.getElementById('tomu-modal-title').textContent = 'プランのアップグレードが\n必要です';
+      document.getElementById('tomu-modal-sub').textContent =
+        `このアプリは${REQUIRED_PLAN.charAt(0).toUpperCase() + REQUIRED_PLAN.slice(1)}プラン以上が必要です。\n現在のプラン: ${currentPlan.toUpperCase()}`;
+      document.getElementById('tomu-email-input').value = email;
+      const errorEl = document.getElementById('tomu-auth-error');
+      errorEl.textContent = `このアプリを使うには${REQUIRED_PLAN}プラン以上が必要です。`;
+      errorEl.classList.add('visible');
+      renderPlanButtons(email);
+      document.getElementById('tomu-pricing-panel').classList.add('visible');
     },
   };
 
@@ -408,7 +401,6 @@
     const pricingPanel = document.getElementById('tomu-pricing-panel');
     const email = emailInput.value.trim().toLowerCase();
 
-    // バリデーション
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errorEl.textContent = 'メールアドレスを正しく入力してください。';
       errorEl.classList.add('visible');
@@ -424,18 +416,22 @@
       const result = await TomuAuth._checkSubscription(email);
 
       if (result.status === 'ok') {
-        TomuAuth._setEmail(email);
-        TomuAuth.hideOverlay();
-        TomuAuth.showBadge(email);
-        document.dispatchEvent(new CustomEvent('tomu:unlocked', { detail: { email, plan: result.plan } }));
+        // プランが要件を満たすか確認
+        if (planMeetsRequirement(result.plan, REQUIRED_PLAN)) {
+          TomuAuth._setEmail(email);
+          TomuAuth.hideOverlay();
+          TomuAuth.showBadge(email, result.plan);
+          document.dispatchEvent(new CustomEvent('tomu:unlocked', { detail: { email, plan: result.plan } }));
+        } else {
+          // プラン不足
+          TomuAuth._showPlanUpgradeError(email, result.plan);
+        }
       } else if (result.status === 'unsubscribed') {
         document.getElementById('tomu-modal-title').textContent = 'サブスクリプションが\n必要です';
         document.getElementById('tomu-modal-sub').textContent =
           'このアプリを使用するにはサブスクリプションが必要です。\nプランを選んでご登録ください。';
+        renderPlanButtons(email);
         pricingPanel.classList.add('visible');
-        // LightプランのみStripeリンクにemailをプリフィル
-        const lightEl = document.getElementById('tomu-plan-light');
-        if (lightEl) lightEl.href = `${STRIPE_LINKS.light}?prefilled_email=${encodeURIComponent(email)}`;
         errorEl.textContent = 'このメールアドレスはまだ登録されていません。';
         errorEl.classList.add('visible');
       } else {
@@ -451,12 +447,10 @@
     }
   });
 
-  // Enterキー対応
   document.getElementById('tomu-email-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') document.getElementById('tomu-auth-btn').click();
   });
 
-  // バッジクリック → ログアウト確認
   badge.addEventListener('click', () => {
     if (confirm('ログアウトしますか？')) {
       TomuAuth._clear();
