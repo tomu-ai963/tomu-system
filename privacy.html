@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>プライバシーポリシー — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.8;
+  min-height: 100vh;
+}
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1.2rem 2rem;
+}
+.header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+}
+.header-logo span { color: var(--accent); }
+main {
+  max-width: 760px;
+  margin: 3rem auto;
+  padding: 0 1.5rem 4rem;
+}
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.06em;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--accent);
+}
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 2rem 0 0.6rem;
+  padding-left: 0.8rem;
+  border-left: 3px solid var(--accent);
+}
+p { font-size: 0.9rem; color: #3a3028; margin-bottom: 0.6rem; }
+ul { font-size: 0.9rem; color: #3a3028; padding-left: 1.4rem; margin-bottom: 0.6rem; }
+ul li { margin-bottom: 0.3rem; }
+.updated {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+.back-link {
+  display: inline-block;
+  margin-top: 2rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.back-link:hover { border-color: var(--accent); }
+footer {
+  background: var(--ink);
+  color: var(--muted);
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.8rem;
+}
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html" class="header-logo">とむ<span>SYSTEM</span></a>
+</header>
+<main>
+  <h1>プライバシーポリシー</h1>
+  <p class="updated">制定日：2026年4月</p>
+
+  <p>とむSYSTEM（以下「当サービス」）は、ユーザーの個人情報の取り扱いについて以下のとおり定めます。</p>
+
+  <h2>1. 収集する情報</h2>
+  <ul>
+    <li>メールアドレス</li>
+    <li>決済情報（クレジットカード情報はStripe社が管理し、当サービスは保持しません）</li>
+  </ul>
+
+  <h2>2. 利用目的</h2>
+  <ul>
+    <li>サービスの提供・管理</li>
+    <li>決済処理</li>
+    <li>お問い合わせ対応</li>
+  </ul>
+
+  <h2>3. 第三者への提供</h2>
+  <p>当サービスは、以下の場合を除き個人情報を第三者に提供しません。</p>
+  <ul>
+    <li><strong>Stripe, Inc.</strong>（決済処理） — <a href="https://stripe.com/jp/privacy" target="_blank" rel="noopener" style="color:var(--accent);">Stripeプライバシーポリシー</a></li>
+    <li><strong>Anthropic, PBC</strong>（AI機能の提供） — <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener" style="color:var(--accent);">Anthropicプライバシーポリシー</a></li>
+    <li>法令に基づき開示が必要な場合</li>
+  </ul>
+
+  <h2>4. 情報の管理</h2>
+  <p>収集した個人情報は、不正アクセス・紛失・改ざん等を防ぐため適切な安全管理措置を講じます。</p>
+
+  <h2>5. Cookieについて</h2>
+  <p>当サービスはCookieおよびlocalStorageをユーザー認証・サービス利用状況の把握に使用します。ブラウザの設定により無効化できますが、一部機能が利用できなくなる場合があります。</p>
+
+  <h2>6. お問い合わせ</h2>
+  <p>個人情報の取り扱いに関するお問い合わせは以下までご連絡ください。</p>
+  <p>運営者：[名前]<br>メールアドレス：<a href="mailto:Inverted.triangle.leef@gmail.com" style="color:var(--accent);">Inverted.triangle.leef@gmail.com</a></p>
+
+  <a href="index.html" class="back-link">← トップページに戻る</a>
+</main>
+<footer>© 2026 とむSYSTEM. All rights reserved.</footer>
+</body>
+</html>
