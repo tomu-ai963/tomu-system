@@ -606,7 +606,10 @@ footer {
   flex-wrap: wrap;
   gap: 20px;
 }
-@media(max-width:640px){ footer { padding: 32px 20px; flex-direction: column; text-align: center; } }
+@media(max-width:640px){
+  footer { padding: 32px 20px; flex-direction: column; text-align: center; }
+  .footer-links { flex-direction: column; gap: 14px; align-items: center; }
+}
 
 .footer-logo {
   font-family: 'Cormorant Garamond', serif;
@@ -622,7 +625,7 @@ footer {
   font-size: 0.68rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(247,243,238,.35);
+  color: rgba(247,243,238,.6);
   text-decoration: none;
   transition: color .2s;
 }
