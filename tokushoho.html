@@ -4,18 +4,20 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>特定商取引法に基づく表記 — とむSYSTEM</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
   --ink: #1a1612;
   --paper: #f7f3ee;
   --warm: #f0e8dc;
   --accent: #b87333;
+  --accent2: #7a9e7e;
   --muted: #8a7e72;
   --border: #ddd5c8;
   --surface: #ffffff;
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
 body {
   background: var(--paper);
   color: var(--ink);
@@ -24,31 +26,40 @@ body {
   line-height: 1.8;
   min-height: 100vh;
 }
-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 1.2rem 2rem;
+
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 48px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
 }
-.header-logo {
+.nav-logo {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
   color: var(--ink);
   text-decoration: none;
-  letter-spacing: 0.08em;
 }
-.header-logo span { color: var(--accent); }
+.nav-logo span { color: var(--accent); }
+@media(max-width:640px){ nav { padding: 16px 20px; } }
+
+/* MAIN */
 main {
   max-width: 760px;
-  margin: 3rem auto;
-  padding: 0 1.5rem 4rem;
+  margin: 0 auto;
+  padding: 120px 1.5rem 5rem;
 }
 h1 {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: 600;
   color: var(--ink);
   letter-spacing: 0.06em;
@@ -59,8 +70,8 @@ h1 {
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 2.5rem;
-  font-size: 0.9rem;
+  margin-bottom: 3rem;
+  font-size: 0.875rem;
 }
 th, td {
   padding: 1rem 1.2rem;
@@ -69,48 +80,64 @@ th, td {
   vertical-align: top;
 }
 th {
-  width: 35%;
+  width: 34%;
   background: var(--warm);
   font-weight: 400;
   color: var(--muted);
-  white-space: nowrap;
+  letter-spacing: 0.04em;
 }
 td { background: var(--surface); }
 .price-list { margin: 0; padding: 0; list-style: none; }
-.price-list li { padding: 0.2rem 0; }
-.price-label {
+.price-list li { padding: 0.25rem 0; display: flex; align-items: baseline; gap: 0.6rem; }
+.price-badge {
   display: inline-block;
   background: var(--accent);
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.5rem;
+  color: var(--paper);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.55rem;
   border-radius: 3px;
-  margin-right: 0.5rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 .back-link {
-  display: inline-block;
-  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   color: var(--accent);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
   border-bottom: 1px solid transparent;
   transition: border-color .2s;
 }
 .back-link:hover { border-color: var(--accent); }
+
+/* FOOTER */
 footer {
   background: var(--ink);
-  color: var(--muted);
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding: 40px 48px;
   text-align: center;
-  padding: 2rem;
-  font-size: 0.8rem;
+}
+.footer-copy {
+  font-size: 0.65rem;
+  color: rgba(247,243,238,.25);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+@media(max-width:640px){
+  main { padding-top: 90px; }
+  footer { padding: 32px 20px; }
+  th { width: 40%; }
 }
 </style>
 </head>
 <body>
-<header>
-  <a href="index.html" class="header-logo">とむ<span>SYSTEM</span></a>
-</header>
+
+<nav>
+  <a href="index.html" class="nav-logo">とむ<span>SYSTEM</span></a>
+</nav>
+
 <main>
   <h1>特定商取引法に基づく表記</h1>
   <table>
@@ -130,9 +157,9 @@ footer {
       <th>販売価格</th>
       <td>
         <ul class="price-list">
-          <li><span class="price-label">ライト</span>月額 480円（税込）</li>
-          <li><span class="price-label">スタンダード</span>月額 980円（税込）</li>
-          <li><span class="price-label">フル</span>月額 1,480円（税込）</li>
+          <li><span class="price-badge">ライト</span>月額 480円（税込）</li>
+          <li><span class="price-badge">スタンダード</span>月額 980円（税込）</li>
+          <li><span class="price-badge">フル</span>月額 1,480円（税込）</li>
         </ul>
       </td>
     </tr>
@@ -151,6 +178,10 @@ footer {
   </table>
   <a href="index.html" class="back-link">← トップページに戻る</a>
 </main>
-<footer>© 2026 とむSYSTEM. All rights reserved.</footer>
+
+<footer>
+  <div class="footer-copy">© 2026 とむSYSTEM. All rights reserved.</div>
+</footer>
+
 </body>
 </html>
