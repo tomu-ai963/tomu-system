@@ -6,7 +6,6 @@
 <title>習い事コンパス | とむSYSTEM</title>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Kosugi+Maru&display=swap" rel="stylesheet">
 <script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
-<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
 <style>
   :root {
@@ -67,48 +66,8 @@
     opacity: 0.7;
   }
 
-  /* ── ログイン ── */
-  #login-area {
-    width: 100%;
-    max-width: 400px;
-    margin: 40px auto;
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 32px 28px;
-    box-shadow: 0 8px 32px rgba(0,100,200,0.10);
-    text-align: center;
-  }
-  #login-area p { font-size: 0.9rem; color: var(--ink2); margin-bottom: 16px; }
-  .input-field {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid var(--sky2);
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color .2s;
-    margin-bottom: 12px;
-  }
-  .input-field:focus { border-color: var(--green); }
-  .btn-primary {
-    width: 100%;
-    padding: 13px;
-    background: linear-gradient(135deg, var(--green), var(--green2));
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform .15s, box-shadow .15s;
-  }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(6,214,160,.35); }
-  .btn-primary:active { transform: translateY(0); }
-
   /* ── チャットエリア ── */
-  #app-area { display: none; width: 100%; max-width: 680px; padding: 0 16px 32px; }
+  #app-area { width: 100%; max-width: 680px; padding: 0 16px 32px; }
 
   .user-badge {
     text-align: right;
@@ -321,14 +280,6 @@
   <p class="subtitle">お子さんにぴったりの習い事を一緒に見つけましょう</p>
 </header>
 
-<!-- ログインエリア -->
-<div id="login-area">
-  <p>Standardプランのメールアドレスでログインしてください</p>
-  <input type="email" id="email-input" class="input-field" placeholder="your@email.com">
-  <button class="btn-primary" onclick="doLogin()">ログインして始める</button>
-  <div id="login-error" class="error-msg"></div>
-</div>
-
 <!-- アプリ本体 -->
 <div id="app-area">
   <div class="user-badge" id="user-badge"></div>
@@ -364,7 +315,6 @@
 const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat";
 
 // ── 会話ステート ──
-let userEmail = "";
 let messages  = [];   // APIに渡す会話履歴
 let step      = 0;    // 0〜4 の質問ステップ
 let answers   = {};   // 集めた回答
@@ -398,38 +348,11 @@ const STEPS = [
   },
 ];
 
-// ── ログイン ──
-async function doLogin() {
-  const email = document.getElementById("email-input").value.trim();
-  if (!email) return;
-  const err = document.getElementById("login-error");
-  err.textContent = "";
-  try {
-    const r = await fetch("https://orange-sound-354b.inverted-triangle-leef.workers.dev/", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({appType:"ping", input:"ping", email})
-    });
-    const d = await r.json();
-    if (!r.ok || d.error) {
-      err.textContent = d.error === "subscription_required"
-        ? "Standardプラン以上のご登録が必要です"
-        : "メールアドレスを確認してください";
-      return;
-    }
-    if (!["standard","full"].includes(d.plan)) {
-      err.textContent = "このアプリはStandard/Fullプラン専用です";
-      return;
-    }
-    userEmail = email;
-    document.getElementById("login-area").style.display = "none";
-    document.getElementById("app-area").style.display = "block";
-    document.getElementById("user-badge").textContent = `✉️ ${email}`;
-    startChat();
-  } catch(e) {
-    err.textContent = "通信エラーが発生しました";
-  }
-}
+// ── 認証後にチャット開始 ──
+document.addEventListener('tomu:unlocked', e => {
+  document.getElementById("user-badge").textContent = `✉️ ${e.detail.email}`;
+  startChat();
+});
 
 // ── チャット開始 ──
 function startChat() {
@@ -586,7 +509,7 @@ async function generateResult() {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
-        email: userEmail,
+        email: window.TomuAuth.getEmail(),
         system,
         messages: [{ role: "user", content: userSummary }],
         max_tokens: 1200

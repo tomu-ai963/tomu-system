@@ -117,11 +117,6 @@
     border-radius: 20px;
   }
 
-  /* ログインセクション */
-  #login-section {
-    animation: fadeUp 0.8s 0.3s ease both;
-  }
-
   .card {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(139,149,184,0.2);
@@ -151,26 +146,6 @@
     opacity: 0.7;
   }
 
-  input[type="email"] {
-    width: 100%;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(139,149,184,0.3);
-    border-radius: 10px;
-    padding: 13px 16px;
-    color: var(--paper);
-    font-family: 'Zen Kaku Gothic New', sans-serif;
-    font-size: 0.9rem;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  input[type="email"]:focus {
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px var(--glow);
-  }
-
-  input[type="email"]::placeholder { color: var(--fog); }
-
   .btn-primary {
     width: 100%;
     margin-top: 14px;
@@ -191,10 +166,8 @@
   .btn-primary:active { transform: translateY(0); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-  /* メインセクション（非表示 → 表示） */
-  #main-section { display: none; }
-  #main-section.visible {
-    display: block;
+  /* メインセクション */
+  #main-section {
     animation: fadeUp 0.6s ease both;
   }
 
@@ -423,16 +396,6 @@
     <span class="week-streak" id="streak-label">読み込み中…</span>
   </div>
 
-  <!-- ログインセクション -->
-  <div id="login-section">
-    <div class="card">
-      <div class="card-title">メールアドレスを入力</div>
-      <input type="email" id="email-input" placeholder="your@email.com" autocomplete="email">
-      <button class="btn-primary" id="login-btn" onclick="handleLogin()">内省を始める</button>
-      <div id="login-error"></div>
-    </div>
-  </div>
-
   <!-- メインセクション -->
   <div id="main-section">
 
@@ -495,14 +458,11 @@
   <footer>とむSYSTEM — Standard Plan</footer>
 </div>
 
-<!-- tomu-login.js -->
-<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
 
 <script>
 const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
-let userEmail = '';
 
 // 週ラベル計算
 function getWeekLabel() {
@@ -514,50 +474,8 @@ function getWeekLabel() {
 
 document.getElementById('week-label').textContent = getWeekLabel();
 
-// ログイン処理
-async function handleLogin() {
-  const email = document.getElementById('email-input').value.trim();
-  if (!email) return;
-
-  const btn = document.getElementById('login-btn');
-  btn.disabled = true;
-  btn.textContent = '確認中…';
-
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appType: 'ping', input: 'ping', email })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      showError('login-error', data.error === 'subscription_required'
-        ? 'Standardプラン以上が必要です。'
-        : 'メールアドレスを確認してください。');
-      btn.disabled = false;
-      btn.textContent = '内省を始める';
-      return;
-    }
-
-    if (!['standard','full'].includes(data.plan)) {
-      showError('login-error', 'このアプリはStandard/Fullプラン専用です。');
-      btn.disabled = false;
-      btn.textContent = '内省を始める';
-      return;
-    }
-
-    userEmail = email;
-    document.getElementById('login-section').style.display = 'none';
-    document.getElementById('main-section').classList.add('visible');
-    await loadPastReflection();
-
-  } catch(e) {
-    showError('login-error', 'エラーが発生しました。再度お試しください。');
-    btn.disabled = false;
-    btn.textContent = '内省を始める';
-  }
-}
+// 認証後に過去の内省を取得
+document.addEventListener('tomu:unlocked', loadPastReflection);
 
 // 過去の内省を取得（KVから）
 async function loadPastReflection() {
@@ -565,7 +483,7 @@ async function loadPastReflection() {
     const res = await fetch(WORKER_URL + '/api/reflection/load', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userEmail })
+      body: JSON.stringify({ email: window.TomuAuth.getEmail() })
     });
     if (res.ok) {
       const data = await res.json();
@@ -623,7 +541,7 @@ async function submitReflection() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: userEmail,
+        email: window.TomuAuth.getEmail(),
         system: systemPrompt,
         messages: [{ role: 'user', content: userInput }],
         max_tokens: 600,
@@ -692,10 +610,6 @@ function showError(id, msg) {
   setTimeout(() => { el.innerHTML = ''; }, 5000);
 }
 
-// Enterキーでログイン
-document.getElementById('email-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') handleLogin();
-});
 </script>
 </body>
 </html>

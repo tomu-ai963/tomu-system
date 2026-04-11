@@ -306,56 +306,6 @@
   }
   .error-box.show { display: block; }
 
-  /* ===== ログイン画面 ===== */
-  #login-screen {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    z-index: 500;
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-  }
-  .login-card {
-    width: 100%; max-width: 380px;
-    background: rgba(255,255,250,0.8);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 36px 28px;
-    text-align: center;
-    box-shadow: 0 8px 40px var(--shadow);
-  }
-  .login-card h2 { font-size: 20px; margin-bottom: 8px; }
-  .login-card p { font-size: 12px; color: var(--ink2); margin-bottom: 24px; line-height: 1.8; }
-  .login-input {
-    width: 100%;
-    padding: 11px 14px;
-    margin-bottom: 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--ink);
-    outline: none;
-    text-align: left;
-  }
-  .login-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(196,134,58,0.12); }
-  .login-btn {
-    width: 100%;
-    padding: 13px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Noto Serif JP', serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .login-btn:hover { background: #a0521c; }
-  .login-error { font-size: 11px; color: var(--red); margin-top: 10px; min-height: 16px; font-family: 'DM Mono', monospace; }
-
   /* ===== アニメ ===== */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(14px); }
@@ -369,18 +319,6 @@
 </style>
 </head>
 <body>
-
-<!-- ログイン画面 -->
-<div id="login-screen">
-  <div class="login-card">
-    <span style="font-size:40px;display:block;margin-bottom:16px;">🩺</span>
-    <h2>健診結果パーサー</h2>
-    <p>メールアドレスを入力して<br>Standardプランでログインしてください</p>
-    <input class="login-input" type="email" id="login-email" placeholder="your@email.com" />
-    <button class="login-btn" onclick="doLogin()">ログイン</button>
-    <p class="login-error" id="login-error"></p>
-  </div>
-</div>
 
 <!-- メインUI -->
 <header>
@@ -543,52 +481,6 @@
 <script>
 // ===== 設定 =====
 const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev";
-let userEmail = "";
-
-// ===== ログイン =====
-async function doLogin() {
-  const email = document.getElementById("login-email").value.trim();
-  const errEl = document.getElementById("login-error");
-  errEl.textContent = "";
-
-  if (!email || !email.includes("@")) {
-    errEl.textContent = "メールアドレスを正しく入力してください";
-    return;
-  }
-
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appType: "ping", input: "ping", email })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.ok) {
-      if (!["standard", "full"].includes(data.plan)) {
-        errEl.textContent = "このアプリはStandard以上のプランが必要です";
-        return;
-      }
-      userEmail = email;
-      document.getElementById("login-screen").style.display = "none";
-      document.getElementById("plan-badge").textContent = data.plan.toUpperCase();
-    } else {
-      const msg = {
-        login_required: "メールアドレスが未入力です",
-        subscription_required: "有効なサブスクリプションが見つかりません",
-        plan_upgrade_required: "Standardプラン以上が必要です",
-      };
-      errEl.textContent = msg[data.error] || "ログインに失敗しました";
-    }
-  } catch (e) {
-    errEl.textContent = "接続エラー。しばらくしてから再試行してください";
-  }
-}
-
-// ===== Enter でログイン =====
-document.getElementById("login-email").addEventListener("keydown", e => {
-  if (e.key === "Enter") doLogin();
-});
 
 // ===== 解析実行 =====
 async function analyze() {
@@ -671,7 +563,7 @@ async function analyze() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: userEmail,
+        email: window.TomuAuth.getEmail(),
         system: system,
         messages: [{ role: "user", content: userInput }],
         max_tokens: 1200

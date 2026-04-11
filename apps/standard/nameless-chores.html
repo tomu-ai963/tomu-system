@@ -43,86 +43,8 @@
     pointer-events: none; z-index: 0;
   }
 
-  /* ========== ログイン ========== */
-  #login-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    position: relative; z-index: 1;
-  }
-
-  .login-card {
-    background: var(--warm-white);
-    border: 1px solid var(--linen);
-    border-radius: 20px;
-    padding: 3rem 2.5rem;
-    max-width: 420px;
-    width: 100%;
-    box-shadow: 0 8px 40px var(--shadow);
-    text-align: center;
-  }
-
-  .login-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    display: block;
-  }
-
-  .login-card h1 {
-    font-family: 'Kaisei Opti', serif;
-    font-size: 1.6rem;
-    color: var(--bark);
-    margin-bottom: 0.5rem;
-  }
-
-  .login-card p {
-    font-size: 0.85rem;
-    color: var(--bark);
-    opacity: 0.7;
-    margin-bottom: 2rem;
-    line-height: 1.7;
-  }
-
-  .input-field {
-    width: 100%;
-    padding: 0.9rem 1.2rem;
-    border: 1.5px solid var(--linen);
-    border-radius: 12px;
-    font-size: 1rem;
-    font-family: inherit;
-    background: var(--cream);
-    color: var(--deep);
-    margin-bottom: 1rem;
-    transition: border-color 0.2s;
-    outline: none;
-  }
-
-  .input-field:focus { border-color: var(--clay); }
-
-  .btn-primary {
-    width: 100%;
-    padding: 1rem;
-    background: var(--clay);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-family: inherit;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.05em;
-  }
-
-  .btn-primary:hover { background: var(--bark); transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
   /* ========== メインアプリ ========== */
   #app-section {
-    display: none;
     position: relative; z-index: 1;
     max-width: 800px;
     margin: 0 auto;
@@ -531,18 +453,6 @@
 </head>
 <body>
 
-<!-- ログイン -->
-<section id="login-section">
-  <div class="login-card">
-    <span class="login-icon">🏠</span>
-    <h1>名もなき家事<br>分担リスト</h1>
-    <p>気づいた人だけが損をする、<br>あの「見えない家事」を見える化して<br>公平に分担しましょう。</p>
-    <input type="email" class="input-field" id="email-input" placeholder="メールアドレス" autocomplete="email">
-    <button class="btn-primary" id="login-btn">はじめる</button>
-    <div class="error-msg" id="login-error"></div>
-  </div>
-</section>
-
 <!-- メインアプリ -->
 <section id="app-section">
   <div class="app-header">
@@ -633,64 +543,14 @@ const BG_COLORS = {
   '−': 'var(--unassigned)'
 };
 
-let currentEmail = '';
-let currentPlan = '';
 let memberNames = {};
 let conversationHistory = [];
 
-// ========== ログイン ==========
-document.getElementById('login-btn').addEventListener('click', doLogin);
-document.getElementById('email-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
+// 認証後にバッジを更新
+document.addEventListener('tomu:unlocked', e => {
+  document.getElementById('user-email-display').textContent = e.detail.email;
+  document.getElementById('user-plan-display').textContent = e.detail.plan.toUpperCase() + ' プラン';
 });
-
-async function doLogin() {
-  const email = document.getElementById('email-input').value.trim();
-  const errEl = document.getElementById('login-error');
-  errEl.style.display = 'none';
-
-  if (!email || !email.includes('@')) {
-    showError(errEl, '正しいメールアドレスを入力してください。');
-    return;
-  }
-
-  const btn = document.getElementById('login-btn');
-  btn.disabled = true;
-  btn.textContent = '確認中…';
-
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appType: 'ping', input: 'ping', email })
-    });
-    const data = await res.json();
-
-    if (!res.ok || data.error) {
-      const msgs = {
-        login_required: 'ログインが必要です。',
-        subscription_required: 'サブスクリプションが必要です。',
-        plan_upgrade_required: 'Standardプラン以上が必要です。'
-      };
-      showError(errEl, msgs[data.error] || 'エラーが発生しました。');
-      btn.disabled = false;
-      btn.textContent = 'はじめる';
-      return;
-    }
-
-    currentEmail = email;
-    currentPlan = data.plan;
-    document.getElementById('user-email-display').textContent = email;
-    document.getElementById('user-plan-display').textContent = data.plan.toUpperCase() + ' プラン';
-    document.getElementById('login-section').style.display = 'none';
-    document.getElementById('app-section').style.display = 'block';
-
-  } catch (e) {
-    showError(errEl, '通信エラーが発生しました。');
-    btn.disabled = false;
-    btn.textContent = 'はじめる';
-  }
-}
 
 // ========== 家事リスト生成 ==========
 async function generateList() {
@@ -750,7 +610,7 @@ async function generateList() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: currentEmail,
+        email: window.TomuAuth.getEmail(),
         system,
         messages: conversationHistory,
         max_tokens: 1500

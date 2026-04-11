@@ -122,20 +122,6 @@
     font-family: 'BIZ UDPGothic', sans-serif;
   }
 
-  /* ===== ログイン状態表示 ===== */
-  #login-status {
-    position: fixed;
-    top: 12px;
-    right: 16px;
-    z-index: 100;
-    font-size: 11px;
-    color: #6b5a3e;
-    background: rgba(245,240,232,0.95);
-    padding: 4px 10px;
-    border: 1px solid rgba(184,150,12,0.3);
-    border-radius: 2px;
-  }
-
   /* ===== メイン ===== */
   main {
     position: relative;
@@ -143,69 +129,6 @@
     max-width: 680px;
     margin: 0 auto;
     padding: 28px 20px 60px 36px;
-  }
-
-  /* ===== ログインパネル ===== */
-  #login-panel {
-    background: var(--paper);
-    border: 1px solid rgba(184,150,12,0.4);
-    border-radius: 4px;
-    padding: 32px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #login-panel::before {
-    content: '申請';
-    position: absolute;
-    top: -8px;
-    right: 20px;
-    font-family: 'Zen Old Mincho', serif;
-    font-size: 64px;
-    color: rgba(184,150,12,0.06);
-    font-weight: 700;
-    letter-spacing: -2px;
-    user-select: none;
-  }
-
-  #login-panel h2 {
-    font-family: 'Zen Old Mincho', serif;
-    font-size: 17px;
-    margin-bottom: 8px;
-    color: var(--ink);
-    letter-spacing: 0.1em;
-  }
-
-  #login-panel p {
-    font-size: 12px;
-    color: #6b5a3e;
-    margin-bottom: 20px;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-
-  input[type="email"] {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid rgba(184,150,12,0.5);
-    background: white;
-    font-family: 'BIZ UDPGothic', sans-serif;
-    font-size: 14px;
-    color: var(--ink);
-    border-radius: 2px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  input[type="email"]:focus {
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(184,150,12,0.1);
   }
 
   /* ===== ボタン共通 ===== */
@@ -267,7 +190,7 @@
   }
 
   /* ===== アプリ本体 ===== */
-  #app-panel { display: none; }
+  #app-panel { display: block; }
 
   /* セクションタイトル */
   .section-title {
@@ -635,8 +558,6 @@
 </head>
 <body>
 
-<div id="login-status">未ログイン</div>
-
 <!-- ヘッダー -->
 <header>
   <div class="header-inner">
@@ -650,17 +571,6 @@
 </header>
 
 <main>
-
-  <!-- ログインパネル -->
-  <div id="login-panel">
-    <h2>メールアドレスでログイン</h2>
-    <p>Standardプラン以上のご契約が必要です</p>
-    <div class="input-row">
-      <input type="email" id="email-input" placeholder="your@email.com">
-      <button class="btn" onclick="doLogin()">確認する</button>
-    </div>
-    <p id="login-error" style="color:var(--vermilion);font-size:12px;margin-top:10px;display:none;"></p>
-  </div>
 
   <!-- アプリ本体 -->
   <div id="app-panel">
@@ -856,47 +766,6 @@
 
 <script>
 const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat';
-let userEmail = '';
-
-// ===== ログイン =====
-async function doLogin() {
-  const email = document.getElementById('email-input').value.trim();
-  if (!email || !email.includes('@')) {
-    showLoginError('メールアドレスを正しく入力してください');
-    return;
-  }
-
-  // Workerでプラン確認（pingエンドポイント利用）
-  try {
-    const res = await fetch('https://orange-sound-354b.inverted-triangle-leef.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appType: 'ping', input: 'check', email })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const planOk = data.plan === 'standard' || data.plan === 'full';
-      if (!planOk) {
-        showLoginError('Standardプラン以上のご契約が必要です（現在：' + data.plan + '）');
-        return;
-      }
-      userEmail = email;
-      document.getElementById('login-panel').style.display = 'none';
-      document.getElementById('app-panel').style.display = 'block';
-      document.getElementById('login-status').textContent = email + '　▸　' + data.plan.toUpperCase();
-    } else {
-      showLoginError('ログインに失敗しました：' + (data.error || '不明なエラー'));
-    }
-  } catch (e) {
-    showLoginError('通信エラーが発生しました');
-  }
-}
-
-function showLoginError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
 
 // ===== タブ切り替え =====
 function switchTab(tab) {
@@ -1009,12 +878,12 @@ ${category ? '【希望返礼品】' + category : ''}`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Customer-Email': userEmail
+        'X-Customer-Email': window.TomuAuth.getEmail()
       },
       body: JSON.stringify({
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
-        email: userEmail,
+        email: window.TomuAuth.getEmail(),
         max_tokens: 1200
       })
     });
@@ -1081,10 +950,6 @@ function copyResult() {
   });
 }
 
-// Enter キーでログイン
-document.getElementById('email-input').addEventListener('keypress', e => {
-  if (e.key === 'Enter') doLogin();
-});
 </script>
 <script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
