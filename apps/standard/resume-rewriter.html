@@ -49,24 +49,6 @@
     text-decoration: none;
   }
 
-  #login-status {
-    font-size: 0.75rem;
-    color: #aaa;
-  }
-
-  #logout-btn {
-    background: none;
-    border: 1px solid #555;
-    color: #ccc;
-    padding: 4px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.75rem;
-    margin-left: 10px;
-    transition: border-color .2s;
-  }
-  #logout-btn:hover { border-color: var(--gold); color: var(--gold); }
-
   /* ── ヒーロー ── */
   .hero {
     background: linear-gradient(135deg, var(--ink) 0%, #2d3561 100%);
@@ -124,48 +106,7 @@
     margin: 0 auto;
   }
 
-  /* ── ログインオーバーレイ ── */
-  #login-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(26,26,46,0.92);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-  }
-  #login-overlay.active { display: flex; }
-
-  .login-card {
-    background: var(--paper);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--gold);
-    padding: 40px 36px;
-    width: min(380px, 90vw);
-    animation: slideUp .3s ease;
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .login-card h2 {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 1.2rem;
-    font-weight: 400;
-    margin-bottom: 6px;
-  }
-
-  .login-card p {
-    font-size: 0.8rem;
-    color: var(--slate-light);
-    margin-bottom: 24px;
-    line-height: 1.6;
-  }
-
-  /* ── メインコンテンツ ── */
+  /* ── メイン ── */
   main {
     flex: 1;
     max-width: 860px;
@@ -200,15 +141,11 @@
     font-size: 0.8rem;
     font-weight: 500;
     color: var(--slate);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
   }
 
-  /* ── セクション ── */
-  .section {
-    margin-bottom: 28px;
-  }
+  .section { margin-bottom: 28px; }
 
-  /* ── フォーム要素 ── */
   label.field-label {
     display: block;
     font-size: 0.78rem;
@@ -249,7 +186,6 @@
   }
   .char-count.warn { color: var(--red-error); }
 
-  /* ── オプション行 ── */
   .options-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -266,7 +202,6 @@
     padding-right: 32px;
   }
 
-  /* ── 送信ボタン ── */
   .submit-btn {
     width: 100%;
     padding: 16px;
@@ -303,7 +238,6 @@
     transform: none;
   }
 
-  /* ── ローディング ── */
   .loading-area {
     display: none;
     text-align: center;
@@ -332,7 +266,6 @@
     50% { opacity: 0.5; }
   }
 
-  /* ── 結果エリア ── */
   #result-area {
     display: none;
     margin-top: 36px;
@@ -372,10 +305,7 @@
     background: var(--gold);
   }
 
-  .action-btns {
-    display: flex;
-    gap: 8px;
-  }
+  .action-btns { display: flex; gap: 8px; }
 
   .action-btn {
     padding: 6px 14px;
@@ -416,11 +346,9 @@
     border-radius: 0 4px 4px 0;
   }
 
-  /* ── フォームとローディングの切り替え ── */
   #form-area { transition: opacity .2s; }
   #form-area.hidden { display: none; }
 
-  /* ── エラー ── */
   .error-msg {
     display: none;
     background: #fff5f5;
@@ -435,7 +363,6 @@
   }
   .error-msg.active { display: block; }
 
-  /* ── ヒント ── */
   .hint-box {
     background: var(--gold-pale);
     border: 1px solid #e8d5a3;
@@ -448,10 +375,6 @@
   }
   .hint-box strong { font-weight: 500; }
 
-  /* ── 共通インプット ── */
-  .field-group { margin-bottom: 20px; }
-
-  /* ── フッター ── */
   footer {
     text-align: center;
     padding: 24px;
@@ -460,66 +383,6 @@
     border-top: 1px solid var(--border);
   }
 
-  /* ── ログインフォーム ── */
-  .login-input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 0.88rem;
-    font-family: 'Noto Sans JP', sans-serif;
-    color: var(--ink);
-    background: #fff;
-    margin-bottom: 10px;
-  }
-  .login-input:focus {
-    outline: none;
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(184,147,63,0.12);
-  }
-
-  .login-btn {
-    width: 100%;
-    padding: 11px;
-    background: var(--ink);
-    color: var(--gold-light);
-    border: none;
-    border-radius: 4px;
-    font-family: 'Noto Serif JP', serif;
-    font-size: 0.95rem;
-    cursor: pointer;
-    letter-spacing: 0.06em;
-    transition: background .2s;
-  }
-  .login-btn:hover { background: #2d3561; }
-
-  .login-error {
-    font-size: 0.78rem;
-    color: var(--red-error);
-    margin-top: 8px;
-    display: none;
-  }
-  .login-error.active { display: block; }
-
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 24px 0;
-  }
-
-  .plan-badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .plan-standard { background: #dbeafe; color: #1e40af; }
-  .plan-full { background: #fef3c7; color: #92400e; }
-
-  /* ── レスポンシブ ── */
   @media (max-width: 600px) {
     .options-row { grid-template-columns: 1fr; }
     header { padding: 14px 20px; }
@@ -530,53 +393,24 @@
 </head>
 <body>
 
-<!-- ヘッダー -->
 <header>
-  <a class="logo" href="https://tomu-ai963.github.io/portfolio/">とむSYSTEM</a>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <span id="login-status"></span>
-    <button id="logout-btn" style="display:none" onclick="doLogout()">ログアウト</button>
-  </div>
+  <a class="logo" href="https://tomu-ai963.github.io/tomu-system/">とむSYSTEM</a>
 </header>
 
-<!-- ログインオーバーレイ -->
-<div id="login-overlay">
-  <div class="login-card">
-    <h2>ログイン</h2>
-    <p>とむSYSTEMのメールアドレスとパスワードを入力してください。</p>
-    <input class="login-input" id="login-email" type="email" placeholder="メールアドレス" autocomplete="email">
-    <input class="login-input" id="login-pass" type="password" placeholder="パスワード" autocomplete="current-password">
-    <div id="login-err" class="login-error"></div>
-    <div style="margin-top:4px;">
-      <button class="login-btn" onclick="doLogin()">ログイン</button>
-    </div>
-    <div class="divider"></div>
-    <p style="font-size:0.75rem;color:var(--slate-light);text-align:center;">
-      アカウントをお持ちでない方は<br>
-      <a href="https://tomu-ai963.github.io/tomu-system/" style="color:var(--gold);text-decoration:none;">こちらからプランを選択</a>
-    </p>
-  </div>
-</div>
-
-<!-- ヒーロー -->
 <section class="hero">
   <div class="hero-badge">STANDARD PLAN</div>
   <h1>職務経歴書<em>リライター</em></h1>
   <p>現在の職務経歴書をAIが分析し、採用担当者の目に留まる、説得力ある表現に書き直します。</p>
 </section>
 
-<!-- メイン -->
 <main>
-
   <div id="form-area">
 
-    <!-- ヒント -->
     <div class="hint-box">
       <strong>💡 より良い結果のために：</strong>
       職種・業界・応募先の雰囲気などを「補足情報」に書くと、ターゲットに合わせた表現になります。文字数は2000字程度まで対応しています。
     </div>
 
-    <!-- STEP 1: 現在の職務経歴書 -->
     <div class="section">
       <div class="step-label">
         <div class="step-num">1</div>
@@ -593,7 +427,6 @@
       <div class="char-count" id="resume-count">0 / 2000</div>
     </div>
 
-    <!-- STEP 2: オプション -->
     <div class="options-row">
       <div>
         <label class="field-label">応募する職種・ポジション</label>
@@ -611,7 +444,6 @@
       </div>
     </div>
 
-    <!-- STEP 3: 補足 -->
     <div class="section">
       <div class="step-label">
         <div class="step-num">2</div>
@@ -630,15 +462,13 @@
 
     <div id="error-msg" class="error-msg"></div>
 
-  </div><!-- /form-area -->
+  </div>
 
-  <!-- ローディング -->
   <div class="loading-area" id="loading">
     <div class="spinner"></div>
     <p>AIが職務経歴書を分析・リライト中です…<br>少々お待ちください（10〜20秒）</p>
   </div>
 
-  <!-- 結果 -->
   <div id="result-area">
     <div class="result-header">
       <div class="result-title">リライト結果</div>
@@ -654,15 +484,13 @@
 
 <footer>© 2025 とむSYSTEM — Powered by Claude AI</footer>
 
-<!-- tomu-login.js -->
-<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+
 <script>
 const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
 const MAX_CHARS  = 2000;
 
-// ── 文字カウント ──
 const resumeTA = document.getElementById('input-resume');
 const countEl  = document.getElementById('resume-count');
 resumeTA.addEventListener('input', () => {
@@ -671,73 +499,6 @@ resumeTA.addEventListener('input', () => {
   countEl.classList.toggle('warn', n > MAX_CHARS);
 });
 
-// ── ログイン状態 UI ──
-function updateLoginUI(email, plan) {
-  const statusEl = document.getElementById('login-status');
-  const logoutEl = document.getElementById('logout-btn');
-  if (email) {
-    const badge = plan
-      ? `<span class="plan-badge plan-${plan === 'full' ? 'full' : 'standard'}">${plan}</span>`
-      : '';
-    statusEl.innerHTML = `${badge} ${email}`;
-    logoutEl.style.display = 'inline-block';
-  } else {
-    statusEl.textContent = '';
-    logoutEl.style.display = 'none';
-  }
-}
-
-// ── ログイン ──
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-err');
-  errEl.classList.remove('active');
-
-  if (!email || !pass) {
-    errEl.textContent = 'メールアドレスとパスワードを入力してください。';
-    errEl.classList.add('active'); return;
-  }
-
-  try {
-    const result = await window.tomuLogin(email, pass, WORKER_URL);
-    if (result.ok) {
-      document.getElementById('login-overlay').classList.remove('active');
-      updateLoginUI(result.email, result.plan);
-    } else {
-      errEl.textContent = result.message || 'ログインに失敗しました。';
-      errEl.classList.add('active');
-    }
-  } catch (e) {
-    errEl.textContent = 'ネットワークエラーが発生しました。';
-    errEl.classList.add('active');
-  }
-}
-
-function doLogout() {
-  if (window.tomuLogout) window.tomuLogout();
-  updateLoginUI(null, null);
-  document.getElementById('login-overlay').classList.add('active');
-}
-
-// ── 初期化 ──
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = window.tomuGetSession ? window.tomuGetSession() : null;
-  if (saved && saved.email) {
-    updateLoginUI(saved.email, saved.plan);
-  } else {
-    document.getElementById('login-overlay').classList.add('active');
-  }
-
-  // Enterキーでログイン
-  ['login-email','login-pass'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') doLogin();
-    });
-  });
-});
-
-// ── 送信 ──
 async function submitResume() {
   const resumeText = resumeTA.value.trim();
   const target     = document.getElementById('input-target').value.trim();
@@ -756,12 +517,12 @@ async function submitResume() {
     errEl.classList.add('active'); return;
   }
 
-  const session = window.tomuGetSession ? window.tomuGetSession() : null;
-  if (!session || !session.email) {
-    document.getElementById('login-overlay').classList.add('active'); return;
+  const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+  if (!email) {
+    window.TomuAuth && window.TomuAuth.showOverlay();
+    return;
   }
 
-  // トーンの日本語
   const toneMap = {
     professional: 'プロフェッショナルで格調ある',
     active:       'アクティブで前向きな',
@@ -790,7 +551,6 @@ ${memo ? `- 補足情報：${memo}` : ''}
 
   const userMessage = `【職務経歴書の原文・メモ】\n${resumeText}`;
 
-  // UI 切り替え
   document.getElementById('form-area').classList.add('hidden');
   document.getElementById('result-area').classList.remove('active');
   document.getElementById('loading').classList.add('active');
@@ -800,48 +560,25 @@ ${memo ? `- 補足情報：${memo}` : ''}
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: session.email,
+        email,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
-        max_tokens: 2000,
       }),
     });
 
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    const text = data.content?.[0]?.text || data.text || '';
 
     document.getElementById('loading').classList.remove('active');
-
-    if (!res.ok) {
-      showError(data.error, data.required);
-      document.getElementById('form-area').classList.remove('hidden');
-      return;
-    }
-
-    const text = data.content?.[0]?.text || '';
     document.getElementById('result-text').textContent = text;
     document.getElementById('result-area').classList.add('active');
 
   } catch (e) {
     document.getElementById('loading').classList.remove('active');
     document.getElementById('form-area').classList.remove('hidden');
-    errEl.textContent = 'ネットワークエラーが発生しました。時間をおいて再試行してください。';
+    errEl.textContent = 'エラーが発生しました。もう一度お試しください。';
     errEl.classList.add('active');
-  }
-}
-
-function showError(code, required) {
-  const errEl = document.getElementById('error-msg');
-  const msgs = {
-    login_required:       'ログインが必要です。',
-    subscription_required:'このアプリはStandardプラン以上が必要です。',
-    plan_upgrade_required: `このアプリには ${required || 'standard'} プランが必要です。現在のプランではご利用いただけません。`,
-    daily_limit_exceeded: '本日の利用上限に達しました。明日また試してください。',
-  };
-  errEl.textContent = msgs[code] || `エラーが発生しました（${code}）`;
-  errEl.classList.add('active');
-
-  if (code === 'login_required' || code === 'subscription_required') {
-    document.getElementById('login-overlay').classList.add('active');
   }
 }
 
@@ -853,18 +590,15 @@ function resetForm() {
 
 async function copyResult() {
   const text = document.getElementById('result-text').textContent;
-  const btn  = document.getElementById('copy-btn');
-  try {
-    await navigator.clipboard.writeText(text);
-    btn.textContent = '✓ コピーしました';
-    btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = 'コピー';
-      btn.classList.remove('copied');
-    }, 2000);
-  } catch {
-    btn.textContent = '失敗';
-  }
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'コピー済み';
+  btn.classList.add('copied');
+  setTimeout(() => {
+    btn.textContent = 'コピー';
+    btn.classList.remove('copied');
+  }, 2000);
 }
 </script>
 </body>
