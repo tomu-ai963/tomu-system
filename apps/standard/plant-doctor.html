@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 Midori — 植物診断AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --moss:    #2d4a2d;
+    --leaf:    #4a7c59;
+    --sage:    #8aad8a;
+    --mist:    #d4e8d4;
+    --cream:   #f7f3ed;
+    --soil:    #6b4f3a;
+    --amber:   #c8853a;
+    --red:     #a84444;
+    --ink:     #1a2a1a;
+    --glass:   rgba(255,255,255,0.6);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Serif JP', serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 背景テクスチャ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 20%, rgba(74,124,89,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, rgba(45,74,45,0.06) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a7c59' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* ヘッダー */
+  header {
+    text-align: center;
+    padding: 52px 0 36px;
+  }
+  .logo-mark {
+    display: inline-block;
+    width: 56px; height: 56px;
+    background: var(--moss);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 20px rgba(45,74,45,0.25);
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.6rem;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    color: var(--moss);
+    line-height: 1;
+  }
+  .tagline {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--sage);
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    text-transform: uppercase;
+  }
+
+  /* カード共通 */
+  .card {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(138,173,138,0.3);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 20px rgba(45,74,45,0.06);
+  }
+
+  /* アップロードエリア */
+  .upload-zone {
+    border: 2px dashed var(--sage);
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: rgba(212,232,212,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--leaf);
+    background: rgba(212,232,212,0.4);
+    transform: translateY(-1px);
+  }
+  .upload-zone input { display: none; }
+
+  .upload-icon { font-size: 2.8rem; display: block; margin-bottom: 12px; }
+  .upload-text { font-size: 0.9rem; color: var(--leaf); line-height: 1.7; }
+  .upload-sub  { font-size: 0.72rem; color: var(--sage); margin-top: 6px; font-family: 'DM Mono', monospace; }
+
+  /* プレビュー */
+  #preview-wrap { display: none; margin-top: 16px; text-align: center; }
+  #preview-img  {
+    max-width: 100%; max-height: 280px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(45,74,45,0.15);
+    object-fit: cover;
+  }
+  .change-btn {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: var(--sage);
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: 'DM Mono', monospace;
+    background: none; border: none;
+  }
+
+  /* 植物名入力 */
+  .input-row { display: flex; gap: 10px; align-items: flex-end; margin-top: 16px; }
+  .input-group { flex: 1; }
+  .input-group label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--sage);
+    margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+  }
+  .input-group input, .input-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid rgba(138,173,138,0.4);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.7);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus, .input-group select:focus {
+    border-color: var(--leaf);
+  }
+
+  /* 診断ボタン */
+  .diagnose-btn {
+    width: 100%;
+    padding: 16px;
+    margin-top: 20px;
+    background: var(--moss);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .diagnose-btn:hover:not(:disabled) {
+    background: var(--leaf);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(45,74,45,0.3);
+  }
+  .diagnose-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ローディング */
+  #loading { display: none; text-align: center; padding: 40px 0; }
+  .leaf-spin {
+    display: inline-block;
+    font-size: 2.4rem;
+    animation: spin 1.2s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    display: block;
+    margin-top: 14px;
+    font-size: 0.8rem;
+    color: var(--sage);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  /* 診断結果 */
+  #result-section { display: none; }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(138,173,138,0.25);
+  }
+  .plant-name-result {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--moss);
+  }
+  .status-badge {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+  }
+  .status-good    { background: rgba(74,124,89,0.15); color: var(--leaf); }
+  .status-caution { background: rgba(200,133,58,0.15); color: var(--amber); }
+  .status-bad     { background: rgba(168,68,68,0.15);  color: var(--red); }
+
+  /* 診断カテゴリ */
+  .diag-grid { display: grid; gap: 12px; }
+
+  .diag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 14px;
+    border-left: 3px solid transparent;
+    background: rgba(255,255,255,0.5);
+  }
+  .diag-item.good    { border-left-color: var(--leaf);  background: rgba(74,124,89,0.05); }
+  .diag-item.caution { border-left-color: var(--amber); background: rgba(200,133,58,0.05); }
+  .diag-item.bad     { border-left-color: var(--red);   background: rgba(168,68,68,0.05); }
+
+  .diag-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+  .diag-body  { flex: 1; }
+  .diag-label {
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 4px;
+  }
+  .diag-title { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+  .diag-desc  { font-size: 0.82rem; color: #4a5a4a; line-height: 1.7; }
+
+  /* 総合アドバイス */
+  .advice-box {
+    background: linear-gradient(135deg, rgba(45,74,45,0.06), rgba(74,124,89,0.04));
+    border: 1px solid rgba(138,173,138,0.3);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+  .advice-label {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 10px;
+  }
+  .advice-text { font-size: 0.88rem; color: var(--ink); line-height: 1.85; }
+
+  /* 免責 */
+  .disclaimer {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--sage);
+    margin-top: 32px;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+  }
+
+  /* リセットボタン */
+  .reset-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 16px;
+    background: transparent;
+    border: 1px solid rgba(138,173,138,0.5);
+    border-radius: 12px;
+    color: var(--sage);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--leaf); color: var(--leaf); }
+
+  /* エラー */
+  .error-box {
+    background: rgba(168,68,68,0.08);
+    border: 1px solid rgba(168,68,68,0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 0.85rem;
+    color: var(--red);
+    margin-top: 16px;
+    display: none;
+    line-height: 1.6;
+  }
+
+  /* アニメーション */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.45s ease both; }
+
+  /* セクションラベル */
+  .section-label {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-mark">🌿</div>
+    <h1>Midori</h1>
+    <p class="tagline">Plant Diagnostic AI — 植物診断</p>
+  </header>
+
+  <!-- 撮影・アップロード -->
+  <div class="card fade-up">
+    <p class="section-label">Step 01 — 写真を選ぶ</p>
+
+    <label class="upload-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="image/*" capture="environment">
+      <span class="upload-icon">📷</span>
+      <div class="upload-text">
+        タップして写真を撮影 / 選択<br>
+        <span style="font-size:0.78rem; color:var(--sage);">葉・茎・全体がよく見える角度で</span>
+      </div>
+      <div class="upload-sub">JPG · PNG · HEIC 対応</div>
+    </label>
+
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="プレビュー">
+      <br>
+      <button class="change-btn" onclick="resetPhoto()">▸ 別の写真を選ぶ</button>
+    </div>
+
+    <div class="input-row" style="margin-top:20px;">
+      <div class="input-group">
+        <label>植物の名前（任意）</label>
+        <input type="text" id="plant-name" placeholder="例：バジル、モンステラ、トマト">
+      </div>
+      <div class="input-group" style="max-width:130px;">
+        <label>置き場所</label>
+        <select id="location">
+          <option value="">未選択</option>
+          <option value="室内（窓際）">室内・窓際</option>
+          <option value="室内（窓から離れた場所）">室内・暗め</option>
+          <option value="ベランダ・屋外（直射日光あり）">ベランダ・直射</option>
+          <option value="半日陰の屋外">半日陰・屋外</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="diagnose-btn" id="diagnose-btn" onclick="diagnose()" disabled>
+      🔍 &nbsp;診断する
+    </button>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <!-- ローディング -->
+  <div id="loading" class="card" style="text-align:center;">
+    <span class="leaf-spin">🌱</span>
+    <span class="loading-text">AIが葉の状態を分析中...</span>
+  </div>
+
+  <!-- 結果 -->
+  <div id="result-section" class="card fade-up">
+    <div class="result-header">
+      <div>
+        <div class="section-label" style="margin-bottom:4px;">診断結果</div>
+        <div class="plant-name-result" id="result-plant-name">—</div>
+      </div>
+      <span class="status-badge" id="overall-badge">—</span>
+    </div>
+
+    <div class="diag-grid" id="diag-grid"></div>
+
+    <div class="advice-box" id="advice-box">
+      <div class="advice-label">📋 総合アドバイス</div>
+      <div class="advice-text" id="advice-text"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">↩ 別の植物を診断する</button>
+  </div>
+
+  <p class="disclaimer">
+    本アプリはAIによる参考診断です。<br>
+    重篤な病気・害虫が疑われる場合は専門家にご相談ください。
+  </p>
+
+</div>
+
+<script>
+let selectedFile = null;
+let imageBase64 = null;
+
+const fileInput   = document.getElementById('file-input');
+const dropZone    = document.getElementById('drop-zone');
+const previewWrap = document.getElementById('preview-wrap');
+const previewImg  = document.getElementById('preview-img');
+const diagnoseBtn = document.getElementById('diagnose-btn');
+const loadingEl   = document.getElementById('loading');
+const resultSec   = document.getElementById('result-section');
+const errorBox    = document.getElementById('error-box');
+
+// ファイル選択
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+// ドラッグ&ドロップ
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imageBase64 = ev.target.result.split(',')[1];
+    previewImg.src = ev.target.result;
+    previewWrap.style.display = 'block';
+    dropZone.style.display    = 'none';
+    diagnoseBtn.disabled = false;
+    errorBox.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetPhoto() {
+  selectedFile = null; imageBase64 = null;
+  previewWrap.style.display = 'none';
+  dropZone.style.display    = 'block';
+  diagnoseBtn.disabled = true;
+  fileInput.value = '';
+}
+
+function resetAll() {
+  resetPhoto();
+  resultSec.style.display = 'none';
+  document.getElementById('plant-name').value = '';
+  document.getElementById('location').value   = '';
+}
+
+// ======= 診断ロジック =======
+async function diagnose() {
+  if (!imageBase64) return;
+
+  const plantName = document.getElementById('plant-name').value.trim();
+  const location  = document.getElementById('location').value;
+  const nameLabel = plantName || '不明な植物';
+
+  diagnoseBtn.disabled = true;
+  loadingEl.style.display   = 'block';
+  resultSec.style.display   = 'none';
+  errorBox.style.display    = 'none';
+
+  const systemPrompt = `あなたは家庭園芸の専門家AIです。ユーザーが撮影した鉢植え植物の写真を診断してください。
+
+必ず以下のJSON形式のみで返答してください。それ以外のテキストは一切含めないでください。
+
+{
+  "plantName": "推定される植物名（ユーザーが指定した名前がある場合はそれを優先）",
+  "overallStatus": "good" | "caution" | "bad",
+  "overallLabel": "状態の一言（例：健康、要注意、要対処）",
+  "items": [
+    {
+      "category": "水分",
+      "icon": "💧",
+      "status": "good" | "caution" | "bad",
+      "title": "状態の短い見出し",
+      "description": "80〜120字で具体的な状態説明と対処法"
+    },
+    {
+      "category": "日照",
+      "icon": "☀️",
+      "status": "good" | "caution" | "bad",
+      "title": "状態の短い見出し",
+      "description": "80〜120字で具体的な状態説明と対処法"
+    },
+    {
+      "category": "栄養・肥料",
+      "icon": "🌱",
+      "status": "good" | "caution" | "bad",
+      "title": "状態の短い見出し",
+      "description": "80〜120字で具体的な状態説明と対処法"
+    },
+    {
+      "category": "病気・害虫",
+      "icon": "🔬",
+      "status": "good" | "caution" | "bad",
+      "title": "状態の短い見出し",
+      "description": "80〜120字で具体的な状態説明と対処法"
+    },
+    {
+      "category": "根・土壌",
+      "icon": "🪴",
+      "status": "good" | "caution" | "bad",
+      "title": "状態の短い見出し",
+      "description": "80〜120字で具体的な状態説明と対処法"
+    }
+  ],
+  "overallAdvice": "150〜200字で今週中にやるべきことをわかりやすく説明する総合アドバイス"
+}
+
+写真から読み取れない項目は推測で構いません。家庭で植物を育てている初〜中級者向けに、やさしく実用的なアドバイスをしてください。`;
+
+  const userPrompt = `植物名: ${nameLabel}\n置き場所: ${location || '未指定'}\n\nこの植物の状態を診断してください。`;
+
+  try {
+    const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/plant-diagnose';
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: selectedFile.type || 'image/jpeg',
+                data: imageBase64
+              }
+            },
+            { type: 'text', text: userPrompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const raw  = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+
+    renderResult(result, nameLabel);
+
+  } catch (err) {
+    console.error(err);
+    errorBox.textContent = '診断に失敗しました。しばらく待ってから再度お試しください。\n(' + err.message + ')';
+    errorBox.style.display = 'block';
+  } finally {
+    loadingEl.style.display = 'none';
+    diagnoseBtn.disabled = false;
+  }
+}
+
+function renderResult(r, fallbackName) {
+  // ヘッダー
+  document.getElementById('result-plant-name').textContent = r.plantName || fallbackName;
+
+  const badge = document.getElementById('overall-badge');
+  badge.textContent = r.overallLabel || '—';
+  badge.className = 'status-badge ' + (
+    r.overallStatus === 'good'    ? 'status-good' :
+    r.overallStatus === 'caution' ? 'status-caution' : 'status-bad'
+  );
+
+  // 個別カテゴリ
+  const grid = document.getElementById('diag-grid');
+  grid.innerHTML = '';
+  (r.items || []).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'diag-item ' + (item.status || 'good');
+    div.innerHTML = `
+      <div class="diag-icon">${item.icon || '🌿'}</div>
+      <div class="diag-body">
+        <div class="diag-label">${item.category}</div>
+        <div class="diag-title">${item.title}</div>
+        <div class="diag-desc">${item.description}</div>
+      </div>`;
+    grid.appendChild(div);
+  });
+
+  // 総合アドバイス
+  document.getElementById('advice-text').textContent = r.overallAdvice || '';
+
+  resultSec.style.display = 'block';
+  resultSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

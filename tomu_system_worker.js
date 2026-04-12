@@ -168,6 +168,32 @@ async function handleRequest(request) {
   }
 
   // =========================================================
+  // POST /api/plant-diagnose — 植物診断アプリ用（認証スキップ）
+  // =========================================================
+  if (url.pathname === "/api/plant-diagnose") {
+    try {
+      var plantRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify(body),
+      });
+      if (!plantRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await plantRes.text() }, plantRes.status);
+      }
+      return new Response(await plantRes.text(), {
+        status: 200,
+        headers: Object.assign({}, CORS_HEADERS, { "Content-Type": "application/json" }),
+      });
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500);
+    }
+  }
+
+  // =========================================================
   // POST /api/chat — Standard/Full アプリ用
   // =========================================================
   if (url.pathname === "/api/chat") {
