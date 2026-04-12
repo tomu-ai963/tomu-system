@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マヤ暦診断 — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --accent: #7b5ea7;
+  --accent2: #c9963a;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --light-accent: #ede5f7;
+  --gold: #c9963a;
+  --gold-light: #f0d9aa;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: .1em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-back {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all .2s;
+}
+.nav-back:hover { border-color: var(--accent); color: var(--accent); }
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px 24px 64px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeUp .6s ease both;
+}
+
+.app-icon {
+  font-size: 2.4rem;
+  margin-bottom: 16px;
+  display: block;
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.app-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: .05em;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.app-subtitle {
+  font-size: .78rem;
+  letter-spacing: .12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.form-card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  animation: fadeUp .6s .1s ease both;
+}
+
+.field-label {
+  font-size: .68rem;
+  letter-spacing: .16em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: block;
+}
+
+input[type="date"] {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: .9rem;
+  font-weight: 300;
+  color: var(--ink);
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(123,94,167,.08);
+}
+
+.calc-display {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--light-accent);
+  border: 1px solid rgba(123,94,167,.2);
+  border-radius: 10px;
+  font-size: .82rem;
+  color: var(--accent);
+  letter-spacing: .04em;
+  text-align: center;
+  display: none;
+  animation: fadeUp .3s ease both;
+}
+
+.calc-display.visible { display: block; }
+
+.submit-btn {
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: .82rem;
+  font-weight: 400;
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: all .25s;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp .6s .2s ease both;
+}
+
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent), transparent 60%);
+  opacity: 0;
+  transition: opacity .3s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #2a2420;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(26,22,18,.2);
+}
+.submit-btn:hover::after { opacity: .25; }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(247,243,238,.3);
+  border-top-color: var(--paper);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading .spinner { display: block; }
+.loading .btn-text { opacity: .6; }
+
+.result-card {
+  width: 100%;
+  margin-top: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+  animation: cardReveal .5s cubic-bezier(.22,1,.36,1) both;
+  display: none;
+}
+.result-card.visible { display: block; }
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--gold), #a78bda);
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(20px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.result-label {
+  font-size: .65rem;
+  letter-spacing: .16em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.result-kin {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 16px;
+  font-weight: 400;
+  letter-spacing: .05em;
+}
+
+.result-text {
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--ink);
+  font-weight: 300;
+  white-space: pre-wrap;
+}
+
+.result-star {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 1.2rem;
+  opacity: .4;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: .3; transform: scale(1); }
+  50% { opacity: .7; transform: scale(1.15); }
+}
+
+.result-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.retry-btn {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.retry-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.powered { font-size: .62rem; color: var(--border); letter-spacing: .06em; }
+
+.error-msg {
+  width: 100%;
+  margin-top: 16px;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: .8rem;
+  color: #c0392b;
+  display: none;
+  animation: fadeUp .3s ease both;
+}
+.error-msg.visible { display: block; }
+
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: .68rem;
+  color: var(--border);
+  letter-spacing: .06em;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.deco { position: fixed; pointer-events: none; opacity: .12; font-size: 1rem; }
+.deco-1 { top: 18%; left: 8%; animation: twinkle 3s .5s ease-in-out infinite; }
+.deco-2 { top: 35%; right: 6%; animation: twinkle 4s 1s ease-in-out infinite; }
+.deco-3 { bottom: 30%; left: 5%; animation: twinkle 3.5s 2s ease-in-out infinite; }
+.deco-4 { bottom: 20%; right: 9%; animation: twinkle 2.8s .3s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="deco deco-1">✦</div>
+<div class="deco deco-2">✧</div>
+<div class="deco deco-3">✦</div>
+<div class="deco deco-4">✧</div>
+
+<nav>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-logo">とむ<span>SYSTEM</span></a>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-back">← 一覧へ</a>
+</nav>
+
+<main>
+  <div class="app-header">
+    <span class="app-icon">🌀</span>
+    <h1 class="app-title">マヤ暦診断</h1>
+    <p class="app-subtitle">Maya Calendar Reading</p>
+  </div>
+
+  <div class="form-card">
+    <label class="field-label" for="birthdate">生年月日</label>
+    <input type="date" id="birthdate" min="1921-01-01" max="2010-12-31" />
+    <div class="calc-display" id="calcDisplay"></div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" disabled>
+    <div class="btn-inner">
+      <div class="spinner" id="spinner"></div>
+      <span class="btn-text" id="btnText">生年月日を入力してください</span>
+    </div>
+  </button>
+
+  <div class="result-card" id="resultCard">
+    <span class="result-star">✦</span>
+    <div class="result-label">Your Maya Reading</div>
+    <div class="result-kin" id="resultKin"></div>
+    <div class="result-text" id="resultText"></div>
+    <div class="result-footer">
+      <button class="retry-btn" id="retryBtn">もう一度占う</button>
+      <span class="powered">powered by とむSYSTEM</span>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+</main>
+
+<footer>© 2026 とむSYSTEM — All apps powered by Claude</footer>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic/maya-calendar";
+
+const SIGNS = [
+  '赤い竜','白い風','青い夜','黄色い種','赤い蛇',
+  '白い世界の橋渡し','青い手','黄色い星','赤い月','白い犬',
+  '青いサル','黄色い人間','赤い空歩く者','白い魔法使い','青いワシ',
+  '黄色い戦士','赤い地球','白い鏡','青い嵐','黄色い太陽'
+];
+
+const TONES = [
+  '磁気','月','電気','自己存在','倍音',
+  'リズム','共鳴','銀河系','太陽','惑星',
+  'スペクトル','水晶','宇宙'
+];
+
+function getMayaKin(birthdate) {
+  const base = new Date('2000-01-01');
+  const target = new Date(birthdate);
+  const diffMs = target.getTime() - base.getTime();
+  const diff = Math.round(diffMs / 86400000);
+  const kin = ((143 + diff) % 260 + 260) % 260 + 1;
+  const signIndex = (kin - 1) % 20;
+  const toneIndex = (kin - 1) % 13;
+  return {
+    kin,
+    sign: SIGNS[signIndex],
+    tone: TONES[toneIndex]
+  };
+}
+
+const birthdateInput = document.getElementById('birthdate');
+const calcDisplay    = document.getElementById('calcDisplay');
+const submitBtn      = document.getElementById('submitBtn');
+const spinner        = document.getElementById('spinner');
+const btnText        = document.getElementById('btnText');
+const resultCard     = document.getElementById('resultCard');
+const resultKin      = document.getElementById('resultKin');
+const resultText     = document.getElementById('resultText');
+const errorMsg       = document.getElementById('errorMsg');
+const retryBtn       = document.getElementById('retryBtn');
+
+let currentKin = null;
+
+birthdateInput.addEventListener('change', () => {
+  const val = birthdateInput.value;
+  if (!val) {
+    calcDisplay.classList.remove('visible');
+    submitBtn.disabled = true;
+    btnText.textContent = '生年月日を入力してください';
+    currentKin = null;
+    return;
+  }
+
+  const result = getMayaKin(val);
+  currentKin = result;
+  calcDisplay.textContent = `KIN${result.kin} ／ ${result.sign}・${result.tone}の音`;
+  calcDisplay.classList.add('visible');
+  submitBtn.disabled = false;
+  btnText.textContent = '今すぐ占う ✦';
+  resultCard.classList.remove('visible');
+  errorMsg.classList.remove('visible');
+});
+
+async function fetchReading() {
+  if (!currentKin || !birthdateInput.value) return;
+
+  submitBtn.disabled = true;
+  submitBtn.classList.add('loading');
+  btnText.textContent = '占っています…';
+  resultCard.classList.remove('visible');
+  errorMsg.classList.remove('visible');
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        birthdate: birthdateInput.value,
+        kin: currentKin.kin,
+        sign: currentKin.sign,
+        tone: currentKin.tone,
+        email: TomuAuth.getEmail()
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error === 'subscription_required' || data.error === 'login_required') {
+      TomuAuth.showOverlay();
+      return;
+    }
+    if (!res.ok || data.error) throw new Error(data.error || 'Worker error');
+
+    resultKin.textContent = `KIN${currentKin.kin}「${currentKin.sign}」${currentKin.tone}の音`;
+    resultText.textContent = data.result;
+    resultCard.classList.add('visible');
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    errorMsg.textContent = `エラーが発生しました：${err.message}`;
+    errorMsg.classList.add('visible');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('loading');
+    btnText.textContent = '今すぐ占う ✦';
+  }
+}
+
+submitBtn.addEventListener('click', fetchReading);
+retryBtn.addEventListener('click', fetchReading);
+</script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
+</body>
+</html>

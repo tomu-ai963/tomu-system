@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>動物占い — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --accent: #2e7d5e;
+  --accent2: #c9963a;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --light-accent: #e4f2ec;
+  --gold: #c9963a;
+  --gold-light: #f0d9aa;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: .1em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-back {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all .2s;
+}
+.nav-back:hover { border-color: var(--accent); color: var(--accent); }
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px 24px 64px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeUp .6s ease both;
+}
+
+.app-icon {
+  font-size: 2.4rem;
+  margin-bottom: 16px;
+  display: block;
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.app-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: .05em;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.app-subtitle {
+  font-size: .78rem;
+  letter-spacing: .12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.form-card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  animation: fadeUp .6s .1s ease both;
+}
+
+.field-group {
+  margin-bottom: 20px;
+}
+.field-group:last-child { margin-bottom: 0; }
+
+.field-label {
+  font-size: .68rem;
+  letter-spacing: .16em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: block;
+}
+
+input[type="date"],
+select {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: .9rem;
+  font-weight: 300;
+  color: var(--ink);
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7e72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+input[type="date"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(46,125,94,.08);
+}
+
+.calc-display {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--light-accent);
+  border: 1px solid rgba(46,125,94,.2);
+  border-radius: 10px;
+  font-size: .82rem;
+  color: var(--accent);
+  letter-spacing: .04em;
+  text-align: center;
+  display: none;
+  animation: fadeUp .3s ease both;
+}
+.calc-display.visible { display: block; }
+
+.submit-btn {
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: .82rem;
+  font-weight: 400;
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: all .25s;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp .6s .2s ease both;
+}
+
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent), transparent 60%);
+  opacity: 0;
+  transition: opacity .3s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #2a2420;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(26,22,18,.2);
+}
+.submit-btn:hover::after { opacity: .25; }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(247,243,238,.3);
+  border-top-color: var(--paper);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading .spinner { display: block; }
+.loading .btn-text { opacity: .6; }
+
+.result-card {
+  width: 100%;
+  margin-top: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+  animation: cardReveal .5s cubic-bezier(.22,1,.36,1) both;
+  display: none;
+}
+.result-card.visible { display: block; }
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--gold), #7fc4a4);
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(20px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.result-label {
+  font-size: .65rem;
+  letter-spacing: .16em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.result-animal {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 16px;
+  font-weight: 400;
+  letter-spacing: .05em;
+}
+
+.result-text {
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--ink);
+  font-weight: 300;
+  white-space: pre-wrap;
+}
+
+.result-star {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 1.2rem;
+  opacity: .4;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: .3; transform: scale(1); }
+  50% { opacity: .7; transform: scale(1.15); }
+}
+
+.result-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.retry-btn {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.retry-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.powered { font-size: .62rem; color: var(--border); letter-spacing: .06em; }
+
+.error-msg {
+  width: 100%;
+  margin-top: 16px;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: .8rem;
+  color: #c0392b;
+  display: none;
+  animation: fadeUp .3s ease both;
+}
+.error-msg.visible { display: block; }
+
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: .68rem;
+  color: var(--border);
+  letter-spacing: .06em;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.deco { position: fixed; pointer-events: none; opacity: .12; font-size: 1rem; }
+.deco-1 { top: 18%; left: 8%; animation: twinkle 3s .5s ease-in-out infinite; }
+.deco-2 { top: 35%; right: 6%; animation: twinkle 4s 1s ease-in-out infinite; }
+.deco-3 { bottom: 30%; left: 5%; animation: twinkle 3.5s 2s ease-in-out infinite; }
+.deco-4 { bottom: 20%; right: 9%; animation: twinkle 2.8s .3s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="deco deco-1">✦</div>
+<div class="deco deco-2">✧</div>
+<div class="deco deco-3">✦</div>
+<div class="deco deco-4">✧</div>
+
+<nav>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-logo">とむ<span>SYSTEM</span></a>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-back">← 一覧へ</a>
+</nav>
+
+<main>
+  <div class="app-header">
+    <span class="app-icon">🐾</span>
+    <h1 class="app-title">動物占い</h1>
+    <p class="app-subtitle">Animal Fortune Telling</p>
+  </div>
+
+  <div class="form-card">
+    <div class="field-group">
+      <label class="field-label" for="birthdate">生年月日</label>
+      <input type="date" id="birthdate" min="1921-01-01" max="2010-12-31" />
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="gender">性別</label>
+      <select id="gender">
+        <option value="">選択してください</option>
+        <option value="女性">女性</option>
+        <option value="男性">男性</option>
+      </select>
+    </div>
+    <div class="calc-display" id="calcDisplay"></div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" disabled>
+    <div class="btn-inner">
+      <div class="spinner" id="spinner"></div>
+      <span class="btn-text" id="btnText">生年月日と性別を入力してください</span>
+    </div>
+  </button>
+
+  <div class="result-card" id="resultCard">
+    <span class="result-star">✦</span>
+    <div class="result-label">Your Animal Reading</div>
+    <div class="result-animal" id="resultAnimal"></div>
+    <div class="result-text" id="resultText"></div>
+    <div class="result-footer">
+      <button class="retry-btn" id="retryBtn">もう一度占う</button>
+      <span class="powered">powered by とむSYSTEM</span>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+</main>
+
+<footer>© 2026 とむSYSTEM — All apps powered by Claude</footer>
+
+<script>
+const WORKER_URL = "https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic/animal-fortune";
+
+// ========== 生年月早見表（弦本將裕式）==========
+// yearMonthTable[年][月-1] = 基準値（1月の基準値はその月の1日のキャラ番号）
+const yearMonthTable = {
+  1921:[1,32,60,31,1,32,2,33,4,34,5,35],
+  1922:[6,37,5,36,6,37,7,38,9,39,10,40],
+  1923:[11,42,10,41,11,42,12,43,14,44,15,45],
+  1924:[16,47,16,47,17,48,18,49,19,50,20,51],
+  1925:[22,53,21,52,22,53,23,54,24,55,25,56],
+  1926:[27,58,26,57,27,58,28,59,29,60,30,1],
+  1927:[32,3,31,2,32,3,33,4,34,5,35,6],
+  1928:[37,8,37,8,38,9,39,10,40,11,41,12],
+  1929:[43,14,42,13,43,14,44,15,45,16,46,17],
+  1930:[48,19,47,18,48,19,49,20,50,21,51,22],
+  1931:[53,24,52,23,53,24,54,25,55,26,56,27],
+  1932:[58,29,58,29,59,30,60,31,1,32,2,33],
+  1933:[4,35,3,34,4,35,5,36,6,37,7,38],
+  1934:[9,40,8,39,9,40,10,41,11,42,12,43],
+  1935:[14,45,13,44,14,45,15,46,16,47,17,48],
+  1936:[19,50,19,50,20,51,21,52,22,53,23,54],
+  1937:[25,56,24,55,25,56,26,57,27,58,28,59],
+  1938:[30,1,29,60,30,1,31,2,32,3,33,4],
+  1939:[35,6,34,5,35,6,36,7,37,8,38,9],
+  1940:[40,11,40,11,41,12,42,13,43,14,44,15],
+  1941:[46,17,45,16,46,17,47,18,48,19,49,20],
+  1942:[51,22,50,21,51,22,52,23,53,24,54,25],
+  1943:[56,27,55,26,56,27,57,28,58,29,59,30],
+  1944:[1,32,1,32,2,33,3,34,4,35,5,36],
+  1945:[7,38,6,37,7,38,8,39,9,40,10,41],
+  1946:[12,43,11,42,12,43,13,44,14,45,15,46],
+  1947:[17,48,16,47,17,48,18,49,19,50,20,51],
+  1948:[22,53,22,53,23,54,24,55,25,56,26,57],
+  1949:[28,59,27,58,28,59,29,60,30,1,31,2],
+  1950:[33,4,32,3,33,4,34,5,35,6,36,7],
+  1951:[38,9,37,8,38,9,39,10,40,11,41,12],
+  1952:[43,14,43,14,44,15,45,16,46,17,47,18],
+  1953:[49,20,48,19,49,20,50,21,51,22,52,23],
+  1954:[54,25,53,24,54,25,55,26,56,27,57,28],
+  1955:[59,30,58,29,59,30,60,31,1,32,2,33],
+  1956:[4,35,4,35,5,36,6,37,7,38,8,39],
+  1957:[10,41,9,40,10,41,11,42,12,43,13,44],
+  1958:[15,46,14,45,15,46,16,47,17,48,18,49],
+  1959:[20,51,19,50,20,51,21,52,22,53,23,54],
+  1960:[25,56,25,56,26,57,27,58,28,59,29,60],
+  1961:[31,2,30,1,31,2,32,3,33,4,34,5],
+  1962:[36,7,35,6,36,7,37,8,38,9,39,10],
+  1963:[41,12,40,11,41,12,42,13,43,14,44,15],
+  1964:[46,17,46,17,47,18,48,19,49,20,50,21],
+  1965:[52,23,51,22,52,23,53,24,54,25,55,26],
+  1966:[57,28,56,27,57,28,58,29,59,30,60,31],
+  1967:[2,33,1,32,2,33,3,34,4,35,5,36],
+  1968:[7,38,7,38,8,39,9,40,10,41,11,42],
+  1969:[13,44,12,43,13,44,14,45,15,46,16,47],
+  1970:[18,49,17,48,18,49,19,50,20,51,21,52],
+  1971:[23,54,22,53,23,54,24,55,25,56,26,57],
+  1972:[28,59,28,59,29,60,30,1,31,2,32,3],
+  1973:[34,5,33,4,34,5,35,6,36,7,37,8],
+  1974:[39,10,38,9,39,10,40,11,41,12,42,13],
+  1975:[44,15,43,14,44,15,45,16,46,17,47,18],
+  1976:[49,20,49,20,50,21,51,22,52,23,53,24],
+  1977:[55,26,54,25,55,26,56,27,57,28,58,29],
+  1978:[60,31,59,30,60,31,1,32,2,33,3,34],
+  1979:[5,36,4,35,5,36,6,37,7,38,8,39],
+  1980:[10,41,10,41,11,42,12,43,13,44,14,45],
+  1981:[16,47,15,46,16,47,17,48,18,49,19,50],
+  1982:[21,52,20,51,21,52,22,53,23,54,24,55],
+  1983:[26,57,25,56,26,57,27,58,28,59,29,60],
+  1984:[31,2,31,2,32,3,33,4,34,5,35,6],
+  1985:[37,8,36,7,37,8,38,9,39,10,40,11],
+  1986:[42,13,41,12,42,13,43,14,44,15,45,16],
+  1987:[47,18,46,17,47,18,48,19,49,20,50,21],
+  1988:[52,23,52,23,53,24,54,25,55,26,56,27],
+  1989:[58,29,57,28,58,29,59,30,60,31,1,32],
+  1990:[3,34,2,33,3,34,4,35,5,36,6,37],
+  1991:[8,39,7,38,8,39,9,40,10,41,11,42],
+  1992:[13,44,13,44,14,45,15,46,16,47,17,48],
+  1993:[19,50,18,49,19,50,20,51,21,52,22,53],
+  1994:[24,55,23,54,24,55,25,56,26,57,27,58],
+  1995:[29,60,28,59,29,60,30,1,31,2,32,3],
+  1996:[34,5,34,5,35,6,36,7,37,8,38,9],
+  1997:[40,11,39,10,40,11,41,12,42,13,43,14],
+  1998:[45,16,44,15,45,16,46,17,47,18,48,19],
+  1999:[50,21,49,20,50,21,51,22,52,23,53,24],
+  2000:[55,26,55,26,56,27,57,28,58,29,59,30],
+  2001:[1,32,60,31,1,32,2,33,3,34,4,35],
+  2002:[6,37,5,36,6,37,7,38,8,39,9,40],
+  2003:[11,42,10,41,11,42,12,43,13,44,14,45],
+  2004:[16,47,16,47,17,48,18,49,19,50,20,51],
+  2005:[22,53,21,52,22,53,23,54,24,55,25,56],
+  2006:[27,58,26,57,27,58,28,59,29,60,30,1],
+  2007:[32,3,31,2,32,3,33,4,34,5,35,6],
+  2008:[37,8,37,8,38,9,39,10,40,11,41,12],
+  2009:[43,14,42,13,43,14,44,15,45,16,46,17],
+  2010:[48,19,47,18,48,19,49,20,50,21,51,22],
+};
+
+// ========== 動物キャラ対応表 ==========
+const animalMap = {
+  1:'チーター', 2:'チーター', 3:'猿', 4:'猿', 5:'黒ひょう',
+  6:'黒ひょう', 7:'ライオン', 8:'ライオン', 9:'狼', 10:'狼',
+  11:'こじか', 12:'こじか', 13:'ペガサス', 14:'ペガサス', 15:'ゾウ',
+  16:'ゾウ', 17:'コアラ', 18:'コアラ', 19:'狼', 20:'狼',
+  21:'ペガサス', 22:'ペガサス', 23:'ライオン', 24:'ライオン', 25:'虎',
+  26:'虎', 27:'たぬき', 28:'たぬき', 29:'羊', 30:'羊',
+  31:'チーター', 32:'チーター', 33:'猿', 34:'猿', 35:'黒ひょう',
+  36:'黒ひょう', 37:'ライオン', 38:'ライオン', 39:'狼', 40:'狼',
+  41:'こじか', 42:'こじか', 43:'ペガサス', 44:'ペガサス', 45:'ゾウ',
+  46:'ゾウ', 47:'コアラ', 48:'コアラ', 49:'虎', 50:'虎',
+  51:'たぬき', 52:'たぬき', 53:'羊', 54:'羊', 55:'チーター',
+  56:'チーター', 57:'猿', 58:'猿', 59:'黒ひょう', 60:'黒ひょう'
+};
+
+// ========== 計算ロジック ==========
+// num = base + day - 1 （baseは「その月の1日のキャラ番号」）
+// ※ base + day だと全テストケースで1ずれるため -1 が必要
+function getAnimalFortune(birthdate) {
+  const [y, m, d] = birthdate.split('-').map(Number);
+  const table = yearMonthTable[y];
+  if (!table) return null;
+  const base = table[m - 1];
+  let num = base + d - 1;
+  if (num > 60) num -= 60;
+  return { num, animal: animalMap[num] || '不明' };
+}
+
+const birthdateInput = document.getElementById('birthdate');
+const genderSelect   = document.getElementById('gender');
+const calcDisplay    = document.getElementById('calcDisplay');
+const submitBtn      = document.getElementById('submitBtn');
+const spinner        = document.getElementById('spinner');
+const btnText        = document.getElementById('btnText');
+const resultCard     = document.getElementById('resultCard');
+const resultAnimal   = document.getElementById('resultAnimal');
+const resultText     = document.getElementById('resultText');
+const errorMsg       = document.getElementById('errorMsg');
+const retryBtn       = document.getElementById('retryBtn');
+
+let currentResult = null;
+
+function updateCalc() {
+  const birthdate = birthdateInput.value;
+  const gender    = genderSelect.value;
+
+  if (!birthdate || !gender) {
+    calcDisplay.classList.remove('visible');
+    submitBtn.disabled = true;
+    btnText.textContent = '生年月日と性別を入力してください';
+    currentResult = null;
+    return;
+  }
+
+  const r = getAnimalFortune(birthdate);
+  if (!r) {
+    calcDisplay.textContent = '対応していない年代です（1921〜2010年）';
+    calcDisplay.classList.add('visible');
+    submitBtn.disabled = true;
+    currentResult = null;
+    return;
+  }
+
+  currentResult = r;
+  calcDisplay.textContent = `キャラ番号：${r.num} ／ 守護動物：${r.animal}`;
+  calcDisplay.classList.add('visible');
+  submitBtn.disabled = false;
+  btnText.textContent = '今すぐ占う ✦';
+  resultCard.classList.remove('visible');
+  errorMsg.classList.remove('visible');
+}
+
+birthdateInput.addEventListener('change', updateCalc);
+genderSelect.addEventListener('change', updateCalc);
+
+async function fetchReading() {
+  if (!currentResult || !birthdateInput.value || !genderSelect.value) return;
+
+  submitBtn.disabled = true;
+  submitBtn.classList.add('loading');
+  btnText.textContent = '占っています…';
+  resultCard.classList.remove('visible');
+  errorMsg.classList.remove('visible');
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        birthdate: birthdateInput.value,
+        gender: genderSelect.value,
+        animal: currentResult.animal,
+        num: currentResult.num,
+        email: TomuAuth.getEmail()
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error === 'subscription_required' || data.error === 'login_required') {
+      TomuAuth.showOverlay();
+      return;
+    }
+    if (!res.ok || data.error) throw new Error(data.error || 'Worker error');
+
+    resultAnimal.textContent = `${genderSelect.value}の${currentResult.animal}（キャラ番号${currentResult.num}）`;
+    resultText.textContent = data.result;
+    resultCard.classList.add('visible');
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    errorMsg.textContent = `エラーが発生しました：${err.message}`;
+    errorMsg.classList.add('visible');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('loading');
+    btnText.textContent = '今すぐ占う ✦';
+  }
+}
+
+submitBtn.addEventListener('click', fetchReading);
+retryBtn.addEventListener('click', fetchReading);
+</script>
+
+<!-- とむSYSTEM 共通認証モジュール -->
+<script src="../tomu-login.js"></script>
+</body>
+</html>
