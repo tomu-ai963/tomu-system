@@ -550,7 +550,7 @@ async function diagnose() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 2048,
         system: systemPrompt,
         messages: [{
           role: 'user',
@@ -571,8 +571,42 @@ async function diagnose() {
 
     const data = await response.json();
     const raw  = data.content.map(b => b.text || '').join('');
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
+
+    // コードブロックを除去してJSONオブジェクト部分だけを抽出
+    const stripped = raw.replace(/```json|```/g, '').trim();
+    const start = stripped.indexOf('{');
+    const end   = stripped.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('JSONが見つかりませんでした');
+    const jsonStr = stripped.slice(start, end + 1);
+
+    // JSON文字列値内の未エスケープ改行・制御文字をエスケープ
+    // (quoted stringの内外を追跡して構造上の改行には手を加えない)
+    const sanitized = (() => {
+      let out = '';
+      let inStr = false;
+      for (let i = 0; i < jsonStr.length; i++) {
+        const c = jsonStr[i];
+        if (c === '\\' && inStr) { out += c + (jsonStr[++i] || ''); continue; }
+        if (c === '"') { inStr = !inStr; out += c; continue; }
+        if (inStr) {
+          if      (c === '\n') out += '\\n';
+          else if (c === '\r') out += '\\r';
+          else if (c === '\t') out += '\\t';
+          else out += c;
+        } else {
+          out += c;
+        }
+      }
+      return out;
+    })();
+
+    let result;
+    try {
+      result = JSON.parse(sanitized);
+    } catch (parseErr) {
+      console.error('JSON parse error. raw response:', raw);
+      throw new Error('レスポンスのJSON解析に失敗しました: ' + parseErr.message);
+    }
 
     renderResult(result, nameLabel);
 
