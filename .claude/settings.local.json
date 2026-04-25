@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(wrangler:*)",
+      "Bash(npm --version)",
+      "Bash(npx wrangler:*)",
+      "Bash(start:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
+      "Bash(curl -s -X POST https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic/animal-fortune -H 'Content-Type: application/json' -d '{\"birthdate\":\"1981-05-06\",\"gender\":\"女性\",\"animal\":\"ペガサス\",\"num\":21,\"email\":\"\"}')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d\\)\")",
+      "Read(//c/Users/PC/Desktop/**)",
+      "Read(//c/Users/PC/Documents/**)",
+      "Bash(git -C ~/Desktop/mystic-system remote get-url origin)",
+      "Bash(git -C ~/Desktop/mystic-system add apps/maya-calendar.html apps/animal-fortune.html mystic-system-worker.js)",
+      "Bash(git -C ~/Desktop/mystic-system status)",
+      "Bash(git:*)",
+      "Bash(node:*)"
+    ]
+  }
+}

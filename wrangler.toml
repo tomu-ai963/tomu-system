@@ -1,0 +1,8 @@
+name = "orange-sound-354b"
+main = "tomu_system_worker.js"
+compatibility_date = "2024-01-01"
+account_id = "b6815ad2ee3097cc0f9e79b8536776b9"
+
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS"
+id = "3d4d66de96b449e28198fdceb322b9d4"
