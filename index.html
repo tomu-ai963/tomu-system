@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -648,6 +648,160 @@ footer {
 .fade-up:nth-child(3) { transition-delay: .2s; }
 .fade-up:nth-child(4) { transition-delay: .3s; }
 .fade-up:nth-child(5) { transition-delay: .4s; }
+
+/* ===== APPS V2 - Grid Layout ===== */
+.apps-filter-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 0 8px;
+  margin-bottom: 8px;
+}
+.apps-filter-scroll::-webkit-scrollbar { display: none; }
+.apps-filter-btn {
+  flex-shrink: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.apps-filter-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.apps-section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.apps-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.apps-plan-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--light-accent);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.apps-count-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.apps-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.apps-card {
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+}
+.apps-card:active { transform: scale(0.97); }
+.apps-card.open {
+  grid-column: 1 / -1;
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px rgba(184,115,51,0.15);
+}
+.apps-card-face {
+  padding: 14px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.apps-card-emoji {
+  font-size: 28px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.apps-card.open .apps-card-emoji { transform: scale(1.1); }
+.apps-card-name {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.apps-card-cat {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+}
+.apps-card-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.apps-card.open .apps-card-panel { max-height: 200px; }
+.apps-card-panel-inner {
+  border-top: 1px solid var(--border);
+  padding: 14px 16px 16px;
+  background: var(--warm);
+}
+.apps-card-desc {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.apps-card-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--light-accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+}
+.apps-card-open-btn:active { background: var(--accent); color: var(--paper); }
+.apps-card-open-btn svg { width: 12px; height: 12px; }
+.cat-mental { background: #e8f4f0; color: #2d7a65; }
+.cat-life   { background: #f0ede8; color: #8a6840; }
+.cat-biz    { background: #edf0f8; color: #3a5080; }
+.cat-play   { background: #f8ede8; color: #8a4030; }
+.cat-learn  { background: #ede8f8; color: #5030a0; }
+.cat-comm   { background: #edf8f0; color: #2d6040; }
+.apps-card.hidden { display: none; }
+.apps-empty-msg {
+  display: none;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.apps-empty-msg.visible { display: block; }
 </style>
 </head>
 <body>
@@ -732,339 +886,480 @@ footer {
     <div class="section-eyebrow">Apps</div>
     <h2 class="section-title">厳選<em>AIアプリ</em></h2>
   </div>
-  <div class="apps-grid">
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/homehome-kagami.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🪞</div>
-      <div class="app-name">褒め褒め鏡</div>
-      <div class="app-desc">今日の小さな成果を入力すると、AIが最大限に称えてくれる。就寝前の自己肯定感を底上げする1分習慣。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">メンタルケア</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/lunch_roulette_v2.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🍱</div>
-      <div class="app-name">昼飯ルーレット</div>
-      <div class="app-desc">気分を入力するだけで、AIが今日のランチを1つ決める。毎日の微細な意思決定コストをゼロにする。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/future-letter.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">✉️</div>
-      <div class="app-name">未来の自分からの手紙</div>
-      <div class="app-desc">今日の頑張りを記録すると、1年後の自分から感謝のメッセージが届く。長期的な視点と癒やしを同時に。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">メンタルケア</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/three-tasks.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📋</div>
-      <div class="app-name">三行タスク整理</div>
-      <div class="app-desc">乱雑な思考を入力すると、今日やるべき3つのアクションに整理してくれる。朝の始業をスムーズにする習慣。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ビジネス</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/lucky-action.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🎴</div>
-      <div class="app-name">今日のラッキーアクション</div>
-      <div class="app-desc">気分に合わせた「1分以内にできる開運行動」を毎朝提案。占いを超えた、具体的で意外な行動指針。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">遊び</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/kokoro_detox.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🌿</div>
-      <div class="app-name">心のデトックス</div>
-      <div class="app-desc">ネガティブな気持ちを吐き出すと、AIが「新しい視点」として1行で再定義。認知をリセットする即席ケア。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">メンタルケア</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/rapid-reply.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">⚡</div>
-      <div class="app-name">爆速メール返信</div>
-      <div class="app-desc">受信メールの要点と返信の方向性を入力すると、2文の返信案を生成。移動中の隙間時間で業務を完結させる。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ビジネス</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/book_log.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📖</div>
-      <div class="app-name">一言読書録</div>
-      <div class="app-desc">本のタイトルと感想を入力すると、その本の本質を突いた「自分だけの座右の銘」を生成。知恵が積み重なる喜び。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/english_chat.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🗣️</div>
-      <div class="app-name">10秒英会話</div>
-      <div class="app-desc">シチュエーションを選ぶと、今すぐ使える1フレーズとカタカナ発音ガイドを提示。学習ではなく、武器を手に入れる感覚。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">学習</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/dinner-savior.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🍳</div>
-      <div class="app-name">晩御飯の救世主</div>
-      <div class="app-desc">冷蔵庫の食材を2つ入力すると、最適な料理名と調理のコツを1つ提示。「今あるもので何とかする」を数秒で解決。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/polite-decline.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🙏</div>
-      <div class="app-name">やんわり断り文句メーカー</div>
-      <div class="app-desc">断りたい内容と相手の関係性を入力するだけ。角の立たない丁寧な断り文句を生成。人間関係を傷つけずに「ノー」と言える。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">コミュニケーション</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/etiquette-guide.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">💐</div>
-      <div class="app-name">冠婚葬祭マナーガイド</div>
-      <div class="app-desc">シーンと自分の立場を選ぶだけ。結婚式・葬儀・お見舞いなど、適切なマナーとアドバイスをすぐに確認できる。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/small-talk-generator.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">💬</div>
-      <div class="app-name">雑談ネタジェネレーター</div>
-      <div class="app-desc">相手の特徴と状況を入力するだけ。その場で使える雑談ネタをすぐに提案。会話の沈黙を埋める即席ネタ帳。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">コミュニケーション</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/drink-excuse.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🍺</div>
-      <div class="app-name">飲み過ぎ言い訳アシスト</div>
-      <div class="app-desc">飲み過ぎた状況と翌日の予定を入力するだけ。ユーモアある言い訳と乗り切り方を提案。翌朝の地獄を笑いに変える。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">遊び</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/outing-idea.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🗺️</div>
-      <div class="app-name">お出かけアイデアメーカー</div>
-      <div class="app-desc">子供の年齢・天気・予算を入力するだけ。日帰りや近場のお出かけ先をすぐに提案。「どこ行く？」問題を即解決。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/oshi-presentation.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">✨</div>
-      <div class="app-name">推し活プレゼン文メーカー</div>
-      <div class="app-desc">推しの名前と魅力を入力するだけ。友達を沼らせる最強の布教文を生成。あなたの熱量をAIが言語化する。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">遊び</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/hangover-recovery.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🤒</div>
-      <div class="app-name">二日酔い回復プランナー</div>
-      <div class="app-desc">今の症状と手元にある食材を入力するだけ。回復メニューと今日の過ごし方を提案。つらい朝を最短で乗り越える。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/parent-message.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📱</div>
-      <div class="app-name">親への連絡文メーカー</div>
-      <div class="app-desc">伝えたい内容と親との関係感を入力するだけ。角が立たない丁寧な報告・お願い文を生成。言いにくいことも円滑に伝わる。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">コミュニケーション</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/neighbor-trouble.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🏠</div>
-      <div class="app-name">ご近所トラブル相談室</div>
-      <div class="app-desc">トラブルの内容と相手との関係を入力するだけ。穏便な対処法と伝え方を一緒に考える。関係を壊さず解決する言葉を見つける。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">コミュニケーション</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/subscript-checker.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">✂️</div>
-      <div class="app-name">サブスク断捨離チェッカー</div>
-      <div class="app-desc">加入中のサブスクを入力するだけ。AIが「解約すべき」を正直に教える。毎月の無駄な出費を一気に見直す断捨離ツール。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
-      </div>
-    </a>
-
+  <!-- フィルター -->
+  <div class="apps-filter-scroll">
+    <button class="apps-filter-btn active" data-filter="all">すべて</button>
+    <button class="apps-filter-btn" data-filter="メンタルケア">メンタルケア</button>
+    <button class="apps-filter-btn" data-filter="ライフハック">ライフハック</button>
+    <button class="apps-filter-btn" data-filter="ビジネス">ビジネス</button>
+    <button class="apps-filter-btn" data-filter="コミュニケーション">コミュニケーション</button>
+    <button class="apps-filter-btn" data-filter="学習">学習</button>
+    <button class="apps-filter-btn" data-filter="遊び">遊び</button>
   </div>
-</section>
 
-<!-- STANDARD APPS -->
-<section class="apps" id="standard-apps" style="background:var(--paper);">
-  <div class="section-header">
-    <div class="section-eyebrow">Standard Plan</div>
-    <h2 class="section-title">さらに深く、<em>生活を整える</em></h2>
+  <!-- Light Plan -->
+  <div class="apps-section-label">Light Plan <span class="apps-plan-tag">¥480/月</span></div>
+  <div class="apps-count-label" id="light-count">20本</div>
+  <div class="apps-grid-v2" id="light-grid">
+
+    <div class="apps-card" data-cat="メンタルケア">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🪞</div>
+        <div class="apps-card-name">褒め褒め鏡</div>
+        <div class="apps-card-cat cat-mental">メンタルケア</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">今日の小さな成果を入力すると、AIが最大限に称えてくれる。就寝前の自己肯定感を底上げする1分習慣。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/homehome-kagami.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🍱</div>
+        <div class="apps-card-name">昼飯ルーレット</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">気分を入力するだけで、AIが今日のランチを1つ決める。毎日の微細な意思決定コストをゼロにする。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/lunch_roulette_v2.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="メンタルケア">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">✉️</div>
+        <div class="apps-card-name">未来の自分からの手紙</div>
+        <div class="apps-card-cat cat-mental">メンタルケア</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">今日の頑張りを記録すると、1年後の自分から感謝のメッセージが届く。長期的な視点と癒やしを同時に。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/future-letter.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ビジネス">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📋</div>
+        <div class="apps-card-name">三行タスク整理</div>
+        <div class="apps-card-cat cat-biz">ビジネス</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">乱雑な思考を入力すると、今日やるべき3つのアクションに整理してくれる。朝の始業をスムーズにする習慣。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/three-tasks.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="遊び">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🎴</div>
+        <div class="apps-card-name">今日のラッキーアクション</div>
+        <div class="apps-card-cat cat-play">遊び</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">気分に合わせた「1分以内にできる開運行動」を毎朝提案。占いを超えた、具体的で意外な行動指針。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/lucky-action.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="メンタルケア">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🌿</div>
+        <div class="apps-card-name">心のデトックス</div>
+        <div class="apps-card-cat cat-mental">メンタルケア</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">ネガティブな気持ちを吐き出すと、AIが「新しい視点」として1行で再定義。認知をリセットする即席ケア。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/kokoro_detox.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ビジネス">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">⚡</div>
+        <div class="apps-card-name">爆速メール返信</div>
+        <div class="apps-card-cat cat-biz">ビジネス</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">受信メールの要点と返信の方向性を入力すると、2文の返信案を生成。移動中の隙間時間で業務を完結させる。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/rapid-reply.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📖</div>
+        <div class="apps-card-name">一言読書録</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">本のタイトルと感想を入力すると、その本の本質を突いた「自分だけの座右の銘」を生成。知恵が積み重なる喜び。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/book_log.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="学習">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🗣️</div>
+        <div class="apps-card-name">10秒英会話</div>
+        <div class="apps-card-cat cat-learn">学習</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">シチュエーションを選ぶと、今すぐ使える1フレーズとカタカナ発音ガイドを提示。学習ではなく、武器を手に入れる感覚。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/english_chat.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🍳</div>
+        <div class="apps-card-name">晩御飯の救世主</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">冷蔵庫の食材を2つ入力すると、最適な料理名と調理のコツを1つ提示。「今あるもので何とかする」を数秒で解決。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/dinner-savior.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="コミュニケーション">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🙏</div>
+        <div class="apps-card-name">やんわり断り文句メーカー</div>
+        <div class="apps-card-cat cat-comm">コミュニケーション</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">断りたい内容と相手の関係性を入力するだけ。角の立たない丁寧な断り文句を生成。人間関係を傷つけずに「ノー」と言える。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/polite-decline.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💐</div>
+        <div class="apps-card-name">冠婚葬祭マナーガイド</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">シーンと自分の立場を選ぶだけ。結婚式・葬儀・お見舞いなど、適切なマナーとアドバイスをすぐに確認できる。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/etiquette-guide.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="コミュニケーション">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💬</div>
+        <div class="apps-card-name">雑談ネタジェネレーター</div>
+        <div class="apps-card-cat cat-comm">コミュニケーション</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">相手の特徴と状況を入力するだけ。その場で使える雑談ネタをすぐに提案。会話の沈黙を埋める即席ネタ帳。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/small-talk-generator.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="遊び">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🍺</div>
+        <div class="apps-card-name">飲み過ぎ言い訳アシスト</div>
+        <div class="apps-card-cat cat-play">遊び</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">飲み過ぎた状況と翌日の予定を入力するだけ。ユーモアある言い訳と乗り切り方を提案。翌朝の地獄を笑いに変える。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/drink-excuse.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🗺️</div>
+        <div class="apps-card-name">お出かけアイデアメーカー</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">子供の年齢・天気・予算を入力するだけ。日帰りや近場のお出かけ先をすぐに提案。「どこ行く？」問題を即解決。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/outing-idea.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="遊び">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">✨</div>
+        <div class="apps-card-name">推し活プレゼン文メーカー</div>
+        <div class="apps-card-cat cat-play">遊び</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">推しの名前と魅力を入力するだけ。友達を沼らせる最強の布教文を生成。あなたの熱量をAIが言語化する。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/oshi-presentation.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🤒</div>
+        <div class="apps-card-name">二日酔い回復プランナー</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">今の症状と手元にある食材を入力するだけ。回復メニューと今日の過ごし方を提案。つらい朝を最短で乗り越える。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/hangover-recovery.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="コミュニケーション">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📱</div>
+        <div class="apps-card-name">親への連絡文メーカー</div>
+        <div class="apps-card-cat cat-comm">コミュニケーション</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">伝えたい内容と親との関係感を入力するだけ。角が立たない丁寧な報告・お願い文を生成。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/parent-message.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="コミュニケーション">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🏠</div>
+        <div class="apps-card-name">ご近所トラブル相談室</div>
+        <div class="apps-card-cat cat-comm">コミュニケーション</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">トラブルの内容と相手との関係を入力するだけ。穏便な対処法と伝え方を一緒に考える。関係を壊さず解決する言葉を見つける。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/neighbor-trouble.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">✂️</div>
+        <div class="apps-card-name">サブスク断捨離チェッカー</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">加入中のサブスクを入力するだけ。AIが「解約すべき」を正直に教える。毎月の無駄な出費を一気に見直す断捨離ツール。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/subscript-checker.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-empty-msg" id="light-empty">該当するアプリがありません</div>
   </div>
-  <div class="apps-grid">
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/summarize-reply.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📧</div>
-      <div class="app-name">長文メール・資料 要約＋返信セット</div>
-      <div class="app-desc">長いメールや資料を貼り付けるだけで、要点と返信案をセットで生成。情報過多な日常をスリム化。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ビジネス</span>
-        <span class="badge badge-live">公開中</span>
+  <!-- Standard Plan -->
+  <div class="apps-section-label" style="margin-top:20px;">Standard Plan <span class="apps-plan-tag">¥980/月</span></div>
+  <div class="apps-count-label" id="std-count">12本</div>
+  <div class="apps-grid-v2" id="std-grid">
+
+    <div class="apps-card" data-cat="ビジネス">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📧</div>
+        <div class="apps-card-name">長文メール要約＋返信セット</div>
+        <div class="apps-card-cat cat-biz">ビジネス</div>
       </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/index-1.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📚</div>
-      <div class="app-name">読書・動画 武器化ノート</div>
-      <div class="app-desc">本や動画のURLや内容を入力すると、明日から使える「行動に変わる知識」に再構成。インプットを武器に。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">学習</span>
-        <span class="badge badge-live">公開中</span>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">長いメールや資料を貼り付けるだけで、要点と返信案をセットで生成。情報過多な日常をスリム化。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/summarize-reply.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/gijiroku-action.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📋</div>
-      <div class="app-name">議事録→アクションプラン変換</div>
-      <div class="app-desc">会議メモを貼るだけで、誰が何をいつまでにやるかを整理したアクションプランに変換。会議後の迷いをゼロに。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ビジネス</span>
-        <span class="badge badge-live">公開中</span>
+    <div class="apps-card" data-cat="学習">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📚</div>
+        <div class="apps-card-name">読書・動画武器化ノート</div>
+        <div class="apps-card-cat cat-learn">学習</div>
       </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/subsidy-guide.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">💴</div>
-      <div class="app-name">補助金・ふるさと納税ガイド</div>
-      <div class="app-desc">状況を入力すると、使える補助金やふるさと納税の活用法を提案。複雑な制度をわかりやすくナビゲート。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">お金</span>
-        <span class="badge badge-live">公開中</span>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">本や動画の内容を入力すると、明日から使える「行動に変わる知識」に再構成。インプットを武器に。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/index-1.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/kids-activity.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🧒</div>
-      <div class="app-name">子供の習い事 条件整理シート</div>
-      <div class="app-desc">子供の特性・予算・送迎条件を入力すると、最適な習い事の選び方を整理。迷いがちな選択をすっきり解決。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">子育て</span>
-        <span class="badge badge-live">公開中</span>
+    <div class="apps-card" data-cat="ビジネス">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📋</div>
+        <div class="apps-card-name">議事録→アクションプラン変換</div>
+        <div class="apps-card-cat cat-biz">ビジネス</div>
       </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/family-trip-planner.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">✈️</div>
-      <div class="app-name">家族旅行プランナー</div>
-      <div class="app-desc">人数・予算・日程・好みを入力すると、行程から宿泊スタイルまで構造化されたプランを提案。計画の手間を一気に削減。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">会議メモを貼るだけで、誰が何をいつまでにやるかを整理したアクションプランに変換。会議後の迷いをゼロに。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/gijiroku-action.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/kenshin-parser.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🩺</div>
-      <div class="app-name">健診結果パーサー</div>
-      <div class="app-desc">健診の数値を入力すると、気になる項目をわかりやすく解説。受診すべきかの判断基準も提示。医師に聞く前の予習に。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ヘルスケア</span>
-        <span class="badge badge-live">公開中</span>
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💴</div>
+        <div class="apps-card-name">補助金・ふるさと納税ガイド</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
       </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/resume-rewriter.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">📝</div>
-      <div class="app-name">職務経歴書リライター</div>
-      <div class="app-desc">経歴や実績を入力すると、採用担当者の目に留まる表現にリライト。転職活動の第一関門を突破する言葉に磨き上げる。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">キャリア</span>
-        <span class="badge badge-live">公開中</span>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">状況を入力すると、使える補助金やふるさと納税の活用法を提案。複雑な制度をわかりやすくナビゲート。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/subsidy-guide.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/nameless-chores.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🏠</div>
-      <div class="app-name">名もなき家事 分担リスト</div>
-      <div class="app-desc">見えない家事を洗い出し、家族で分担できるリストに整理。「なんで気づかないの」をなくす、家庭の平和ツール。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">家庭</span>
-        <span class="badge badge-live">公開中</span>
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🧒</div>
+        <div class="apps-card-name">子供の習い事条件整理</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
       </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/app10-weekly-coach.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🌙</div>
-      <div class="app-name">週次内省コーチ</div>
-      <div class="app-desc">週に一度、3つの問いに答えるだけ。AIコーチが静かに伴走し、気づきと次の一歩を届ける。自己成長が習慣になる。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">自己成長</span>
-        <span class="badge badge-live">公開中</span>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">子供の特性・予算・送迎条件を入力すると、最適な習い事の選び方を整理。迷いがちな選択をすっきり解決。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/kids-activity.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/plant-doctor.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">🌿</div>
-      <div class="app-name">植物ドクター</div>
-      <div class="app-desc">植物の写真を撮って送るだけで、AIが葉・茎・土の状態を診断。水やりや日当たりの改善点をわかりやすくアドバイス。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">ライフハック</span>
-        <span class="badge badge-live">公開中</span>
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">✈️</div>
+        <div class="apps-card-name">家族旅行プランナー</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
       </div>
-    </a>
-
-    <a class="app-card fade-up" href="https://tomu-ai963.github.io/tomu-system/apps/standard/sticker-studio.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
-      <div class="app-emoji">✧</div>
-      <div class="app-name">Sticker Studio</div>
-      <div class="app-desc">形・色・テキストを自由に組み合わせてオリジナルステッカーを作成。AIカラーコーチ・テキスト提案・コンセプト生成で完成度を底上げ。PNG書き出し対応。</div>
-      <div class="app-badges">
-        <span class="badge badge-genre">クリエイティブ</span>
-        <span class="badge badge-live">公開中</span>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">人数・予算・日程・好みを入力すると、行程から宿泊スタイルまで構造化されたプランを提案。計画の手間を一気に削減。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/family-trip-planner.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
       </div>
-    </a>
+    </div>
 
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🩺</div>
+        <div class="apps-card-name">健診結果パーサー</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">健診の数値を入力すると、気になる項目をわかりやすく解説。受診すべきかの判断基準も提示。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/kenshin-parser.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ビジネス">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📝</div>
+        <div class="apps-card-name">職務経歴書リライター</div>
+        <div class="apps-card-cat cat-biz">ビジネス</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">経歴や実績を入力すると、採用担当者の目に留まる表現にリライト。転職活動の第一関門を突破する言葉に磨き上げる。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/resume-rewriter.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🏠</div>
+        <div class="apps-card-name">名もなき家事分担リスト</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">見えない家事を洗い出し、家族で分担できるリストに整理。「なんで気づかないの」をなくす、家庭の平和ツール。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/nameless-chores.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="メンタルケア">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🌙</div>
+        <div class="apps-card-name">週次内省コーチ</div>
+        <div class="apps-card-cat cat-mental">メンタルケア</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">週に一度、3つの問いに答えるだけ。AIコーチが静かに伴走し、気づきと次の一歩を届ける。自己成長が習慣になる。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/app10-weekly-coach.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🌿</div>
+        <div class="apps-card-name">植物ドクター</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">植物の写真を送るだけで、AIが葉・茎・土の状態を診断。水やりや日当たりの改善点をわかりやすくアドバイス。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/plant-doctor.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="ライフハック">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">✧</div>
+        <div class="apps-card-name">Sticker Studio</div>
+        <div class="apps-card-cat cat-life">ライフハック</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">形・色・テキストを自由に組み合わせてオリジナルステッカーを作成。AIカラーコーチ・テキスト提案・コンセプト生成で完成度を底上げ。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/standard/sticker-studio.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-empty-msg" id="std-empty">該当するアプリがありません</div>
   </div>
 </section>
 <section class="pricing" id="pricing">
@@ -1218,6 +1513,45 @@ const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.12 });
 document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// アプリカード展開
+let openCard = null;
+document.querySelectorAll('.apps-card').forEach(card => {
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.apps-card-open-btn')) return;
+    if (openCard && openCard !== card) openCard.classList.remove('open');
+    card.classList.toggle('open');
+    openCard = card.classList.contains('open') ? card : null;
+    if (card.classList.contains('open')) {
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
+  });
+});
+
+// カテゴリフィルター
+document.querySelectorAll('.apps-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.apps-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    if (openCard) { openCard.classList.remove('open'); openCard = null; }
+    let lv = 0, sv = 0;
+    document.querySelectorAll('#light-grid .apps-card').forEach(c => {
+      const show = filter === 'all' || c.dataset.cat === filter;
+      c.classList.toggle('hidden', !show);
+      if (show) lv++;
+    });
+    document.querySelectorAll('#std-grid .apps-card').forEach(c => {
+      const show = filter === 'all' || c.dataset.cat === filter;
+      c.classList.toggle('hidden', !show);
+      if (show) sv++;
+    });
+    document.getElementById('light-count').textContent = lv + '本';
+    document.getElementById('std-count').textContent = sv + '本';
+    document.getElementById('light-empty').classList.toggle('visible', lv === 0);
+    document.getElementById('std-empty').classList.toggle('visible', sv === 0);
+  });
+});
 
 // Stripe Checkout
 const STRIPE_LINKS = {
