@@ -9,11 +9,22 @@
  *   POST /stripe-webhook — Stripe Webhook
  */
 
-var CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
-};
+var ALLOWED_ORIGINS = [
+  "https://tomu-ai963.github.io",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:3000",
+];
+
+function getCorsHeaders(origin) {
+  var allow = ALLOWED_ORIGINS.indexOf(origin) !== -1 ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
+    "Vary": "Origin",
+  };
+}
 
 var DAILY_LIMITS = { light: 50, standard: 200, full: 500 };
 var PLAN_RANK = { light: 1, standard: 2, full: 3 };
@@ -102,10 +113,10 @@ async function checkPlanAndCount(email, requiredPlan) {
   return { ok: true, plan: plan };
 }
 
-function jsonRes(data, status) {
+function jsonRes(data, status, corsH) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
-    headers: Object.assign({}, CORS_HEADERS, { "Content-Type": "application/json" }),
+    headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
   });
 }
 
@@ -116,9 +127,11 @@ addEventListener("fetch", function(event) {
 
 async function handleRequest(request) {
   var url = new URL(request.url);
+  var origin = request.headers.get("Origin") || "";
+  var corsH = getCorsHeaders(origin);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { headers: CORS_HEADERS });
+    return new Response(null, { headers: corsH });
   }
 
   // ===== Stripe Webhook =====
@@ -153,18 +166,18 @@ async function handleRequest(request) {
   }
 
   if (request.method !== "POST") {
-    return jsonRes({ error: "Method not allowed" }, 405);
+    return jsonRes({ error: "Method not allowed" }, 405, corsH);
   }
 
   if (!ANTHROPIC_API_KEY) {
-    return jsonRes({ error: "API key not configured" }, 500);
+    return jsonRes({ error: "API key not configured" }, 500, corsH);
   }
 
   var body;
   try {
     body = await request.json();
   } catch (e) {
-    return jsonRes({ error: "Invalid JSON" }, 400);
+    return jsonRes({ error: "Invalid JSON" }, 400, corsH);
   }
 
   // =========================================================
@@ -182,14 +195,14 @@ async function handleRequest(request) {
         body: JSON.stringify(body),
       });
       if (!plantRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await plantRes.text() }, plantRes.status);
+        return jsonRes({ error: "Anthropic API error", detail: await plantRes.text() }, plantRes.status, corsH);
       }
       return new Response(await plantRes.text(), {
         status: 200,
-        headers: Object.assign({}, CORS_HEADERS, { "Content-Type": "application/json" }),
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
       });
     } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500);
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
     }
   }
 
@@ -203,12 +216,12 @@ async function handleRequest(request) {
     var maxTokens = Math.min(body.max_tokens || 1000, 2000);
 
     if (!system || !messages || !Array.isArray(messages) || messages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400);
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
     }
 
     var chatCheck = await checkPlanAndCount(chatEmail, "standard");
     if (!chatCheck.ok) {
-      return jsonRes({ error: chatCheck.error, required: chatCheck.required, current: chatCheck.current, limit: chatCheck.limit }, chatCheck.status);
+      return jsonRes({ error: chatCheck.error, required: chatCheck.required, current: chatCheck.current, limit: chatCheck.limit }, chatCheck.status, corsH);
     }
 
     try {
@@ -227,15 +240,14 @@ async function handleRequest(request) {
         }),
       });
       if (!chatRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await chatRes.text() }, chatRes.status);
+        return jsonRes({ error: "Anthropic API error", detail: await chatRes.text() }, chatRes.status, corsH);
       }
-      // Anthropic レスポンスをそのまま返す
       return new Response(await chatRes.text(), {
         status: 200,
-        headers: Object.assign({}, CORS_HEADERS, { "Content-Type": "application/json" }),
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
       });
     } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500);
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
     }
   }
 
@@ -248,20 +260,20 @@ async function handleRequest(request) {
   var lightEmail = body.email;
 
   if (!appType || !input) {
-    return jsonRes({ error: "appType and input are required" }, 400);
+    return jsonRes({ error: "appType and input are required" }, 400, corsH);
   }
 
   // ping — プラン確認のみ
   if (appType === "ping") {
-    if (!lightEmail) return jsonRes({ error: "login_required" }, 401);
+    if (!lightEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var pingPlan = await SUBSCRIPTIONS.get(lightEmail);
-    if (!pingPlan) return jsonRes({ error: "subscription_required" }, 403);
-    return jsonRes({ ok: true, plan: pingPlan });
+    if (!pingPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    return jsonRes({ ok: true, plan: pingPlan }, 200, corsH);
   }
 
   var lightCheck = await checkPlanAndCount(lightEmail, "light");
   if (!lightCheck.ok) {
-    return jsonRes({ error: lightCheck.error, limit: lightCheck.limit }, lightCheck.status);
+    return jsonRes({ error: lightCheck.error, limit: lightCheck.limit }, lightCheck.status, corsH);
   }
 
   try {
@@ -280,12 +292,12 @@ async function handleRequest(request) {
       }),
     });
     if (!lightRes.ok) {
-      return jsonRes({ error: "Anthropic API error", detail: await lightRes.text() }, lightRes.status);
+      return jsonRes({ error: "Anthropic API error", detail: await lightRes.text() }, lightRes.status, corsH);
     }
     var lightData = await lightRes.json();
     var text = (lightData.content && lightData.content[0]) ? lightData.content[0].text : "";
-    return jsonRes({ result: text });
+    return jsonRes({ result: text }, 200, corsH);
   } catch (err) {
-    return jsonRes({ error: "Worker error", detail: err.message }, 500);
+    return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
   }
 }

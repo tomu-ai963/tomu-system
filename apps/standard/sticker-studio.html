@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Sticker Studio — Sacred Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a84c;
+  --gold-light: #f0d080;
+  --gold-dim: #7a5c1e;
+  --bg: #0a0a12;
+  --surface: #111122;
+  --surface2: #181830;
+  --border: #2a2a4a;
+  --border-gold: #3a3020;
+  --text: #e8e0d0;
+  --muted: #7a7090;
+  --sacred: #8b6fd4;
+  --sacred-light: #c4b0ff;
+  --success: #3ecf8e;
+  --danger: #e55;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  font-family: 'Outfit', sans-serif;
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+
+/* ── 幾何学背景 ──────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 50% 20%, rgba(139,111,212,0.07) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(201,168,76,0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+.geo-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+}
+
+.app-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 100px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── ヘッダー ─────────────────────────── */
+.header {
+  text-align: center;
+  padding: 24px 0 16px;
+}
+.header-symbol {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 6px;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(201,168,76,0.5));
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%,100% { filter: drop-shadow(0 0 12px rgba(201,168,76,0.5)); }
+  50% { filter: drop-shadow(0 0 22px rgba(201,168,76,0.9)); }
+}
+.header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--gold-light);
+  text-shadow: 0 0 20px rgba(201,168,76,0.3);
+}
+.header-sub {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ── キャンバス（スティッキー） ───────────────────────── */
+.canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.canvas-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,111,212,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+#preview {
+  border-radius: 20px;
+  box-shadow: 0 0 40px rgba(139,111,212,0.2), 0 0 80px rgba(201,168,76,0.08);
+  touch-action: none;
+  cursor: grab;
+  display: block;
+  border: 1px solid var(--border);
+}
+#preview:active { cursor: grabbing; }
+
+/* ── カード ───────────────────────────── */
+.card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.card-gold {
+  border-color: var(--border-gold);
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(201,168,76,0.04) 100%);
+}
+.card-sacred {
+  border-color: rgba(139,111,212,0.3);
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(139,111,212,0.06) 100%);
+}
+.card-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title.gold { color: var(--gold); }
+.card-title.sacred { color: var(--sacred-light); }
+.card-title.muted { color: var(--muted); }
+
+/* ── 形状グリッド ─────────────────────── */
+.shape-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.btn-shape {
+  padding: 12px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-shape .icon { font-size: 1.3rem; }
+.btn-shape.active {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.08);
+  color: var(--gold-light);
+}
+
+/* ── テキスト入力 ─────────────────────── */
+.text-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+.text-input:focus { border-color: var(--gold); }
+.text-input::placeholder { color: var(--muted); }
+
+/* ── コントロール ─────────────────────── */
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ctrl-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 72px;
+}
+input[type="color"] {
+  height: 38px;
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 2px;
+  background: var(--surface2);
+}
+input[type="range"] {
+  flex: 1;
+  cursor: pointer;
+  accent-color: var(--gold);
+}
+.val-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 36px;
+  text-align: right;
+}
+.btn-adj {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-adj:active { background: rgba(201,168,76,0.1); }
+
+/* ── モード切替 ───────────────────────── */
+.mode-toggle {
+  display: flex;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.btn-mode {
+  flex: 1; padding: 9px;
+  border: none; border-radius: 7px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem; font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.btn-mode.active {
+  background: var(--surface);
+  color: var(--gold-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ── 画像アップロード ─────────────────── */
+.btn-photo {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--gold-dim);
+  background: rgba(201,168,76,0.05);
+  color: var(--gold);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.15s;
+}
+.btn-photo:active { background: rgba(201,168,76,0.12); }
+
+/* ── AIボタン ─────────────────────────── */
+.ai-input-wrap {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ai-input {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(139,111,212,0.4);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.ai-input:focus { border-color: var(--sacred); }
+.ai-input::placeholder { color: var(--muted); }
+.btn-ai {
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--sacred) 0%, #6040b8 100%);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(139,111,212,0.3);
+  transition: all 0.15s;
+}
+.btn-ai:active { transform: scale(0.97); }
+.btn-ai:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-ai-full {
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--sacred) 0%, #6040b8 100%);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(139,111,212,0.3);
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+.btn-ai-full:active { transform: scale(0.98); }
+.btn-ai-full:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* AIレスポンスチップ */
+.ai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ai-chip {
+  padding: 7px 14px;
+  border-radius: 99px;
+  border: 1px solid rgba(139,111,212,0.4);
+  background: rgba(139,111,212,0.1);
+  color: var(--sacred-light);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-chip:hover, .ai-chip:active {
+  background: rgba(139,111,212,0.25);
+  border-color: var(--sacred);
+}
+
+/* AIステータス */
+.ai-status {
+  font-size: 0.78rem;
+  color: var(--sacred-light);
+  padding: 8px 12px;
+  background: rgba(139,111,212,0.1);
+  border-radius: 8px;
+  margin-top: 8px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+.ai-status.show { display: flex; }
+.ai-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--sacred);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+
+/* ── 固定ボタン ───────────────────────── */
+.btn-save {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 448px;
+  background: linear-gradient(135deg, #2a7a5a 0%, var(--success) 100%);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(62,207,142,0.25);
+  z-index: 100;
+  letter-spacing: 0.3px;
+}
+
+/* ── フッター ─────────────────────────── */
+.legal-footer {
+  font-size: 0.62rem;
+  color: #444466;
+  text-align: center;
+  padding: 28px 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  line-height: 2;
+}
+.legal-footer a { color: #444466; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="geo-bg" id="geoBg"></div>
+
+<div class="app-container">
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <span class="header-symbol">✧</span>
+    <h1>Sticker Studio</h1>
+    <div class="header-sub">Sacred Edition</div>
+  </header>
+
+  <!-- キャンバス -->
+  <div class="canvas-wrap">
+    <div class="canvas-glow"></div>
+    <canvas id="preview" width="300" height="300"></canvas>
+  </div>
+
+  <!-- 1. ベースデザイン -->
+  <div class="card">
+    <div class="card-title muted">
+      <span>◎</span> ベースデザイン
+    </div>
+    <div class="shape-grid">
+      <button class="btn-shape active" onclick="setShape('circle', this)">
+        <span class="icon">○</span><span>円形</span>
+      </button>
+      <button class="btn-shape" onclick="setShape('square', this)">
+        <span class="icon">□</span><span>四角</span>
+      </button>
+      <button class="btn-shape" onclick="setShape('heart', this)">
+        <span class="icon">♥</span><span>ハート</span>
+      </button>
+      <button class="btn-shape" onclick="setShape('star', this)">
+        <span class="icon">★</span><span>スター</span>
+      </button>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="ctrl-row">
+        <span class="ctrl-label">背景色</span>
+        <input type="color" id="bgColor" value="#111122" oninput="updateBg(this.value)">
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">文字色</span>
+        <input type="color" id="textColor" value="#c9a84c" oninput="updateTextColor(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. コンテンツ -->
+  <div class="card">
+    <div class="card-title muted">
+      <span>✎</span> コンテンツ
+    </div>
+    <input type="text" class="text-input" id="textInput" placeholder="テキストを入力..." oninput="updateText(this.value)">
+    <div id="dragHint" style="font-size:0.68rem;color:var(--muted);margin-bottom:10px;margin-top:-6px;">✦ 画像ドラッグ / 2本指タップでテキスト移動モード</div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">フォントサイズ</span>
+      <button class="btn-adj" onclick="adjFontSize(-2)">−</button>
+      <div class="val-label" id="fontSizeVal">40</div>
+      <button class="btn-adj" onclick="adjFontSize(2)">+</button>
+      <div style="flex:1"></div>
+      <label style="font-size:0.7rem;color:var(--muted);display:flex;align-items:center;gap:5px;cursor:pointer;">
+        <input type="checkbox" id="textShadow" checked onchange="updateShadow(this.checked)"> 影
+      </label>
+    </div>
+    <div class="mode-toggle">
+      <button class="btn-mode active" id="modeColor" onclick="setMode('color')">カラーのみ</button>
+      <button class="btn-mode" id="modePhoto" onclick="setMode('photo')">画像 / SVG</button>
+    </div>
+    <div id="photoArea" style="display:none;">
+      <button class="btn-photo" onclick="document.getElementById('fileInput').click()">+ 画像をアップロード</button>
+      <input type="file" id="fileInput" hidden accept="image/*" onchange="handleFile(this)">
+      <div class="ctrl-row" style="margin-top:12px;">
+        <span class="ctrl-label">サイズ</span>
+        <button class="btn-adj" onclick="adjScale(-0.1)">−</button>
+        <input type="range" id="scaleRange" min="0.1" max="3.0" step="0.05" value="1.0" oninput="updateScale(this.value)">
+        <button class="btn-adj" onclick="adjScale(0.1)">+</button>
+        <span class="val-label" id="scaleVal">100%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. AIカラーコーチ -->
+  <div class="card card-sacred">
+    <div class="card-title sacred">
+      <span>✦</span> AIカラーコーチ
+    </div>
+    <div id="colorAiArea"></div>
+  </div>
+
+  <!-- 4. AIテキスト提案 -->
+  <div class="card card-sacred">
+    <div class="card-title sacred">
+      <span>✦</span> AIテキスト提案
+    </div>
+    <div id="textAiArea"></div>
+    <div id="snsTextWrap" style="display:none;margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(139,111,212,0.2);">
+      <div style="font-size:0.65rem;color:var(--sacred-light);margin-bottom:6px;font-weight:800;letter-spacing:1px;">SNSキャプション</div>
+      <div id="snsText" style="font-size:0.8rem;line-height:1.6;color:var(--text);"></div>
+    </div>
+  </div>
+
+  <!-- 5. AIコンセプト生成 -->
+  <div class="card card-sacred">
+    <div class="card-title sacred">
+      <span>✦</span> AIコンセプト生成
+    </div>
+    <div id="conceptAiArea"></div>
+  </div>
+
+  <!-- フッター -->
+  <footer class="legal-footer">
+    &copy; 2026 Sticker Studio — Sacred Edition<br>
+    <a href="#">利用規約</a> &bull; <a href="#">プライバシーポリシー</a><br>
+    Powered by とむSYSTEM
+  </footer>
+
+  <!-- 固定ボタン -->
+  <button class="btn-save" onclick="downloadPNG()">ステッカーをダウンロード (PNG)</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// 状態管理
+// ═══════════════════════════════════════
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+
+const canvas = document.getElementById('preview');
+const ctx = canvas.getContext('2d');
+const SIZE = 300;
+
+const STATE = {
+  shape: 'circle',
+  bgColor: '#111122',
+  textColor: '#c9a84c',
+  text: '',
+  fontSize: 40,
+  textPos: { x: 50, y: 130 },
+  textShadow: true,
+  mode: 'color',
+  photoImg: null,
+  photoScale: 1.0,
+  photoPos: { x: 0, y: 0 },
+};
+
+// ═══════════════════════════════════════
+// キャンバスエンジン
+// ═══════════════════════════════════════
+function redraw() {
+  ctx.clearRect(0, 0, SIZE, SIZE);
+  ctx.save();
+  clipShape(ctx, SIZE);
+  ctx.fillStyle = STATE.bgColor;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  if (STATE.photoImg) {
+    const img = STATE.photoImg;
+    const asp = img.width / img.height;
+    const bw = asp >= 1 ? SIZE * asp : SIZE;
+    const bh = asp >= 1 ? SIZE : SIZE / asp;
+    ctx.drawImage(img, STATE.photoPos.x, STATE.photoPos.y, bw * STATE.photoScale, bh * STATE.photoScale);
+  }
+  ctx.restore();
+  if (STATE.text) {
+    ctx.font = `900 ${STATE.fontSize}px 'Outfit', sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    if (STATE.textShadow) {
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = STATE.fontSize * 0.18;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(STATE.text, STATE.textPos.x, STATE.textPos.y);
+    }
+    ctx.fillStyle = STATE.textColor;
+    ctx.fillText(STATE.text, STATE.textPos.x, STATE.textPos.y);
+  }
+}
+
+function clipShape(c, s) {
+  c.beginPath();
+  if (STATE.shape === 'circle') {
+    c.arc(s/2, s/2, s/2 - 2, 0, Math.PI * 2);
+  } else if (STATE.shape === 'square') {
+    const r = 40;
+    c.moveTo(r, 0);
+    c.lineTo(s-r, 0); c.quadraticCurveTo(s, 0, s, r);
+    c.lineTo(s, s-r); c.quadraticCurveTo(s, s, s-r, s);
+    c.lineTo(r, s); c.quadraticCurveTo(0, s, 0, s-r);
+    c.lineTo(0, r); c.quadraticCurveTo(0, 0, r, 0);
+  } else if (STATE.shape === 'heart') {
+    const x=0, y=20, w=s, h=s-20;
+    c.moveTo(x+w/2, y+h*0.3);
+    c.bezierCurveTo(x+w/2, y, x, y, x, y+h*0.35);
+    c.bezierCurveTo(x, y+h*0.7, x+w/2, y+h, x+w/2, y+h);
+    c.bezierCurveTo(x+w/2, y+h, x+w, y+h*0.7, x+w, y+h*0.35);
+    c.bezierCurveTo(x+w, y, x+w/2, y, x+w/2, y+h*0.3);
+  } else if (STATE.shape === 'star') {
+    const cx=s/2, cy=s/2, spikes=5, outer=s/2-2, inner=s/4;
+    let rot = Math.PI/2*3;
+    const step = Math.PI/spikes;
+    c.moveTo(cx, cy - outer);
+    for (let i = 0; i < spikes; i++) {
+      c.lineTo(cx + Math.cos(rot)*outer, cy + Math.sin(rot)*outer); rot += step;
+      c.lineTo(cx + Math.cos(rot)*inner, cy + Math.sin(rot)*inner); rot += step;
+    }
+    c.lineTo(cx, cy - outer);
+  }
+  c.closePath();
+  c.clip();
+}
+
+// ═══════════════════════════════════════
+// UIハンドラ
+// ═══════════════════════════════════════
+function setShape(shape, btn) {
+  STATE.shape = shape;
+  document.querySelectorAll('.btn-shape').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  redraw();
+}
+function updateBg(v) { STATE.bgColor = v; redraw(); }
+function updateTextColor(v) { STATE.textColor = v; redraw(); }
+function updateText(v) { STATE.text = v; redraw(); }
+function adjFontSize(v) {
+  STATE.fontSize = Math.max(10, Math.min(120, STATE.fontSize + v));
+  document.getElementById('fontSizeVal').textContent = STATE.fontSize;
+  redraw();
+}
+function updateShadow(v) { STATE.textShadow = v; redraw(); }
+function setMode(m) {
+  STATE.mode = m;
+  document.getElementById('modeColor').classList.toggle('active', m === 'color');
+  document.getElementById('modePhoto').classList.toggle('active', m === 'photo');
+  document.getElementById('photoArea').style.display = m === 'photo' ? 'block' : 'none';
+  if (m === 'color') { STATE.photoImg = null; redraw(); }
+}
+function updateScale(v) {
+  STATE.photoScale = parseFloat(v);
+  document.getElementById('scaleVal').textContent = Math.round(v * 100) + '%';
+  redraw();
+}
+function adjScale(delta) {
+  const newVal = Math.max(0.1, Math.min(3.0, STATE.photoScale + delta));
+  STATE.photoScale = Math.round(newVal * 100) / 100;
+  document.getElementById('scaleRange').value = STATE.photoScale;
+  document.getElementById('scaleVal').textContent = Math.round(STATE.photoScale * 100) + '%';
+  redraw();
+}
+
+// ── ドラッグ操作 ──
+let isDragging = false, lastPos = { x: 0, y: 0 };
+let textMoveMode = false;
+
+canvas.onpointerdown = (e) => {
+  isDragging = true;
+  lastPos = { x: e.clientX, y: e.clientY };
+  canvas.setPointerCapture(e.pointerId);
+};
+canvas.onpointermove = (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - lastPos.x, dy = e.clientY - lastPos.y;
+  if (textMoveMode) {
+    STATE.textPos.x += dx; STATE.textPos.y += dy;
+  } else if (STATE.mode === 'photo' && STATE.photoImg) {
+    STATE.photoPos.x += dx; STATE.photoPos.y += dy;
+  } else {
+    STATE.textPos.x += dx; STATE.textPos.y += dy;
+  }
+  lastPos = { x: e.clientX, y: e.clientY };
+  redraw();
+};
+canvas.onpointerup = () => isDragging = false;
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    textMoveMode = !textMoveMode;
+    const hint = document.getElementById('dragHint');
+    if (hint) hint.textContent = textMoveMode
+      ? '✦ テキスト移動モード ON（2本指でOFF）'
+      : '✦ 画像ドラッグ / 2本指タップでテキスト移動モード';
+  }
+}, { passive: true });
+
+// ── 画像アップロード ──
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      STATE.photoImg = img;
+      STATE.photoPos = { x: 0, y: 0 };
+      STATE.photoScale = 1.0;
+      document.getElementById('scaleRange').value = 1.0;
+      document.getElementById('scaleVal').textContent = '100%';
+      redraw();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ═══════════════════════════════════════
+// Cloudflare Worker API呼び出し
+// ═══════════════════════════════════════
+async function callClaude(system, user) {
+  const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+  const res = await fetch(`${WORKER_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system,
+      messages: [{ role: 'user', content: user }],
+      email,
+      max_tokens: 2000,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `APIエラー: ${res.status}`);
+  }
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// ═══════════════════════════════════════
+// ステータス表示
+// ═══════════════════════════════════════
+function showStatus(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.querySelector('span').textContent = msg;
+  el.classList.add('show');
+}
+function hideStatus(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+
+// ═══════════════════════════════════════
+// AI機能初期化
+// ═══════════════════════════════════════
+function initAiFeatures() {
+  initColorCoach();
+  initTextProposer();
+  initConceptGenerator();
+}
+
+// ── AIカラーコーチ ──
+function initColorCoach() {
+  document.getElementById('colorAiArea').innerHTML = `
+    <div class="ai-input-wrap">
+      <input class="ai-input" id="colorKeyword" placeholder="例：夕焼け・海・ネオン・和風">
+      <button class="btn-ai" onclick="runColorCoach()">✦ 配色提案</button>
+    </div>
+    <div class="ai-status" id="colorStatus"><div class="ai-dot"></div><span>AIが配色を考えています...</span></div>
+    <div class="ai-chips" id="colorChips"></div>
+  `;
+}
+
+async function runColorCoach() {
+  const kw = document.getElementById('colorKeyword').value.trim();
+  if (!kw) return;
+  showStatus('colorStatus', 'AIが配色を考えています...');
+  try {
+    const raw = await callClaude(
+      `あなたはカラーデザインの専門家です。キーワードに合う配色を3案提案してください。
+必ずJSONのみで返してください。形式：
+{"palettes":[{"name":"名前","bg":"#hex","text":"#hex","desc":"一言説明"},{"name":"...","bg":"...","text":"...","desc":"..."},{"name":"...","bg":"...","text":"...","desc":"..."}]}`,
+      `キーワード：${kw}`
+    );
+    const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    const chips = document.getElementById('colorChips');
+    chips.innerHTML = '';
+    data.palettes.forEach(p => {
+      const chip = document.createElement('button');
+      chip.className = 'ai-chip';
+      chip.style.cssText = `background:${p.bg};color:${p.text};border-color:${p.text}44;display:block;width:100%;text-align:left;padding:10px 14px;border-radius:10px;margin-bottom:4px;`;
+      chip.innerHTML = `<b>${p.name}</b><br><span style="font-size:0.75rem;opacity:0.8">${p.desc}</span>`;
+      chip.onclick = () => {
+        STATE.bgColor = p.bg; STATE.textColor = p.text;
+        document.getElementById('bgColor').value = p.bg;
+        document.getElementById('textColor').value = p.text;
+        redraw();
+      };
+      chips.appendChild(chip);
+    });
+  } catch(e) {
+    showStatus('colorStatus', '⚠ ' + e.message);
+    setTimeout(() => hideStatus('colorStatus'), 3000); return;
+  }
+  hideStatus('colorStatus');
+}
+
+// ── AIテキスト提案 ──
+function initTextProposer() {
+  document.getElementById('textAiArea').innerHTML = `
+    <div class="ai-input-wrap">
+      <input class="ai-input" id="textKeyword" placeholder="例：推し活・誕生日・カフェ・旅行">
+      <button class="btn-ai" onclick="runTextProposer()">✦ テキスト提案</button>
+    </div>
+    <div class="ai-status" id="textStatus"><div class="ai-dot"></div><span>AIがテキストを考えています...</span></div>
+    <div class="ai-chips" id="textChips"></div>
+  `;
+}
+
+async function runTextProposer() {
+  const kw = document.getElementById('textKeyword').value.trim();
+  if (!kw) return;
+  const btn = document.querySelector('#textAiArea .btn-ai');
+  btn.disabled = true;
+  showStatus('textStatus', 'AIがテキストを考えています...');
+  try {
+    const raw = await callClaude(
+      `あなたはステッカーコピーライターです。シーンに合う短いテキストを5案提案してください。
+必ずJSONのみで返してください。形式：{"texts":["テキスト1","テキスト2","テキスト3","テキスト4","テキスト5"]}
+各テキストは12文字以内で。`,
+      `シーン：${kw}`
+    );
+    const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    const chips = document.getElementById('textChips');
+    chips.innerHTML = '';
+    data.texts.forEach(t => {
+      const chip = document.createElement('button');
+      chip.className = 'ai-chip';
+      chip.textContent = t;
+      chip.onclick = () => {
+        STATE.text = t;
+        document.getElementById('textInput').value = t;
+        redraw();
+      };
+      chips.appendChild(chip);
+    });
+    const snsRaw = await callClaude(
+      'ステッカーのSNSキャプションを1つ、日本語で100文字以内で生成してください。ハッシュタグも含めてください。テキストのみ返してください。',
+      `シーン：${kw}`
+    );
+    document.getElementById('snsText').textContent = snsRaw.trim();
+    document.getElementById('snsTextWrap').style.display = 'block';
+  } catch(e) {
+    showStatus('textStatus', '⚠ ' + e.message);
+    setTimeout(() => hideStatus('textStatus'), 3000);
+    btn.disabled = false; return;
+  }
+  hideStatus('textStatus');
+  btn.disabled = false;
+}
+
+// ── AIコンセプト生成 ──
+function initConceptGenerator() {
+  document.getElementById('conceptAiArea').innerHTML = `
+    <div class="ai-input-wrap">
+      <input class="ai-input" id="conceptKeyword" placeholder="例：推し活・誕生日・瞑想・宇宙">
+      <button class="btn-ai-full" id="conceptAiBtn" onclick="runConceptGenerator()">✦ シーンからデザインを一括生成</button>
+    </div>
+    <div class="ai-status" id="conceptStatus"><div class="ai-dot"></div><span>AIがデザインコンセプトを考えています...</span></div>
+    <div class="ai-chips" id="conceptChips"></div>
+  `;
+}
+
+async function runConceptGenerator() {
+  const kw = document.getElementById('conceptKeyword').value.trim();
+  if (!kw) return;
+  const btn = document.getElementById('conceptAiBtn');
+  btn.disabled = true;
+  showStatus('conceptStatus', 'AIがデザインコンセプトを考えています...');
+  try {
+    const raw = await callClaude(
+      `あなたはステッカーデザインのプロです。シーンに最適なデザインコンセプトを3案提案してください。
+必ずJSONのみで返してください。形式：
+{"concepts":[{"name":"コンセプト名","shape":"circle|square|star|heart","bg":"#hex","textColor":"#hex","text":"ステッカーテキスト（12文字以内）","desc":"一言説明"}]}`,
+      `シーン：${kw}`
+    );
+    const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    const chips = document.getElementById('conceptChips');
+    chips.innerHTML = '';
+    data.concepts.forEach(con => {
+      const chip = document.createElement('button');
+      chip.className = 'ai-chip';
+      chip.style.cssText = `background:${con.bg};color:${con.textColor};border-color:${con.textColor}44;display:block;width:100%;text-align:left;padding:12px 16px;border-radius:12px;margin-bottom:4px;`;
+      chip.innerHTML = `<b>${con.name}</b><br><span style="font-size:0.75rem;opacity:0.8">${con.desc}</span>`;
+      chip.onclick = () => {
+        STATE.bgColor = con.bg; STATE.textColor = con.textColor;
+        STATE.text = con.text; STATE.shape = con.shape;
+        document.getElementById('bgColor').value = con.bg;
+        document.getElementById('textColor').value = con.textColor;
+        document.getElementById('textInput').value = con.text;
+        document.querySelectorAll('.btn-shape').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${con.shape}'`));
+        });
+        setMode('color');
+        redraw();
+      };
+      chips.appendChild(chip);
+    });
+  } catch(e) {
+    showStatus('conceptStatus', '⚠ ' + e.message);
+    setTimeout(() => hideStatus('conceptStatus'), 3000);
+    btn.disabled = false; return;
+  }
+  hideStatus('conceptStatus');
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════
+// PNG書き出し（1000px）
+// ═══════════════════════════════════════
+function downloadPNG() {
+  const EXPORT = 1000;
+  const off = document.createElement('canvas');
+  off.width = EXPORT; off.height = EXPORT;
+  const offCtx = off.getContext('2d');
+  const scale = EXPORT / SIZE;
+  offCtx.clearRect(0, 0, EXPORT, EXPORT);
+  offCtx.save();
+  offCtx.scale(scale, scale);
+  clipShape(offCtx, SIZE);
+  offCtx.fillStyle = STATE.bgColor;
+  offCtx.fillRect(0, 0, SIZE, SIZE);
+  if (STATE.photoImg) {
+    const img = STATE.photoImg;
+    const asp = img.width / img.height;
+    const bw = asp >= 1 ? SIZE*asp : SIZE;
+    const bh = asp >= 1 ? SIZE : SIZE/asp;
+    offCtx.drawImage(img, STATE.photoPos.x, STATE.photoPos.y, bw*STATE.photoScale, bh*STATE.photoScale);
+  }
+  offCtx.restore();
+  if (STATE.text) {
+    const fs = STATE.fontSize * scale;
+    offCtx.font = `900 ${fs}px 'Outfit', sans-serif`;
+    offCtx.textAlign = 'left'; offCtx.textBaseline = 'top';
+    if (STATE.textShadow) {
+      offCtx.strokeStyle = '#000';
+      offCtx.lineWidth = fs * 0.18;
+      offCtx.lineJoin = 'round';
+      offCtx.strokeText(STATE.text, STATE.textPos.x*scale, STATE.textPos.y*scale);
+    }
+    offCtx.fillStyle = STATE.textColor;
+    offCtx.fillText(STATE.text, STATE.textPos.x*scale, STATE.textPos.y*scale);
+  }
+  const a = document.createElement('a');
+  a.download = `sticker_${STATE.shape}_${EXPORT}px.png`;
+  a.href = off.toDataURL('image/png');
+  a.click();
+}
+
+// ═══════════════════════════════════════
+// 初期化
+// ═══════════════════════════════════════
+initAiFeatures();
+redraw();
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="/tomu-system/tomu-login.js"></script>
+</body>
+</html>
