@@ -102,7 +102,7 @@ nav {
 .hero {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   align-items: center;
   padding: 120px 48px 80px;
   gap: 60px;
@@ -164,7 +164,7 @@ nav {
   color: var(--muted);
   line-height: 1.9;
   margin-bottom: 40px;
-  max-width: 420px;
+  width: 100%;
 }
 
 .hero-btns {
@@ -206,41 +206,6 @@ nav {
 }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ヒーロー右：アプリカード積み */
-.hero-visual {
-  position: relative;
-  height: 480px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stack-card {
-  position: absolute;
-  width: 260px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 22px 24px;
-  box-shadow: 0 4px 24px rgba(26,22,18,.07);
-}
-.stack-card:nth-child(1) { transform: rotate(-6deg) translate(-60px, 30px); z-index:1; opacity:.5; }
-.stack-card:nth-child(2) { transform: rotate(-2deg) translate(-20px, 12px); z-index:2; opacity:.75; }
-.stack-card:nth-child(3) { transform: rotate(1deg); z-index:3; }
-
-.card-emoji { font-size: 1.8rem; margin-bottom: 10px; }
-.card-name { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
-.card-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.6; }
-.card-tag {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  background: var(--light-accent);
-  color: var(--accent);
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-}
 
 /* ===== SECTION COMMONS ===== */
 section { padding: 100px 48px; }
@@ -833,26 +798,6 @@ footer {
     </div>
   </div>
 
-  <div class="hero-visual">
-    <div class="stack-card">
-      <div class="card-emoji">🎴</div>
-      <div class="card-name">ラッキーアクション</div>
-      <div class="card-desc">今日の開運行動を1つだけ提案</div>
-      <span class="card-tag" style="background:rgba(122,158,126,.15);color:var(--accent2)">公開中</span>
-    </div>
-    <div class="stack-card">
-      <div class="card-emoji">✉️</div>
-      <div class="card-name">未来の自分からの手紙</div>
-      <div class="card-desc">今日の頑張りへ、未来からの感謝</div>
-      <span class="card-tag" style="background:rgba(122,158,126,.15);color:var(--accent2)">公開中</span>
-    </div>
-    <div class="stack-card">
-      <div class="card-emoji">🪞</div>
-      <div class="card-name">褒め褒め鏡</div>
-      <div class="card-desc">小さな成果を最大限に称える</div>
-      <span class="card-tag" style="background:rgba(122,158,126,.15);color:var(--accent2)">公開中</span>
-    </div>
-  </div>
 </section>
 
 <!-- CONCEPT -->
