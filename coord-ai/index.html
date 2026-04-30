@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coord AI — コーディネートアドバイザー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #e8c96e;
+  --gold-dim: rgba(201,168,76,0.15);
+  --gold-border: rgba(201,168,76,0.35);
+  --white: #ffffff;
+  --bg: #fafaf8;
+  --text: #1a1a1a;
+  --text-sub: #666;
+  --border: #e8e4de;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.wrapper {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+/* ヘッダー */
+header {
+  text-align: center;
+  padding: 48px 0 32px;
+}
+.logo-mark {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, #C9A84C, #e8c96e);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+}
+h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+.tagline {
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  margin-top: 6px;
+  letter-spacing: 0.12em;
+}
+
+/* セクションカード */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title::before {
+  content: '';
+  display: block;
+  width: 3px; height: 14px;
+  background: var(--gold);
+  border-radius: 2px;
+}
+
+/* タブ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: #f2efe9;
+  border-radius: 8px;
+  padding: 4px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--white);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.tab-panel { display: none; animation: fadeIn 0.2s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* アップロードゾーン（1枚ずつ） */
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.upload-slot {
+  position: relative;
+}
+.upload-slot label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-sub);
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+}
+.upload-slot .badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--gold-dim);
+  color: var(--gold);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.drop-zone {
+  border: 1.5px dashed var(--gold-border);
+  border-radius: 8px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--gold-dim);
+  overflow: hidden;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.22);
+}
+.drop-zone .drop-icon { font-size: 1.4rem; margin-bottom: 4px; }
+.drop-zone .drop-text { font-size: 0.7rem; color: var(--text-sub); text-align: center; }
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.drop-zone .preview-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 7px;
+}
+.remove-btn {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 20px; height: 20px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 10;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.remove-btn.visible { display: flex; }
+
+/* まとめてアップロード */
+.bulk-drop-zone {
+  border: 1.5px dashed var(--gold-border);
+  border-radius: 8px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--gold-dim);
+  position: relative;
+  margin-bottom: 16px;
+}
+.bulk-drop-zone:hover, .bulk-drop-zone.dragover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.22);
+}
+.bulk-drop-zone .drop-icon { font-size: 2rem; margin-bottom: 8px; }
+.bulk-drop-zone .drop-text { font-size: 0.8rem; color: var(--text-sub); text-align: center; }
+.bulk-drop-zone .drop-sub { font-size: 0.68rem; color: #999; margin-top: 4px; }
+.bulk-drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.bulk-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+@media (max-width: 480px) { .bulk-thumbs { grid-template-columns: repeat(3, 1fr); } }
+.bulk-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #eee;
+}
+.bulk-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.bulk-thumb .remove-btn {
+  display: flex;
+  top: 3px; right: 3px;
+}
+
+/* シチュエーション */
+.preset-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preset-btn {
+  padding: 8px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: var(--white);
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.preset-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.preset-btn.selected {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: #8a6a1a;
+  font-weight: 500;
+}
+
+textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  color: var(--text);
+  background: var(--white);
+}
+textarea:focus { border-color: var(--gold); }
+
+/* オプション行 */
+.option-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.option-group {
+  flex: 1;
+}
+.option-group label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-sub);
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+}
+.option-group select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23999' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  transition: border-color 0.2s;
+}
+.option-group select:focus { border-color: var(--gold); }
+
+/* 送信ボタン */
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #C9A84C, #e8c96e);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(201,168,76,0.35);
+  margin-top: 8px;
+}
+.submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.45); }
+.submit-btn:active { transform: translateY(0); }
+.submit-btn:disabled {
+  background: #ccc;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* エラーメッセージ */
+.error-msg {
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  color: #c0392b;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.84rem;
+  margin-top: 12px;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* ローディング */
+.loading-box {
+  text-align: center;
+  padding: 48px 24px;
+  display: none;
+}
+.loading-box.visible { display: block; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--gold-dim);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 0.88rem; color: var(--text-sub); }
+
+/* 結果 */
+.result-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  display: none;
+}
+.result-box.visible { display: block; }
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.result-header .icon {
+  width: 36px; height: 36px;
+  background: var(--gold-dim);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.result-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.result-header .sub {
+  font-size: 0.74rem;
+  color: var(--text-sub);
+}
+
+/* マークダウン出力スタイル */
+.result-content { font-size: 0.9rem; line-height: 1.8; color: var(--text); }
+.result-content h1, .result-content h2, .result-content h3 {
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: #1a1a1a;
+}
+.result-content h2 { font-size: 1rem; }
+.result-content h3 { font-size: 0.9rem; color: var(--gold); }
+.result-content p { margin-bottom: 10px; }
+.result-content ul, .result-content ol { padding-left: 20px; margin-bottom: 10px; }
+.result-content li { margin-bottom: 4px; }
+.result-content strong { font-weight: 700; color: #333; }
+.result-content em { font-style: italic; color: var(--text-sub); }
+.result-content hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+.retry-btn {
+  margin-top: 24px;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1.5px solid var(--gold-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.18s;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.retry-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+
+/* フッター */
+footer {
+  text-align: center;
+  padding: 32px 0 0;
+  font-size: 0.72rem;
+  color: #bbb;
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.4rem; }
+  .card { padding: 18px; }
+  .upload-grid { grid-template-columns: 1fr 1fr; }
+  .option-row { flex-direction: column; gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-mark">👗</div>
+    <h1>Coord AI</h1>
+    <p class="tagline">手持ちのアイテムから最適なコーディネートをご提案</p>
+  </header>
+
+  <!-- 入力フォーム -->
+  <div id="formSection">
+
+    <!-- 写真アップロード -->
+    <div class="card">
+      <div class="card-title">STEP 1 — 服・小物の写真</div>
+
+      <div class="tabs" id="uploadTabs">
+        <button class="tab-btn active" onclick="switchTab(this, 'single')">1枚ずつ</button>
+        <button class="tab-btn" onclick="switchTab(this, 'bulk')">まとめて</button>
+      </div>
+
+      <!-- 1枚ずつモード -->
+      <div class="tab-panel active" id="panel-single">
+        <div class="upload-grid">
+          <div class="upload-slot">
+            <label>トップス <span class="badge">必須</span></label>
+            <div class="drop-zone" id="zone-tops" ondragover="handleDragOver(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'tops',this)">
+              <input type="file" accept="image/*" onchange="handleFile(this.files[0],'tops',this.parentElement)">
+              <span class="drop-icon">👕</span>
+              <span class="drop-text">タップまたは<br>ドロップ</span>
+            </div>
+            <button class="remove-btn" id="rm-tops" onclick="removeSlot('tops')">×</button>
+          </div>
+          <div class="upload-slot">
+            <label>ボトムス <span class="badge">必須</span></label>
+            <div class="drop-zone" id="zone-bottoms" ondragover="handleDragOver(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'bottoms',this)">
+              <input type="file" accept="image/*" onchange="handleFile(this.files[0],'bottoms',this.parentElement)">
+              <span class="drop-icon">👖</span>
+              <span class="drop-text">タップまたは<br>ドロップ</span>
+            </div>
+            <button class="remove-btn" id="rm-bottoms" onclick="removeSlot('bottoms')">×</button>
+          </div>
+          <div class="upload-slot">
+            <label>アウター <span class="badge" style="background:#f0f0f0;color:#999;">任意</span></label>
+            <div class="drop-zone" id="zone-outer" ondragover="handleDragOver(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'outer',this)">
+              <input type="file" accept="image/*" onchange="handleFile(this.files[0],'outer',this.parentElement)">
+              <span class="drop-icon">🧥</span>
+              <span class="drop-text">タップまたは<br>ドロップ</span>
+            </div>
+            <button class="remove-btn" id="rm-outer" onclick="removeSlot('outer')">×</button>
+          </div>
+          <div class="upload-slot">
+            <label>アクセサリー <span class="badge" style="background:#f0f0f0;color:#999;">任意</span></label>
+            <div class="drop-zone" id="zone-accessory" ondragover="handleDragOver(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'accessory',this)">
+              <input type="file" accept="image/*" onchange="handleFile(this.files[0],'accessory',this.parentElement)">
+              <span class="drop-icon">💍</span>
+              <span class="drop-text">タップまたは<br>ドロップ</span>
+            </div>
+            <button class="remove-btn" id="rm-accessory" onclick="removeSlot('accessory')">×</button>
+          </div>
+          <div class="upload-slot">
+            <label>靴 <span class="badge" style="background:#f0f0f0;color:#999;">任意</span></label>
+            <div class="drop-zone" id="zone-shoes" ondragover="handleDragOver(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'shoes',this)">
+              <input type="file" accept="image/*" onchange="handleFile(this.files[0],'shoes',this.parentElement)">
+              <span class="drop-icon">👟</span>
+              <span class="drop-text">タップまたは<br>ドロップ</span>
+            </div>
+            <button class="remove-btn" id="rm-shoes" onclick="removeSlot('shoes')">×</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- まとめてモード -->
+      <div class="tab-panel" id="panel-bulk">
+        <div class="bulk-drop-zone" id="bulkZone" ondragover="handleBulkDragOver(event)" ondragleave="handleBulkDragLeave()" ondrop="handleBulkDrop(event)">
+          <input type="file" accept="image/*" multiple onchange="handleBulkFiles(this.files)">
+          <span class="drop-icon">📁</span>
+          <span class="drop-text">複数の写真をまとめてドロップ</span>
+          <span class="drop-sub">または タップして選択（最大10枚）</span>
+        </div>
+        <div class="bulk-thumbs" id="bulkThumbs"></div>
+      </div>
+    </div>
+
+    <!-- シチュエーション -->
+    <div class="card">
+      <div class="card-title">STEP 2 — シチュエーション</div>
+
+      <div class="tabs" id="situTabs">
+        <button class="tab-btn active" onclick="switchTab(this, 'preset')">プリセット選択</button>
+        <button class="tab-btn" onclick="switchTab(this, 'free')">自由入力</button>
+      </div>
+
+      <div class="tab-panel active" id="panel-preset">
+        <div class="preset-btns" id="presetBtns">
+          <button class="preset-btn" onclick="togglePreset(this)">デート（カジュアル）</button>
+          <button class="preset-btn" onclick="togglePreset(this)">デート（ちょっとおしゃれ）</button>
+          <button class="preset-btn" onclick="togglePreset(this)">高級レストラン・ホテル</button>
+          <button class="preset-btn" onclick="togglePreset(this)">ビジネスカジュアル</button>
+          <button class="preset-btn" onclick="togglePreset(this)">友人とランチ</button>
+          <button class="preset-btn" onclick="togglePreset(this)">アウトドア・自然</button>
+          <button class="preset-btn" onclick="togglePreset(this)">旅行</button>
+          <button class="preset-btn" onclick="togglePreset(this)">ショッピング</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-free">
+        <textarea id="freeText" placeholder="どんな場所・シチュエーションに着ていくか、できるだけ詳しく書いてください。&#10;例：彼女の友達との顔合わせで、少しフォーマルな印象にしたい"></textarea>
+      </div>
+
+      <div class="option-row">
+        <div class="option-group">
+          <label>季節</label>
+          <select id="selSeason">
+            <option value="">指定なし</option>
+            <option value="春">春</option>
+            <option value="夏">夏</option>
+            <option value="秋">秋</option>
+            <option value="冬">冬</option>
+          </select>
+        </div>
+        <div class="option-group">
+          <label>天気</label>
+          <select id="selWeather">
+            <option value="">指定なし</option>
+            <option value="晴れ">晴れ</option>
+            <option value="曇り">曇り</option>
+            <option value="雨">雨</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 送信 -->
+    <button class="submit-btn" id="submitBtn" onclick="submitCoord()">コーディネートを相談する ✨</button>
+    <div class="error-msg" id="errorMsg"></div>
+
+  </div><!-- /formSection -->
+
+  <!-- ローディング -->
+  <div class="loading-box" id="loadingBox">
+    <div class="spinner"></div>
+    <p class="loading-text">AIがコーディネートを考えています…</p>
+  </div>
+
+  <!-- 結果 -->
+  <div class="result-box" id="resultBox">
+    <div class="result-header">
+      <div class="icon">✨</div>
+      <div>
+        <h2>コーディネートアドバイス</h2>
+        <div class="sub">Coord AI より</div>
+      </div>
+    </div>
+    <div class="result-content" id="resultContent"></div>
+    <button class="retry-btn" onclick="resetForm()">もう一度相談する</button>
+  </div>
+
+  <footer>
+    <p>Coord AI — とむSYSTEM Standard</p>
+  </footer>
+
+</div><!-- /wrapper -->
+
+<script>
+// ===== 状態管理 =====
+var singleImages = {}; // { tops: {data, mediaType}, bottoms: ..., outer, accessory, shoes }
+var bulkImages = [];   // [{data, mediaType}, ...]
+var currentUploadMode = 'single';
+var currentSituMode = 'preset';
+
+// ===== タブ切り替え =====
+function switchTab(btn, panelId) {
+  var tabsEl = btn.parentElement;
+  var cardEl = tabsEl.parentElement;
+
+  tabsEl.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  cardEl.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  var target = document.getElementById('panel-' + panelId);
+  if (target) target.classList.add('active');
+
+  if (tabsEl.id === 'uploadTabs') currentUploadMode = panelId;
+  if (tabsEl.id === 'situTabs') currentSituMode = panelId;
+}
+
+// ===== 1枚ずつアップロード =====
+function handleDragOver(e, zone) {
+  e.preventDefault();
+  zone.classList.add('dragover');
+}
+function handleDragLeave(zone) {
+  zone.classList.remove('dragover');
+}
+function handleDrop(e, category, zone) {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  var file = e.dataTransfer.files[0];
+  if (file) handleFile(file, category, zone);
+}
+function handleFile(file, category, zone) {
+  if (!file || !file.type.startsWith('image/')) return;
+  resizeAndEncode(file, function(base64, mediaType) {
+    singleImages[category] = { data: base64, mediaType: mediaType };
+
+    var existing = zone.querySelector('.preview-img');
+    if (existing) existing.remove();
+
+    var img = document.createElement('img');
+    img.className = 'preview-img';
+    img.src = 'data:' + mediaType + ';base64,' + base64;
+    zone.appendChild(img);
+
+    var rmBtn = document.getElementById('rm-' + category);
+    if (rmBtn) rmBtn.classList.add('visible');
+
+    zone.querySelector('.drop-icon') && (zone.querySelector('.drop-icon').style.display = 'none');
+    zone.querySelector('.drop-text') && (zone.querySelector('.drop-text').style.display = 'none');
+  });
+}
+function removeSlot(category) {
+  delete singleImages[category];
+  var zone = document.getElementById('zone-' + category);
+  if (zone) {
+    var img = zone.querySelector('.preview-img');
+    if (img) img.remove();
+    var icon = zone.querySelector('.drop-icon');
+    var text = zone.querySelector('.drop-text');
+    if (icon) icon.style.display = '';
+    if (text) text.style.display = '';
+    var fileInput = zone.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = '';
+  }
+  var rmBtn = document.getElementById('rm-' + category);
+  if (rmBtn) rmBtn.classList.remove('visible');
+}
+
+// ===== まとめてアップロード =====
+function handleBulkDragOver(e) {
+  e.preventDefault();
+  document.getElementById('bulkZone').classList.add('dragover');
+}
+function handleBulkDragLeave() {
+  document.getElementById('bulkZone').classList.remove('dragover');
+}
+function handleBulkDrop(e) {
+  e.preventDefault();
+  document.getElementById('bulkZone').classList.remove('dragover');
+  handleBulkFiles(e.dataTransfer.files);
+}
+function handleBulkFiles(files) {
+  var arr = Array.from(files).filter(function(f) { return f.type.startsWith('image/'); });
+  var remaining = 10 - bulkImages.length;
+  arr.slice(0, remaining).forEach(function(file) {
+    resizeAndEncode(file, function(base64, mediaType) {
+      var idx = bulkImages.length;
+      bulkImages.push({ data: base64, mediaType: mediaType });
+      addBulkThumb(base64, mediaType, idx);
+    });
+  });
+}
+function addBulkThumb(base64, mediaType, idx) {
+  var container = document.getElementById('bulkThumbs');
+  var div = document.createElement('div');
+  div.className = 'bulk-thumb';
+  div.id = 'bulk-thumb-' + idx;
+
+  var img = document.createElement('img');
+  img.src = 'data:' + mediaType + ';base64,' + base64;
+
+  var btn = document.createElement('button');
+  btn.className = 'remove-btn visible';
+  btn.textContent = '×';
+  btn.onclick = function() { removeBulkThumb(idx); };
+
+  div.appendChild(img);
+  div.appendChild(btn);
+  container.appendChild(div);
+}
+function removeBulkThumb(idx) {
+  bulkImages[idx] = null;
+  var el = document.getElementById('bulk-thumb-' + idx);
+  if (el) el.remove();
+  bulkImages = bulkImages.filter(Boolean);
+  // インデックスを振り直し
+  document.getElementById('bulkThumbs').querySelectorAll('.bulk-thumb').forEach(function(div, i) {
+    div.id = 'bulk-thumb-' + i;
+    div.querySelector('.remove-btn').onclick = function() { removeBulkThumb(i); };
+  });
+}
+
+// ===== Canvas リサイズ＆エンコード =====
+function resizeAndEncode(file, callback) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var MAX = 800;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      var base64 = dataUrl.replace(/^data:image\/jpeg;base64,/, '');
+      callback(base64, 'image/jpeg');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== プリセット選択 =====
+function togglePreset(btn) {
+  btn.classList.toggle('selected');
+}
+
+// ===== バリデーション =====
+function getImages() {
+  if (currentUploadMode === 'single') {
+    return Object.keys(singleImages).map(function(cat) {
+      return { category: cat, data: singleImages[cat].data, mediaType: singleImages[cat].mediaType };
+    });
+  } else {
+    return bulkImages.map(function(img) {
+      return { category: 'unspecified', data: img.data, mediaType: img.mediaType };
+    });
+  }
+}
+
+function getSituation() {
+  if (currentSituMode === 'preset') {
+    var selected = [];
+    document.querySelectorAll('#presetBtns .preset-btn.selected').forEach(function(b) {
+      selected.push(b.textContent.trim());
+    });
+    return selected.join('、');
+  } else {
+    return document.getElementById('freeText').value.trim();
+  }
+}
+
+function showError(msg) {
+  var el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(function() { el.classList.remove('visible'); }, 5000);
+}
+
+// ===== 送信 =====
+function submitCoord() {
+  document.getElementById('errorMsg').classList.remove('visible');
+
+  var images = getImages();
+  if (images.length === 0) {
+    showError('写真を1枚以上追加してください');
+    return;
+  }
+
+  var situation = getSituation();
+  if (!situation) {
+    showError('シチュエーションを選んでください');
+    return;
+  }
+
+  var season = document.getElementById('selSeason').value;
+  var weather = document.getElementById('selWeather').value;
+
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('loadingBox').classList.add('visible');
+  document.getElementById('submitBtn').disabled = true;
+
+  fetch('https://orange-sound-354b.inverted-triangle-leef.workers.dev/coord-ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ images: images, situation: situation, season: season, weather: weather, email: (window.TomuAuth && window.TomuAuth.getEmail()) || '' })
+  })
+  .then(function(res) {
+    return res.json().then(function(data) {
+      return { ok: res.ok, data: data };
+    });
+  })
+  .then(function(result) {
+    document.getElementById('loadingBox').classList.remove('visible');
+    document.getElementById('submitBtn').disabled = false;
+
+    if (!result.ok || result.data.error) {
+      document.getElementById('formSection').style.display = '';
+      showError('通信エラーが発生しました。もう一度お試しください。');
+      return;
+    }
+
+    var html = marked.parse(result.data.advice || '');
+    document.getElementById('resultContent').innerHTML = html;
+    document.getElementById('resultBox').classList.add('visible');
+  })
+  .catch(function() {
+    document.getElementById('loadingBox').classList.remove('visible');
+    document.getElementById('formSection').style.display = '';
+    document.getElementById('submitBtn').disabled = false;
+    showError('通信エラーが発生しました。もう一度お試しください。');
+  });
+}
+
+// ===== リセット =====
+function resetForm() {
+  singleImages = {};
+  bulkImages = [];
+
+  ['tops','bottoms','outer','accessory','shoes'].forEach(function(cat) {
+    removeSlot(cat);
+  });
+  document.getElementById('bulkThumbs').innerHTML = '';
+  var bulkInput = document.querySelector('#bulkZone input[type="file"]');
+  if (bulkInput) bulkInput.value = '';
+
+  document.querySelectorAll('#presetBtns .preset-btn').forEach(function(b) {
+    b.classList.remove('selected');
+  });
+  document.getElementById('freeText').value = '';
+  document.getElementById('selSeason').value = '';
+  document.getElementById('selWeather').value = '';
+
+  document.getElementById('resultBox').classList.remove('visible');
+  document.getElementById('formSection').style.display = '';
+  document.getElementById('errorMsg').classList.remove('visible');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
