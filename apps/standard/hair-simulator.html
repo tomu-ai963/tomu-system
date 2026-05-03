@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAIR SIM — AIヘアースタイルシミュレーター</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500&family=DM+Mono:wght@300&display=swap" rel="stylesheet">
+<script src="/tomu-system/common/header.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500&family=DM+Mono:wght@300&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #c9a96e;
+    --accent2: #e8c99a;
+    --text: #f0ece4;
+    --muted: #666;
+    --radius: 2px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,10,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+
+  .logo span {
+    color: var(--text);
+    opacity: 0.4;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2px;
+    display: block;
+    margin-top: -4px;
+  }
+
+  .plan-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    opacity: 0.7;
+  }
+
+  /* ── Main Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    min-height: calc(100vh - 69px);
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 28px;
+  }
+
+  .panel-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Upload Area ── */
+  .upload-area {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    aspect-ratio: 3/4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .upload-area:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .upload-area.has-image {
+    border-style: solid;
+    border-color: var(--accent);
+  }
+
+  .upload-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+  }
+
+  .upload-text {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .upload-sub {
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.5;
+    margin-top: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .upload-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-area.has-image:hover .upload-overlay {
+    opacity: 1;
+  }
+
+  .change-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: var(--radius);
+  }
+
+  #fileInput { display: none; }
+
+  /* ── Controls Panel ── */
+  .controls-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Section ── */
+  .section {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+  }
+
+  .section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  .section-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 14px;
+  }
+
+  /* ── Style Buttons ── */
+  .style-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .style-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .style-btn .emoji { font-size: 18px; }
+
+  .style-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .style-btn.active {
+    border-color: var(--accent);
+    background: rgba(201,169,110,0.1);
+    color: var(--accent2);
+  }
+
+  /* ── Color Swatches ── */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+
+  .color-swatch {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .color-swatch:hover {
+    transform: scale(1.15);
+  }
+
+  .color-swatch.active {
+    border-color: var(--accent);
+    transform: scale(1.1);
+  }
+
+  .color-swatch.active::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+
+  /* ── Custom Prompt ── */
+  .prompt-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    width: 100%;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    resize: none;
+    height: 80px;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+
+  .prompt-area:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .prompt-area::placeholder {
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
+  /* ── Generate Button ── */
+  .generate-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .generate-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+
+  .generate-btn:hover::before {
+    transform: translateX(100%);
+  }
+
+  .generate-btn:hover {
+    background: var(--accent2);
+  }
+
+  .generate-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .generate-btn:disabled::before { display: none; }
+
+  /* ── Result Panel ── */
+  .result-panel {
+    background: var(--bg);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .result-area {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-placeholder {
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .result-placeholder .big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    letter-spacing: 4px;
+    opacity: 0.06;
+    display: block;
+    line-height: 1;
+  }
+
+  .result-placeholder .small {
+    font-size: 12px;
+    letter-spacing: 2px;
+    font-family: 'DM Mono', monospace;
+    opacity: 0.3;
+    margin-top: 8px;
+  }
+
+  .result-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* ── Loading ── */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,10,0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .loading-overlay.active { display: flex; }
+
+  .loading-bar {
+    width: 200px;
+    height: 1px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .loading-bar::after {
+    content: '';
+    position: absolute;
+    left: -50%;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    background: var(--accent);
+    animation: loading 1.2s ease-in-out infinite;
+  }
+
+  @keyframes loading {
+    0% { left: -50%; }
+    100% { left: 150%; }
+  }
+
+  .loading-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ── Download Button ── */
+  .download-btn {
+    display: none;
+    width: 100%;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all 0.3s;
+    text-align: center;
+    margin-top: 16px;
+    text-transform: uppercase;
+  }
+
+  .download-btn:hover {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .download-btn.visible { display: block; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #c0392b;
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    transition: transform 0.4s;
+    z-index: 300;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .app {
+      grid-template-columns: 1fr;
+    }
+    .panel { padding: 20px; }
+    .style-grid { grid-template-columns: repeat(3, 1fr); }
+    .color-grid { grid-template-columns: repeat(6, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    HAIR SIM
+    <span>AI HAIRSTYLE SIMULATOR</span>
+  </div>
+  <div class="plan-badge">STANDARD PLAN</div>
+</header>
+
+<!-- App -->
+<div class="app">
+
+  <!-- Left: Upload -->
+  <div class="panel">
+    <div class="panel-label">あなたの写真</div>
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text">写真をアップロード</div>
+      <div class="upload-sub">PNG推奨 / 4MB以下 / 正方形</div>
+      <div class="upload-overlay">
+        <button class="change-btn">写真を変更</button>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" onchange="handleFileUpload(event)">
+  </div>
+
+  <!-- Center: Controls -->
+  <div class="panel controls-panel">
+    <div class="panel-label">スタイル設定</div>
+
+    <!-- Hair Style -->
+    <div class="section">
+      <div class="section-title">ヘアースタイル</div>
+      <div class="style-grid">
+        <button class="style-btn" data-style="long straight hair" onclick="selectStyle(this)">
+          <span class="emoji">💇‍♀️</span>ロング
+        </button>
+        <button class="style-btn" data-style="short bob haircut" onclick="selectStyle(this)">
+          <span class="emoji">✂️</span>ショート
+        </button>
+        <button class="style-btn" data-style="medium length hair" onclick="selectStyle(this)">
+          <span class="emoji">💆‍♀️</span>ミディアム
+        </button>
+        <button class="style-btn" data-style="curly permed hair" onclick="selectStyle(this)">
+          <span class="emoji">🌀</span>パーマ
+        </button>
+        <button class="style-btn" data-style="wavy hair loose waves" onclick="selectStyle(this)">
+          <span class="emoji">🌊</span>ウェーブ
+        </button>
+        <button class="style-btn" data-style="hair up in a bun updo" onclick="selectStyle(this)">
+          <span class="emoji">🎀</span>アップ
+        </button>
+      </div>
+    </div>
+
+    <!-- Hair Color -->
+    <div class="section">
+      <div class="section-title">ヘアーカラー</div>
+      <div class="color-grid">
+        <div class="color-swatch" style="background:#1a0a00;" data-color="jet black hair" onclick="selectColor(this)" title="ジェットブラック"></div>
+        <div class="color-swatch" style="background:#3d2b1f;" data-color="dark brown hair" onclick="selectColor(this)" title="ダークブラウン"></div>
+        <div class="color-swatch" style="background:#8B5e3c;" data-color="chestnut brown hair" onclick="selectColor(this)" title="チェスナット"></div>
+        <div class="color-swatch" style="background:#c8a96e;" data-color="golden blonde hair" onclick="selectColor(this)" title="ゴールデンブロンド"></div>
+        <div class="color-swatch" style="background:#e8d5b0;" data-color="platinum blonde hair" onclick="selectColor(this)" title="プラチナブロンド"></div>
+        <div class="color-swatch" style="background:#c0392b;" data-color="red hair auburn" onclick="selectColor(this)" title="レッド"></div>
+        <div class="color-swatch" style="background:#8e44ad;" data-color="purple hair" onclick="selectColor(this)" title="パープル"></div>
+        <div class="color-swatch" style="background:#2980b9;" data-color="blue hair" onclick="selectColor(this)" title="ブルー"></div>
+        <div class="color-swatch" style="background:#27ae60;" data-color="green hair" onclick="selectColor(this)" title="グリーン"></div>
+        <div class="color-swatch" style="background:#e67e22;" data-color="orange copper hair" onclick="selectColor(this)" title="コパー"></div>
+        <div class="color-swatch" style="background:#bdc3c7;" data-color="silver gray hair" onclick="selectColor(this)" title="シルバー"></div>
+        <div class="color-swatch active" style="background:linear-gradient(135deg,#ff9a9e,#a18cd1,#ffecd2);" data-color="" onclick="selectColor(this)" title="変更なし（✦）"></div>
+      </div>
+    </div>
+
+    <!-- Custom Prompt -->
+    <div class="section">
+      <div class="section-title">追加指定（任意）</div>
+      <textarea class="prompt-area" id="customPrompt" placeholder="例：サイドを刈り上げて、毛先を内巻きに"></textarea>
+    </div>
+
+    <!-- Generate -->
+    <button class="generate-btn" id="generateBtn" onclick="generate()" disabled>
+      AI GENERATE →
+    </button>
+  </div>
+
+</div>
+
+<!-- Before / After -->
+<div style="background:var(--border);height:1px;"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);">
+  <div style="background:var(--bg);padding:28px;">
+    <div class="panel-label">元の写真</div>
+    <div id="beforeThumb" style="aspect-ratio:3/4;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;letter-spacing:2px;overflow:hidden;">
+      BEFORE
+    </div>
+  </div>
+  <div style="background:var(--bg);padding:28px;">
+    <div class="panel-label">シミュレーション結果</div>
+    <div class="result-area" id="resultArea">
+      <div class="result-placeholder">
+        <span class="big">AFTER</span>
+        <span class="small">GENERATE を押してください</span>
+      </div>
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-text">GENERATING...</div>
+        <div class="loading-bar"></div>
+      </div>
+    </div>
+    <a class="download-btn" id="downloadBtn">⬇ 画像をダウンロード</a>
+  </div>
+</div>
+
+<script>
+  const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+
+  let uploadedFile = null;
+  let uploadedImageBase64 = '';
+  let selectedStyle = '';
+  let selectedColor = '';
+
+  function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    uploadedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      uploadedImageBase64 = ev.target.result;
+      const area = document.getElementById('uploadArea');
+      area.innerHTML = `
+        <img src="${uploadedImageBase64}" alt="upload">
+        <div class="upload-overlay">
+          <button class="change-btn" onclick="document.getElementById('fileInput').click()">写真を変更</button>
+        </div>`;
+      area.classList.add('has-image');
+
+      document.getElementById('beforeThumb').innerHTML =
+        `<img src="${uploadedImageBase64}" style="width:100%;height:100%;object-fit:cover;">`;
+
+      checkReady();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function selectStyle(btn) {
+    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedStyle = btn.dataset.style;
+    checkReady();
+  }
+
+  function selectColor(sw) {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    selectedColor = sw.dataset.color;
+  }
+
+  function checkReady() {
+    document.getElementById('generateBtn').disabled = !(uploadedFile && selectedStyle);
+  }
+
+  async function generate() {
+    if (!uploadedFile || !selectedStyle) return;
+
+    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+    if (!email) {
+      if (window.TomuAuth) window.TomuAuth.showOverlay();
+      return;
+    }
+
+    const customPrompt = document.getElementById('customPrompt').value.trim();
+    let prompt = `Change this person's hairstyle to ${selectedStyle}`;
+    if (selectedColor) prompt += ` with ${selectedColor}`;
+    if (customPrompt) prompt += `. Additional details: ${customPrompt}`;
+    prompt += `. Keep the person's face, skin tone, and overall appearance the same. Only change the hair. Realistic photo style.`;
+
+    document.getElementById('loadingOverlay').classList.add('active');
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('downloadBtn').classList.remove('visible');
+
+    try {
+      const formData = new FormData();
+      formData.append('image', uploadedFile, 'photo.png');
+      formData.append('prompt', prompt);
+
+      const res = await fetch(`${WORKER_URL}/hair-sim`, {
+        method: 'POST',
+        headers: { 'X-Customer-Email': email },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.error === 'subscription_required' || data.error === 'login_required') {
+        if (window.TomuAuth) window.TomuAuth.showOverlay();
+        return;
+      }
+      if (data.error === 'plan_upgrade_required') {
+        if (window.TomuAuth) window.TomuAuth.showOverlay();
+        return;
+      }
+      if (data.error) throw new Error(data.error);
+
+      const imgSrc = `data:image/png;base64,${data.image_base64}`;
+
+      const resultArea = document.getElementById('resultArea');
+      resultArea.innerHTML = `
+        <img src="${imgSrc}" alt="result">
+        <div class="loading-overlay" id="loadingOverlay"></div>`;
+
+      const dl = document.getElementById('downloadBtn');
+      dl.classList.add('visible');
+      dl.href = imgSrc;
+      dl.download = 'hair-sim-result.png';
+
+    } catch (err) {
+      showToast('エラー: ' + err.message);
+    } finally {
+      const overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.classList.remove('active');
+      document.getElementById('generateBtn').disabled = false;
+      checkReady();
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="/tomu-system/tomu-login.js"></script>
+</body>
+</html>

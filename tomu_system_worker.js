@@ -169,6 +169,54 @@ async function handleRequest(request) {
     return jsonRes({ error: "Method not allowed" }, 405, corsH);
   }
 
+  // =========================================================
+  // POST /hair-sim — ヘアーシミュレーター用（OpenAI DALL-E 2）
+  // =========================================================
+  if (url.pathname === "/hair-sim") {
+    var hairEmail = request.headers.get("X-Customer-Email") || "";
+    var hairCheck = await checkPlanAndCount(hairEmail, "standard");
+    if (!hairCheck.ok) {
+      return jsonRes({ error: hairCheck.error, required: hairCheck.required, current: hairCheck.current, limit: hairCheck.limit }, hairCheck.status, corsH);
+    }
+
+    if (!OPENAI_API_KEY) {
+      return jsonRes({ error: "OpenAI API key not configured" }, 500, corsH);
+    }
+
+    try {
+      var hairForm = await request.formData();
+      var hairImage = hairForm.get("image");
+      var hairPrompt = hairForm.get("prompt");
+
+      if (!hairImage || !hairPrompt) {
+        return jsonRes({ error: "image and prompt are required" }, 400, corsH);
+      }
+
+      var oaiForm = new FormData();
+      oaiForm.append("image", hairImage, "photo.png");
+      oaiForm.append("prompt", hairPrompt);
+      oaiForm.append("model", "dall-e-2");
+      oaiForm.append("n", "1");
+      oaiForm.append("size", "512x512");
+      oaiForm.append("response_format", "b64_json");
+
+      var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + OPENAI_API_KEY },
+        body: oaiForm,
+      });
+
+      var oaiData = await oaiRes.json();
+      if (oaiData.error) {
+        return jsonRes({ error: oaiData.error.message }, oaiRes.status, corsH);
+      }
+
+      return jsonRes({ image_base64: oaiData.data[0].b64_json }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
   if (!ANTHROPIC_API_KEY) {
     return jsonRes({ error: "API key not configured" }, 500, corsH);
   }
