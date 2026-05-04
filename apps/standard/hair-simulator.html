@@ -640,6 +640,10 @@
 <script>
   const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
 
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = 512;
+  offscreenCanvas.height = 512;
+
   let uploadedFile = null;
   let previewObjectURL = null;
   let selectedStyle = '';
@@ -658,12 +662,11 @@
       const sx = (img.naturalWidth - size) / 2;
       const sy = (img.naturalHeight - size) / 2;
 
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      canvas.getContext('2d').drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
+      const ctx = offscreenCanvas.getContext('2d');
+      ctx.clearRect(0, 0, 512, 512);
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
 
-      canvas.toBlob(blob => {
+      offscreenCanvas.toBlob(blob => {
         uploadedFile = blob;
 
         if (previewObjectURL) URL.revokeObjectURL(previewObjectURL);
@@ -673,7 +676,7 @@
         area.innerHTML = `
           <img src="${previewObjectURL}" alt="upload">
           <div class="upload-overlay">
-            <button class="change-btn" onclick="document.getElementById('fileInput').click()">写真を変更</button>
+            <button class="change-btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">写真を変更</button>
           </div>`;
         area.classList.add('has-image');
 
