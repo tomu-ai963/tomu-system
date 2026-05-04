@@ -192,8 +192,11 @@ async function handleRequest(request) {
         return jsonRes({ error: "image and prompt are required" }, 400, corsH);
       }
 
+      var hairBuf = await hairImage.arrayBuffer();
+      var hairBlob = new Blob([hairBuf], { type: "image/png" });
+
       var oaiForm = new FormData();
-      oaiForm.append("image", hairImage, "photo.png");
+      oaiForm.append("image", hairBlob, "photo.png");
       oaiForm.append("prompt", hairPrompt);
       oaiForm.append("model", "dall-e-2");
       oaiForm.append("n", "1");

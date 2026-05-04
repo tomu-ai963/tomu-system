@@ -641,32 +641,49 @@
   const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
 
   let uploadedFile = null;
-  let uploadedImageBase64 = '';
+  let previewObjectURL = null;
   let selectedStyle = '';
   let selectedColor = '';
 
   function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
-    uploadedFile = file;
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      uploadedImageBase64 = ev.target.result;
-      const area = document.getElementById('uploadArea');
-      area.innerHTML = `
-        <img src="${uploadedImageBase64}" alt="upload">
-        <div class="upload-overlay">
-          <button class="change-btn" onclick="document.getElementById('fileInput').click()">写真を変更</button>
-        </div>`;
-      area.classList.add('has-image');
+    const objectURL = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectURL);
 
-      document.getElementById('beforeThumb').innerHTML =
-        `<img src="${uploadedImageBase64}" style="width:100%;height:100%;object-fit:cover;">`;
+      const size = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth - size) / 2;
+      const sy = (img.naturalHeight - size) / 2;
 
-      checkReady();
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      canvas.getContext('2d').drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
+
+      canvas.toBlob(blob => {
+        uploadedFile = blob;
+
+        if (previewObjectURL) URL.revokeObjectURL(previewObjectURL);
+        previewObjectURL = URL.createObjectURL(blob);
+
+        const area = document.getElementById('uploadArea');
+        area.innerHTML = `
+          <img src="${previewObjectURL}" alt="upload">
+          <div class="upload-overlay">
+            <button class="change-btn" onclick="document.getElementById('fileInput').click()">写真を変更</button>
+          </div>`;
+        area.classList.add('has-image');
+
+        document.getElementById('beforeThumb').innerHTML =
+          `<img src="${previewObjectURL}" style="width:100%;height:100%;object-fit:cover;">`;
+
+        checkReady();
+      }, 'image/png');
     };
-    reader.readAsDataURL(file);
+    img.src = objectURL;
   }
 
   function selectStyle(btn) {
