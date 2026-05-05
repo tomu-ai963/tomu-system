@@ -190,14 +190,29 @@ async function handleRequest(request) {
       var hairColor = hairForm.get("color") || "";
       var hairCustom = hairForm.get("customPrompt") || "";
 
+      // DEBUG: formDataの受信内容を確認
+      console.log("[hair-sim] image:", hairImage ? hairImage.size + "bytes" : "null");
+      console.log("[hair-sim] style:", hairStyle || "empty");
+      console.log("[hair-sim] color:", hairColor || "empty");
+
       if (!hairImage || !hairStyle) {
-        return jsonRes({ error: "image and style are required" }, 400, corsH);
+        return jsonRes({
+          error: "image and style are required",
+          debug: {
+            hasImage: !!hairImage,
+            imageSize: hairImage ? hairImage.size : null,
+            style: hairStyle,
+            color: hairColor,
+          }
+        }, 400, corsH);
       }
 
       var hairPrompt = "A person with " + hairStyle;
       if (hairColor) hairPrompt += " " + hairColor;
       hairPrompt += " hair, same face as the reference photo, realistic portrait photo";
       if (hairCustom) hairPrompt += ". " + hairCustom;
+
+      console.log("[hair-sim] prompt:", hairPrompt);
 
       var hairBuf = await hairImage.arrayBuffer();
       var hairBlob = new Blob([hairBuf], { type: "image/png" });
@@ -216,13 +231,18 @@ async function handleRequest(request) {
       });
 
       var oaiData = await oaiRes.json();
+      console.log("[hair-sim] OpenAI status:", oaiRes.status);
+
       if (oaiData.error) {
-        return jsonRes({ error: oaiData.error.message }, oaiRes.status, corsH);
+        return jsonRes({
+          error: oaiData.error.message,
+          openai_error: oaiData.error,
+        }, oaiRes.status, corsH);
       }
 
       return jsonRes({ image_base64: oaiData.data[0].b64_json }, 200, corsH);
     } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+      return jsonRes({ error: "Worker error", detail: err.message, stack: err.stack }, 500, corsH);
     }
   }
 
