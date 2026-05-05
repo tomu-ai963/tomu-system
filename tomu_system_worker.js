@@ -170,7 +170,7 @@ async function handleRequest(request) {
   }
 
   // =========================================================
-  // POST /hair-sim — ヘアーシミュレーター用（OpenAI DALL-E 2）
+  // POST /hair-sim — ヘアーシミュレーター用（gpt-image-1 edits）
   // =========================================================
   if (url.pathname === "/hair-sim") {
     var hairEmail = request.headers.get("X-Customer-Email") || "";
@@ -186,11 +186,18 @@ async function handleRequest(request) {
     try {
       var hairForm = await request.formData();
       var hairImage = hairForm.get("image");
-      var hairPrompt = hairForm.get("prompt");
+      var hairStyle = hairForm.get("style") || "";
+      var hairColor = hairForm.get("color") || "";
+      var hairCustom = hairForm.get("customPrompt") || "";
 
-      if (!hairImage || !hairPrompt) {
-        return jsonRes({ error: "image and prompt are required" }, 400, corsH);
+      if (!hairImage || !hairStyle) {
+        return jsonRes({ error: "image and style are required" }, 400, corsH);
       }
+
+      var hairPrompt = "A person with " + hairStyle;
+      if (hairColor) hairPrompt += " " + hairColor;
+      hairPrompt += " hair, same face as the reference photo, realistic portrait photo";
+      if (hairCustom) hairPrompt += ". " + hairCustom;
 
       var hairBuf = await hairImage.arrayBuffer();
       var hairBlob = new Blob([hairBuf], { type: "image/png" });
@@ -198,10 +205,9 @@ async function handleRequest(request) {
       var oaiForm = new FormData();
       oaiForm.append("image", hairBlob, "photo.png");
       oaiForm.append("prompt", hairPrompt);
-      oaiForm.append("model", "dall-e-2");
+      oaiForm.append("model", "gpt-image-1");
       oaiForm.append("n", "1");
-      oaiForm.append("size", "512x512");
-      oaiForm.append("response_format", "b64_json");
+      oaiForm.append("size", "1024x1024");
 
       var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
