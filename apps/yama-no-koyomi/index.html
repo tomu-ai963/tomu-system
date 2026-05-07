@@ -465,6 +465,30 @@
     box-shadow: 0 2px 8px var(--shadow);
     margin-bottom: 12px;
   }
+
+  .advice-text {
+    font-size: 0.82rem;
+    line-height: 1.9;
+    color: rgba(232,223,200,0.9);
+    white-space: pre-wrap;
+    margin-bottom: 10px;
+  }
+
+  .ai-section details { margin-top: 10px; }
+  .ai-section summary {
+    font-size: 0.75rem;
+    color: var(--gold-light);
+    cursor: pointer;
+    opacity: 0.8;
+    list-style: none;
+    padding: 4px 0;
+  }
+  .ai-section details p {
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: rgba(232,223,200,0.7);
+    padding: 2px 0 2px 8px;
+  }
 </style>
 </head>
 <body>
@@ -554,6 +578,12 @@
   </div>
 
   <div class="page" id="page-ai">
+    <div class="ai-section" style="margin-bottom:12px;">
+      <div class="ai-title">📅 今月の農作業プランを立てる</div>
+      <div class="ai-subtitle">Google Calendarと月齢を照合してAIが提案します</div>
+      <button class="ai-btn" id="calendarPlanBtn" onclick="loadCalendarAdvice()">📅 今月の農作業プランを立てる</button>
+      <div id="calendar-advice" class="ai-response"></div>
+    </div>
     <div class="ai-section">
       <div class="ai-title">✨ Claude AI 農作業相談</div>
       <div class="ai-subtitle">月齢・吉日情報を踏まえてアドバイスします</div>
@@ -1045,6 +1075,40 @@ function renderMoonCards() {
       <div class="moon-card-value">${getRokuyo(today)}</div>
     </div>
   `;
+}
+
+// ===== Google Calendar 農作業プラン =====
+async function loadCalendarAdvice() {
+  const resultDiv = document.getElementById('calendar-advice');
+  const btn = document.getElementById('calendarPlanBtn');
+  resultDiv.className = 'ai-response visible';
+  resultDiv.innerHTML = '🌿 Google Calendarと月齢を照合中...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/yama-calendar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Email': window.TomuAuth ? window.TomuAuth.getEmail() : (localStorage.getItem('tomu_email') || ''),
+      },
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    resultDiv.innerHTML = `
+      <div style="font-family:'Shippori Mincho',serif;font-size:0.85rem;color:var(--gold-light);margin-bottom:8px;">📅 ${data.month} 農作業タイミング提案</div>
+      <div class="advice-text">${data.advice.replace(/\n/g, '<br>')}</div>
+      <details>
+        <summary>今月の月齢吉日</summary>
+        ${data.keyDays.map(d => `<p>${d.day}日: ${d.phase}</p>`).join('')}
+      </details>
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = `⚠️ ${err.message}`;
+  }
+
+  btn.disabled = false;
 }
 
 // ===== タブ =====
