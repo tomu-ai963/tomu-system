@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>山の暦 | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
+<script src="/tomu-system/common/header.js"></script>
+<style>
+  :root {
+    --ink: #1a1510;
+    --paper: #f5f0e8;
+    --paper2: #ede8dc;
+    --gold: #b8973a;
+    --gold-light: #d4b056;
+    --moon: #e8dfc8;
+    --red: #8b2020;
+    --green: #2a5c3f;
+    --blue-gray: #3d5166;
+    --shadow: rgba(26,21,16,0.15);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Serif JP', serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    overscroll-behavior: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(184,151,58,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(42,92,63,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    background: var(--ink);
+    color: var(--moon);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: calc(44px + env(safe-area-inset-top));
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  .header-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.15em;
+    color: var(--gold-light);
+  }
+
+  .header-date { font-size: 0.75rem; opacity: 0.7; letter-spacing: 0.1em; }
+  .moon-display { text-align: right; line-height: 1.3; }
+  .moon-emoji { font-size: 1.6rem; }
+  .moon-label { font-size: 0.65rem; opacity: 0.8; }
+
+  .tabs {
+    display: flex;
+    background: var(--ink);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: rgba(232,223,200,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid transparent;
+    user-select: none;
+  }
+
+  .tab.active { color: var(--gold-light); border-bottom-color: var(--gold-light); }
+
+  .main {
+    padding: 16px;
+    padding-bottom: calc(16px + var(--safe-bottom));
+    position: relative;
+    z-index: 1;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* カレンダー */
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .cal-nav {
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .cal-nav:hover { background: var(--gold); color: var(--paper); }
+
+  .cal-month {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+
+  .cal-dow {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--blue-gray);
+    padding: 4px 0;
+  }
+  .cal-dow:first-child { color: var(--red); }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.15s;
+    position: relative;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid transparent;
+    user-select: none;
+  }
+
+  .cal-day:active { transform: scale(0.92); }
+  .cal-day.today { border-color: var(--gold); background: rgba(184,151,58,0.12); }
+  .cal-day.selected { background: var(--ink); color: var(--moon); }
+  .cal-day.selected .day-num { color: var(--gold-light); }
+  .cal-day.other-month { opacity: 0.3; }
+  .cal-day.has-record::after {
+    content: '';
+    position: absolute;
+    bottom: 3px; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  .day-num { font-size: 0.85rem; line-height: 1; font-weight: 600; }
+  .day-moon { font-size: 0.6rem; line-height: 1; margin-top: 1px; }
+  .day-kichi { font-size: 0.45rem; line-height: 1; color: var(--red); margin-top: 1px; }
+
+  .day-detail {
+    background: var(--ink);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: var(--moon);
+  }
+
+  .day-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .day-detail-date { font-family: 'Shippori Mincho', serif; font-size: 1.1rem; color: var(--gold-light); }
+  .day-detail-moon { text-align: right; }
+  .moon-age { font-size: 1.4rem; }
+  .moon-name { font-size: 0.7rem; color: var(--gold-light); }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; letter-spacing: 0.05em; }
+  .badge-gold { background: var(--gold); color: var(--ink); font-weight: 600; }
+  .badge-red { background: var(--red); color: white; }
+  .badge-green { background: var(--green); color: white; }
+  .badge-blue { background: var(--blue-gray); color: white; }
+
+  .farm-advice {
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: rgba(232,223,200,0.85);
+    border-left: 3px solid var(--gold);
+  }
+
+  .moon-phase-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .moon-phase-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; }
+
+  .record-section {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .section-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  textarea {
+    width: 100%;
+    border: 1px solid var(--paper2);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--paper);
+    resize: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { outline: none; border-color: var(--gold); }
+
+  .save-btn {
+    background: var(--ink);
+    color: var(--gold-light);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .save-btn:active { background: var(--gold); color: var(--ink); transform: scale(0.98); }
+
+  .saved-msg { text-align: center; color: var(--green); font-size: 0.75rem; margin-top: 6px; display: none; }
+  .saved-msg.show { display: block; }
+
+  .memo-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+
+  .memo-card {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    position: relative;
+    border-left: 3px solid var(--gold);
+  }
+
+  .memo-date { font-size: 0.65rem; color: #888; margin-bottom: 4px; }
+  .memo-text { font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; }
+
+  .memo-delete {
+    position: absolute;
+    top: 8px; right: 10px;
+    background: none; border: none;
+    color: #ccc; cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+  }
+
+  .add-memo-form {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .schedule-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+  .schedule-item {
+    background: white;
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .schedule-item.done { opacity: 0.5; }
+  .schedule-item.done .schedule-title { text-decoration: line-through; }
+
+  .schedule-check {
+    width: 24px; height: 24px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+  }
+
+  .schedule-item.done .schedule-check { background: var(--gold); color: white; }
+
+  .schedule-info { flex: 1; min-width: 0; }
+  .schedule-title { font-size: 0.9rem; font-weight: 600; }
+  .schedule-meta { font-size: 0.7rem; color: #888; margin-top: 2px; }
+
+  .schedule-delete { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1rem; padding: 4px; }
+
+  .add-form {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  input[type="text"], input[type="date"], input[type="time"] {
+    width: 100%;
+    border: 1px solid var(--paper2);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: var(--paper);
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+
+  input:focus { outline: none; border-color: var(--gold); }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { flex: 1; }
+
+  .ai-section {
+    background: var(--ink);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    color: var(--moon);
+  }
+
+  .ai-title { font-family: 'Shippori Mincho', serif; font-size: 0.9rem; color: var(--gold-light); margin-bottom: 4px; letter-spacing: 0.1em; }
+  .ai-subtitle { font-size: 0.72rem; opacity: 0.6; margin-bottom: 12px; }
+
+  .ai-query-area {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--moon);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    resize: none;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .ai-query-area:focus { outline: none; border-color: var(--gold); }
+
+  .ai-btn {
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+
+  .ai-btn:active { transform: scale(0.98); }
+  .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .ai-response {
+    margin-top: 12px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    border-left: 3px solid var(--gold);
+    white-space: pre-wrap;
+    display: none;
+  }
+
+  .ai-response.visible { display: block; }
+
+  .moon-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .moon-card {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    text-align: center;
+  }
+
+  .moon-card-icon { font-size: 2rem; margin-bottom: 4px; }
+  .moon-card-label { font-size: 0.65rem; color: #888; }
+  .moon-card-value { font-size: 0.9rem; font-weight: 600; margin-top: 2px; }
+
+  .kichi-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .kichi-item {
+    background: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 4px var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+  }
+
+  .kichi-date { font-weight: 600; min-width: 60px; }
+  .kichi-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .upcoming-events {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px var(--shadow);
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <div class="header-title">山の暦</div>
+    <div class="header-date" id="todayLabel"></div>
+  </div>
+  <div class="moon-display">
+    <div class="moon-emoji" id="headerMoon">🌕</div>
+    <div class="moon-label" id="headerMoonAge">月齢 --</div>
+  </div>
+</header>
+
+<nav class="tabs tomu-lockable">
+  <div class="tab active" onclick="switchTab('calendar')">📅 暦</div>
+  <div class="tab" onclick="switchTab('record')">🌱 記録</div>
+  <div class="tab" onclick="switchTab('schedule')">📋 予定</div>
+  <div class="tab" onclick="switchTab('memo')">📝 メモ</div>
+  <div class="tab" onclick="switchTab('ai')">✨ AI</div>
+</nav>
+
+<main class="main tomu-lockable">
+
+  <div class="page active" id="page-calendar">
+    <div class="calendar-header">
+      <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month" id="calMonth"></div>
+      <button class="cal-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="calendar-grid" id="calGrid">
+      <div class="cal-dow">日</div>
+      <div class="cal-dow">月</div>
+      <div class="cal-dow">火</div>
+      <div class="cal-dow">水</div>
+      <div class="cal-dow">木</div>
+      <div class="cal-dow">金</div>
+      <div class="cal-dow">土</div>
+    </div>
+    <div class="day-detail" id="dayDetail" style="display:none"></div>
+    <div class="upcoming-events">
+      <div class="section-title"><span>🌕</span>今後の月の満ち欠け</div>
+      <div id="upcomingMoon" class="kichi-list"></div>
+    </div>
+    <div class="record-section">
+      <div class="section-title"><span>🎋</span>今月の吉日</div>
+      <div id="kichiList" class="kichi-list"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-record">
+    <div class="record-section">
+      <div class="section-title"><span>🌱</span>農作業記録</div>
+      <div id="recordDateLabel" style="font-size:0.8rem;color:#888;margin-bottom:8px;"></div>
+      <textarea id="recordText" rows="6" placeholder="今日の農作業を記録してください。&#10;例）コナラ周辺の草刈り、椎茸の菌打ち など"></textarea>
+      <button class="save-btn" onclick="saveRecord()">記録を保存</button>
+      <div class="saved-msg" id="recordSaved">✓ 保存しました</div>
+    </div>
+    <div class="record-section">
+      <div class="section-title"><span>📖</span>過去の記録</div>
+      <div id="recordHistory"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-schedule">
+    <div class="schedule-list" id="scheduleList"></div>
+    <div class="add-form">
+      <div class="section-title"><span>＋</span>予定を追加</div>
+      <input type="text" id="scheduleTitle" placeholder="予定のタイトル（例：種まき、草刈り）">
+      <div class="input-row">
+        <input type="date" id="scheduleDate">
+        <input type="time" id="scheduleTime">
+      </div>
+      <input type="text" id="scheduleMemo" placeholder="メモ（任意）">
+      <button class="save-btn" onclick="addSchedule()">予定を追加</button>
+    </div>
+  </div>
+
+  <div class="page" id="page-memo">
+    <div class="memo-list" id="memoList"></div>
+    <div class="add-memo-form">
+      <div class="section-title"><span>📝</span>メモを追加</div>
+      <textarea id="memoText" rows="4" placeholder="気づいたこと、覚えておきたいことを書いてください。"></textarea>
+      <button class="save-btn" onclick="addMemo()">メモを保存</button>
+    </div>
+  </div>
+
+  <div class="page" id="page-ai">
+    <div class="ai-section">
+      <div class="ai-title">✨ Claude AI 農作業相談</div>
+      <div class="ai-subtitle">月齢・吉日情報を踏まえてアドバイスします</div>
+      <textarea class="ai-query-area" id="aiQuery" rows="4" placeholder="例）来週の農作業計画を立てたい。何をすれば良いですか？&#10;例）今月の種まきに適した日はいつ？"></textarea>
+      <button class="ai-btn" id="aiBtn" onclick="askAI()">相談する</button>
+      <div class="ai-response" id="aiResponse"></div>
+    </div>
+    <div class="moon-cards" id="moonCards"></div>
+    <div class="record-section">
+      <div class="section-title"><span>🌕</span>月齢と農作業の目安</div>
+      <div style="font-size:0.78rem;line-height:1.9;color:#555;">
+        🌑 <strong>新月〜上弦</strong>（月齢0〜7）葉野菜・発芽に◎<br>
+        🌕 <strong>上弦〜満月</strong>（月齢7〜15）実なり野菜に◎<br>
+        🌾 <strong>満月〜下弦</strong>（月齢15〜22）根菜類に◎<br>
+        🌿 <strong>下弦〜新月</strong>（月齢22〜29）土づくり・剪定に◎
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+
+// ===== 状態 =====
+let currentDate = new Date();
+let selectedDate = new Date();
+let calYear = currentDate.getFullYear();
+let calMonth = currentDate.getMonth();
+
+// ===== ストレージ =====
+function loadData(key) { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; } }
+function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+function loadArray(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
+function saveArray(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+// ===== 月齢計算 =====
+function getMoonAge(date) {
+  const known = new Date(2000, 0, 6, 18, 14);
+  const diff = date - known;
+  const days = diff / (1000 * 60 * 60 * 24);
+  const cycle = 29.53058867;
+  return ((days % cycle) + cycle) % cycle;
+}
+
+function getMoonEmoji(age) {
+  if (age < 1.85) return '🌑';
+  if (age < 5.54) return '🌒';
+  if (age < 9.23) return '🌓';
+  if (age < 12.91) return '🌔';
+  if (age < 16.61) return '🌕';
+  if (age < 20.30) return '🌖';
+  if (age < 23.99) return '🌗';
+  if (age < 27.68) return '🌘';
+  return '🌑';
+}
+
+function getMoonName(age) {
+  if (age < 1.85) return '新月';
+  if (age < 5.54) return '三日月';
+  if (age < 9.23) return '上弦の月';
+  if (age < 12.91) return '十日夜';
+  if (age < 16.61) return '満月';
+  if (age < 20.30) return '十六夜';
+  if (age < 23.99) return '下弦の月';
+  if (age < 27.68) return '有明月';
+  return '晦日';
+}
+
+function getMoonFarmAdvice(age) {
+  if (age < 7) return '🌱 新月〜上弦の時期。葉野菜・芽吹く植物の種まきに好機です。土の水分が上昇し、発芽力が高まります。';
+  if (age < 15) return '🍅 上弦〜満月の時期。実なり野菜（トマト・きゅうりなど）の植え付け・施肥に◎。植物の生命力が最高潮です。';
+  if (age < 22) return '🥕 満月〜下弦の時期。根菜類（大根・人参・芋類）の種まき・収穫に適しています。根への栄養の流れが増します。';
+  return '🌿 下弦〜新月の時期。土づくり・堆肥入れ・剪定・草刈りの好機。次のサイクルの準備を整えましょう。';
+}
+
+// ===== 吉日計算 =====
+function getKichiDays(date) {
+  const days = [];
+  const d = date.getDate();
+  const m = date.getMonth() + 1;
+  const baseDate = new Date(2024, 0, 1);
+  const diffDays = Math.floor((date - baseDate) / 86400000);
+  const junishi = ((diffDays % 12) + 12) % 12;
+
+  const junishiList = [
+    { label: '子の日', color: 'badge-blue' },
+    { label: '丑の日', color: 'badge-blue' },
+    { label: '寅の日', color: 'badge-gold' },
+    { label: '卯の日', color: 'badge-blue' },
+    { label: '辰の日', color: 'badge-blue' },
+    { label: '巳の日', color: 'badge-red' },
+    { label: '午の日', color: 'badge-blue' },
+    { label: '未の日', color: 'badge-blue' },
+    { label: '申の日', color: 'badge-blue' },
+    { label: '酉の日', color: 'badge-blue' },
+    { label: '戌の日', color: 'badge-blue' },
+    { label: '亥の日', color: 'badge-blue' },
+  ];
+  days.push(junishiList[junishi]);
+
+  const ippyuMap = {
+    1:[1,7], 2:[2,8], 3:[3,9], 4:[4,10],
+    5:[5,11], 6:[0,6], 7:[1,7], 8:[2,8],
+    9:[3,9], 10:[4,10], 11:[5,11], 12:[0,6]
+  };
+  if (ippyuMap[m] && ippyuMap[m].includes(junishi)) {
+    days.push({ label: '一粒万倍日', color: 'badge-gold' });
+  }
+
+  const tenshaList = [[1,3],[1,15],[2,11],[4,26],[5,12],[7,27],[8,12],[10,27],[11,12]];
+  for (const [tm, td] of tenshaList) {
+    if (tm === m && td === d) days.push({ label: '天赦日', color: 'badge-red' });
+  }
+  return days;
+}
+
+function getRokuyo(date) {
+  const rokuyos = ['大安', '赤口', '先勝', '友引', '先負', '仏滅'];
+  const base = new Date(2024, 0, 1);
+  const diff = Math.floor((date - base) / 86400000);
+  return rokuyos[((diff % 6) + 6) % 6];
+}
+
+// ===== カレンダー =====
+function renderCalendar() {
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('calMonth').textContent = `${calYear}年 ${monthNames[calMonth]}`;
+
+  const grid = document.getElementById('calGrid');
+  grid.querySelectorAll('.cal-day').forEach(c => c.remove());
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const records = loadData('farmRecords');
+  const today = new Date();
+
+  for (let i = firstDay - 1; i >= 0; i--) {
+    grid.appendChild(createDayCell(new Date(calYear, calMonth - 1, daysInPrev - i), daysInPrev - i, true, records, today));
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    grid.appendChild(createDayCell(new Date(calYear, calMonth, d), d, false, records, today));
+  }
+  const cells = grid.querySelectorAll('.cal-day').length;
+  const rem = cells % 7 === 0 ? 0 : 7 - (cells % 7);
+  for (let d = 1; d <= rem; d++) {
+    grid.appendChild(createDayCell(new Date(calYear, calMonth + 1, d), d, true, records, today));
+  }
+
+  renderUpcomingMoon();
+  renderKichiList();
+}
+
+function createDayCell(date, d, otherMonth, records, today) {
+  const cell = document.createElement('div');
+  cell.className = 'cal-day';
+  if (otherMonth) cell.classList.add('other-month');
+  if (date.toDateString() === today.toDateString()) cell.classList.add('today');
+  if (date.toDateString() === selectedDate.toDateString()) cell.classList.add('selected');
+  if (records[formatDateKey(date)]) cell.classList.add('has-record');
+
+  const moonAge = getMoonAge(date);
+  const kichi = getKichiDays(date);
+  const kichiLabel = kichi.length > 0 ? kichi[0].label.slice(0, 2) : '';
+
+  cell.innerHTML = `
+    <span class="day-num">${d}</span>
+    <span class="day-moon">${getMoonEmoji(moonAge)}</span>
+    ${kichiLabel ? `<span class="day-kichi">${kichiLabel}</span>` : ''}
+  `;
+  cell.onclick = () => { selectedDate = date; renderCalendar(); showDayDetail(date); };
+  return cell;
+}
+
+function showDayDetail(date) {
+  const detail = document.getElementById('dayDetail');
+  detail.style.display = 'block';
+  const moonAge = getMoonAge(date);
+  const rokuyo = getRokuyo(date);
+  const kichi = getKichiDays(date);
+  const dowNames = ['日','月','火','水','木','金','土'];
+  const dateStr = `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日（${dowNames[date.getDay()]}）`;
+  const moonPhase = Math.round(moonAge / 29.53 * 100);
+
+  let badgesHTML = `<span class="badge badge-blue">${rokuyo}</span>`;
+  kichi.forEach(k => { badgesHTML += `<span class="badge ${k.color}">${k.label}</span>`; });
+
+  detail.innerHTML = `
+    <div class="day-detail-header">
+      <div>
+        <div class="day-detail-date">${dateStr}</div>
+        <div style="font-size:0.72rem;opacity:0.6;margin-top:2px;">月齢 ${moonAge.toFixed(1)}</div>
+        <div class="moon-phase-bar" style="width:120px">
+          <div class="moon-phase-fill" style="width:${moonPhase}%"></div>
+        </div>
+      </div>
+      <div class="day-detail-moon">
+        <div class="moon-age">${getMoonEmoji(moonAge)}</div>
+        <div class="moon-name">${getMoonName(moonAge)}</div>
+      </div>
+    </div>
+    <div class="badges">${badgesHTML}</div>
+    <div class="farm-advice">${getMoonFarmAdvice(moonAge)}</div>
+  `;
+}
+
+function renderUpcomingMoon() {
+  const container = document.getElementById('upcomingMoon');
+  const events = [];
+  const today = new Date();
+  const dowNames = ['日','月','火','水','木','金','土'];
+
+  for (let i = 0; i <= 35; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const name = getMoonName(getMoonAge(d));
+    if (['新月','上弦の月','満月','下弦の月'].includes(name)) {
+      const prev = new Date(d);
+      prev.setDate(d.getDate() - 1);
+      if (getMoonName(getMoonAge(prev)) !== name) {
+        events.push({ date: d, name, emoji: getMoonEmoji(getMoonAge(d)) });
+      }
+    }
+  }
+
+  container.innerHTML = events.slice(0, 5).map(e => `
+    <div class="kichi-item">
+      <span class="kichi-date">${e.date.getMonth()+1}/${e.date.getDate()}（${dowNames[e.date.getDay()]}）</span>
+      <span style="font-size:1.2rem">${e.emoji}</span>
+      <span>${e.name}</span>
+    </div>
+  `).join('');
+}
+
+function renderKichiList() {
+  const container = document.getElementById('kichiList');
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const dowNames = ['日','月','火','水','木','金','土'];
+  const items = [];
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calYear, calMonth, d);
+    const kichi = getKichiDays(date);
+    if (kichi.length > 0) items.push({ date, kichi });
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="kichi-item">
+      <span class="kichi-date">${item.date.getDate()}日（${dowNames[item.date.getDay()]}）</span>
+      <div class="kichi-tags">
+        ${item.kichi.map(k => `<span class="badge ${k.color}" style="font-size:0.65rem;padding:2px 8px">${k.label}</span>`).join('')}
+      </div>
+    </div>
+  `).join('') || '<div style="font-size:0.8rem;color:#888;padding:8px">今月の吉日はありません</div>';
+}
+
+// ===== 記録 =====
+function formatDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function saveRecord() {
+  const text = document.getElementById('recordText').value.trim();
+  if (!text) return;
+  const records = loadData('farmRecords');
+  const key = formatDateKey(selectedDate);
+  const moonAge = getMoonAge(selectedDate);
+  records[key] = { text, moonAge: moonAge.toFixed(1), moonName: getMoonName(moonAge), kichi: getKichiDays(selectedDate).map(k => k.label) };
+  saveData('farmRecords', records);
+  const msg = document.getElementById('recordSaved');
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2000);
+  renderCalendar();
+  renderRecordHistory();
+}
+
+function renderRecordHistory() {
+  const records = loadData('farmRecords');
+  const dowNames = ['日','月','火','水','木','金','土'];
+  const sorted = Object.entries(records).sort((a, b) => b[0].localeCompare(a[0]));
+  const container = document.getElementById('recordHistory');
+  if (sorted.length === 0) {
+    container.innerHTML = '<div style="font-size:0.8rem;color:#888">まだ記録がありません</div>';
+    return;
+  }
+  container.innerHTML = sorted.slice(0, 30).map(([key, val]) => {
+    const d = new Date(key);
+    const kichiStr = val.kichi && val.kichi.length > 0 ? ` · ${val.kichi.join('·')}` : '';
+    return `
+      <div style="border-bottom:1px solid var(--paper2);padding:10px 0;cursor:pointer" onclick="selectRecordDate('${key}')">
+        <div style="font-size:0.72rem;color:var(--gold);font-weight:600;margin-bottom:4px">
+          ${key}（${dowNames[d.getDay()]}）月齢${val.moonAge} ${val.moonName}${kichiStr}
+        </div>
+        <div style="font-size:0.82rem;line-height:1.6">${val.text}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectRecordDate(key) {
+  const parts = key.split('-');
+  selectedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  const records = loadData('farmRecords');
+  document.getElementById('recordText').value = records[key]?.text || '';
+  updateRecordDateLabel();
+}
+
+function updateRecordDateLabel() {
+  const dowNames = ['日','月','火','水','木','金','土'];
+  document.getElementById('recordDateLabel').textContent =
+    `${selectedDate.getFullYear()}年${selectedDate.getMonth()+1}月${selectedDate.getDate()}日（${dowNames[selectedDate.getDay()]}）の記録`;
+}
+
+// ===== スケジュール =====
+function addSchedule() {
+  const title = document.getElementById('scheduleTitle').value.trim();
+  const date = document.getElementById('scheduleDate').value;
+  const time = document.getElementById('scheduleTime').value;
+  const memo = document.getElementById('scheduleMemo').value.trim();
+  if (!title || !date) return;
+  const schedules = loadArray('schedules');
+  schedules.push({ id: Date.now(), title, date, time, memo, done: false });
+  schedules.sort((a, b) => a.date.localeCompare(b.date));
+  saveArray('schedules', schedules);
+  document.getElementById('scheduleTitle').value = '';
+  document.getElementById('scheduleMemo').value = '';
+  renderSchedules();
+}
+
+function toggleSchedule(id) {
+  const schedules = loadArray('schedules');
+  const item = schedules.find(s => s.id === id);
+  if (item) item.done = !item.done;
+  saveArray('schedules', schedules);
+  renderSchedules();
+}
+
+function deleteSchedule(id) {
+  saveArray('schedules', loadArray('schedules').filter(s => s.id !== id));
+  renderSchedules();
+}
+
+function renderSchedules() {
+  const schedules = loadArray('schedules');
+  const container = document.getElementById('scheduleList');
+  const dowNames = ['日','月','火','水','木','金','土'];
+  if (schedules.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85rem;padding:20px">予定がありません</div>';
+    return;
+  }
+  container.innerHTML = schedules.map(s => {
+    const d = new Date(s.date + 'T00:00:00');
+    const moonAge = getMoonAge(d);
+    const kichi = getKichiDays(d);
+    const kichiStr = kichi.length > 0 ? ` · ${kichi[0].label}` : '';
+    return `
+      <div class="schedule-item ${s.done ? 'done' : ''}">
+        <div class="schedule-check" onclick="toggleSchedule(${s.id})">${s.done ? '✓' : ''}</div>
+        <div class="schedule-info">
+          <div class="schedule-title">${s.title}</div>
+          <div class="schedule-meta">${s.date}（${dowNames[d.getDay()]}）${s.time ? ' ' + s.time : ''} ${getMoonEmoji(moonAge)}月齢${moonAge.toFixed(0)}${kichiStr}</div>
+          ${s.memo ? `<div style="font-size:0.72rem;color:#888;margin-top:2px">${s.memo}</div>` : ''}
+        </div>
+        <button class="schedule-delete" onclick="deleteSchedule(${s.id})">×</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== メモ =====
+function addMemo() {
+  const text = document.getElementById('memoText').value.trim();
+  if (!text) return;
+  const memos = loadArray('memos');
+  const now = new Date();
+  memos.unshift({ id: Date.now(), text, date: formatDateKey(now) + ' ' + now.toTimeString().slice(0, 5) });
+  saveArray('memos', memos);
+  document.getElementById('memoText').value = '';
+  renderMemos();
+}
+
+function deleteMemo(id) {
+  saveArray('memos', loadArray('memos').filter(m => m.id !== id));
+  renderMemos();
+}
+
+function renderMemos() {
+  const memos = loadArray('memos');
+  const container = document.getElementById('memoList');
+  if (memos.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85rem;padding:20px">メモがありません</div>';
+    return;
+  }
+  container.innerHTML = memos.map(m => `
+    <div class="memo-card">
+      <div class="memo-date">${m.date}</div>
+      <div class="memo-text">${m.text}</div>
+      <button class="memo-delete" onclick="deleteMemo(${m.id})">×</button>
+    </div>
+  `).join('');
+}
+
+// ===== AI (Worker経由) =====
+async function askAI() {
+  const query = document.getElementById('aiQuery').value.trim();
+  if (!query) { alert('質問を入力してください'); return; }
+
+  const email = window.TomuAuth ? window.TomuAuth.getEmail() : localStorage.getItem('tomu_email');
+
+  const btn = document.getElementById('aiBtn');
+  const responseDiv = document.getElementById('aiResponse');
+  btn.disabled = true;
+  btn.textContent = '相談中...';
+  responseDiv.className = 'ai-response visible';
+  responseDiv.textContent = '考えています...';
+
+  const today = new Date();
+  const moonAge = getMoonAge(today);
+  const kichi = getKichiDays(today);
+  const kichiStr = kichi.length > 0 ? kichi.map(k => k.label).join('、') : 'なし';
+
+  const systemPrompt = `あなたは農作業と自然農法に詳しいアシスタントです。月齢や吉日（一粒万倍日、寅の日、巳の日など）を考慮した農作業アドバイスが得意です。日本の伝統的な農事暦の知識を持ち、山林での農作業にも詳しいです。回答は簡潔で実践的にしてください。
+
+本日の暦情報：
+- 日付：${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日
+- 月齢：${moonAge.toFixed(1)}（${getMoonEmoji(moonAge)}${getMoonName(moonAge)}）
+- 六曜：${getRokuyo(today)}
+- 吉日：${kichiStr}
+- 農作業アドバイス：${getMoonFarmAdvice(moonAge)}`;
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: query }],
+        max_tokens: 600
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      responseDiv.textContent = `エラー：${data.error || 'サーバーエラーが発生しました'}`;
+    } else {
+      responseDiv.textContent = data.content?.[0]?.text || `エラー：不明なエラーが発生しました`;
+    }
+  } catch (e) {
+    responseDiv.textContent = `通信エラー：${e.message}`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '相談する';
+}
+
+function renderMoonCards() {
+  const today = new Date();
+  const moonAge = getMoonAge(today);
+  let nextFull = null, nextNew = null;
+
+  for (let i = 1; i <= 30; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const age = getMoonAge(d);
+    if (!nextFull && age >= 14 && age <= 16) nextFull = d;
+    if (!nextNew && age <= 1.5) nextNew = d;
+  }
+
+  document.getElementById('moonCards').innerHTML = `
+    <div class="moon-card">
+      <div class="moon-card-icon">🌕</div>
+      <div class="moon-card-label">次の満月</div>
+      <div class="moon-card-value">${nextFull ? `${nextFull.getMonth()+1}/${nextFull.getDate()}` : '--'}</div>
+    </div>
+    <div class="moon-card">
+      <div class="moon-card-icon">🌑</div>
+      <div class="moon-card-label">次の新月</div>
+      <div class="moon-card-value">${nextNew ? `${nextNew.getMonth()+1}/${nextNew.getDate()}` : '--'}</div>
+    </div>
+    <div class="moon-card">
+      <div class="moon-card-icon">${getMoonEmoji(moonAge)}</div>
+      <div class="moon-card-label">今日の月齢</div>
+      <div class="moon-card-value">${moonAge.toFixed(1)} ${getMoonName(moonAge)}</div>
+    </div>
+    <div class="moon-card">
+      <div class="moon-card-icon">🎋</div>
+      <div class="moon-card-label">今日の六曜</div>
+      <div class="moon-card-value">${getRokuyo(today)}</div>
+    </div>
+  `;
+}
+
+// ===== タブ =====
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const idx = ['calendar','record','schedule','memo','ai'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'record') { updateRecordDateLabel(); const r = loadData('farmRecords'); document.getElementById('recordText').value = r[formatDateKey(selectedDate)]?.text || ''; renderRecordHistory(); }
+  if (name === 'schedule') renderSchedules();
+  if (name === 'memo') renderMemos();
+  if (name === 'ai') renderMoonCards();
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+// ===== 初期化 =====
+function init() {
+  const today = new Date();
+  const dowNames = ['日','月','火','水','木','金','土'];
+  document.getElementById('todayLabel').textContent = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日（${dowNames[today.getDay()]}）`;
+  const moonAge = getMoonAge(today);
+  document.getElementById('headerMoon').textContent = getMoonEmoji(moonAge);
+  document.getElementById('headerMoonAge').textContent = `月齢 ${moonAge.toFixed(1)}`;
+  document.getElementById('scheduleDate').value = formatDateKey(today);
+  renderCalendar();
+  showDayDetail(selectedDate);
+}
+
+init();
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+</body>
+</html>
