@@ -20,7 +20,7 @@ function getCorsHeaders(origin) {
   var allow = ALLOWED_ORIGINS.indexOf(origin) !== -1 ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
     "Vary": "Origin",
   };
@@ -118,6 +118,145 @@ function jsonRes(data, status, corsH) {
     status: status || 200,
     headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
   });
+}
+
+// ===== Google Calendar OAuth2 =====
+async function getGoogleAccessToken() {
+  var refreshToken = await SUBSCRIPTIONS.get("GOOGLE_REFRESH_TOKEN");
+  if (!refreshToken) throw new Error("refresh_token not found in KV");
+
+  var res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  var data = await res.json();
+  if (!data.access_token) throw new Error("access_token取得失敗: " + JSON.stringify(data));
+  return data.access_token;
+}
+
+async function getCalendarEvents(accessToken) {
+  var now = new Date();
+  var timeMin = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  var timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+  var calUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+  calUrl.searchParams.set("timeMin", timeMin);
+  calUrl.searchParams.set("timeMax", timeMax);
+  calUrl.searchParams.set("singleEvents", "true");
+  calUrl.searchParams.set("orderBy", "startTime");
+  calUrl.searchParams.set("maxResults", "50");
+
+  var res = await fetch(calUrl.toString(), {
+    headers: { "Authorization": "Bearer " + accessToken },
+  });
+  var data = await res.json();
+  if (!data.items) throw new Error("Calendar取得失敗: " + JSON.stringify(data));
+  return data.items;
+}
+
+function getMoonAge(date) {
+  var known = new Date("2000-01-06T18:14:00Z");
+  var diff = (date - known) / (1000 * 60 * 60 * 24);
+  return ((diff % 29.53058867) + 29.53058867) % 29.53058867;
+}
+
+function getMoonPhaseLabel(age) {
+  if (age < 1.5)  return "🌑 新月（種まき・始まりの時）";
+  if (age < 7.5)  return "🌒 上弦前（地上部の成長に◎）";
+  if (age < 8.5)  return "🌓 上弦（収穫・剪定に吉）";
+  if (age < 14.5) return "🌔 満月前（実りの準備）";
+  if (age < 15.5) return "🌕 満月（収穫・保存作業に◎）";
+  if (age < 22.5) return "🌖 下弦前（根の作業に◎）";
+  if (age < 23.5) return "🌗 下弦（土壌整備・施肥に吉）";
+  return "🌘 晦日前（休息・計画の時）";
+}
+
+function getMonthMoonData() {
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var moonData = [];
+  for (var d = 1; d <= daysInMonth; d++) {
+    var date = new Date(year, month, d);
+    var age = getMoonAge(date);
+    moonData.push({
+      day: d,
+      moonAge: Math.floor(age),
+      phase: getMoonPhaseLabel(age),
+      isNewMoon: age < 1.5,
+      isFullMoon: age >= 14 && age < 16,
+      isQuarter: (age >= 7 && age < 9) || (age >= 22 && age < 24),
+    });
+  }
+  return moonData;
+}
+
+async function handleYamaCalendar(request, corsH) {
+  var email = request.headers.get("X-Customer-Email") || request.headers.get("X-User-Email") || "";
+  var planCheck = await checkPlanAndCount(email, "standard");
+  if (!planCheck.ok) {
+    return jsonRes({ error: planCheck.error, required: planCheck.required, current: planCheck.current, limit: planCheck.limit }, planCheck.status, corsH);
+  }
+  try {
+    var accessToken = await getGoogleAccessToken();
+    var events = await getCalendarEvents(accessToken);
+    var moonData = getMonthMoonData();
+    var now = new Date();
+    var monthLabel = now.getFullYear() + "年" + (now.getMonth() + 1) + "月";
+    var keyDays = moonData.filter(function(d) { return d.isNewMoon || d.isFullMoon || d.isQuarter; });
+
+    var eventSummary = events.map(function(e) {
+      var start = (e.start && (e.start.dateTime || e.start.date)) || "";
+      return "・" + start.slice(5, 10) + " " + (e.summary || "（無題）");
+    }).join("\n") || "（今月の予定なし）";
+
+    var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        system: "あなたは山暮らしの農作業アドバイザーです。\n月齢・旧暦の吉日と、ユーザーのGoogleカレンダーの予定を組み合わせて、\n今月の農作業タイミングを具体的に提案してください。\n豪雪地帯・高標高の山林環境を考慮し、キノコの原木栽培・山仕事に特化したアドバイスを含めること。\n出力は日本語で、見やすくまとめてください。",
+        messages: [{
+          role: "user",
+          content: "【" + monthLabel + "の情報】\n\n■ 月齢カレンダー（吉日）\n" +
+            keyDays.map(function(d) { return d.day + "日: " + d.phase; }).join("\n") +
+            "\n\n■ Googleカレンダーの予定\n" + eventSummary +
+            "\n\n上記を踏まえ、今月の農作業・山仕事の最適タイミングを提案してください。",
+        }],
+      }),
+    });
+    var aiData = await aiRes.json();
+    var advice = (aiData.content && aiData.content[0] && aiData.content[0].text) || "AI提案を取得できませんでした";
+
+    return jsonRes({
+      success: true,
+      month: monthLabel,
+      events: events.map(function(e) {
+        return {
+          title: e.summary,
+          start: (e.start && (e.start.dateTime || e.start.date)) || "",
+        };
+      }),
+      moonData: moonData,
+      keyDays: keyDays,
+      advice: advice,
+    }, 200, corsH);
+  } catch (err) {
+    return jsonRes({ success: false, error: err.message }, 500, corsH);
+  }
 }
 
 // ===== メインハンドラー =====
@@ -281,6 +420,13 @@ async function handleRequest(request) {
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
     }
+  }
+
+  // =========================================================
+  // POST /api/yama-calendar — 山の暦（月齢×カレンダー農作業提案）
+  // =========================================================
+  if (url.pathname === "/api/yama-calendar") {
+    return handleYamaCalendar(request, corsH);
   }
 
   // =========================================================
