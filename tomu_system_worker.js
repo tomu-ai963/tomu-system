@@ -430,6 +430,51 @@ async function handleRequest(request) {
   }
 
   // =========================================================
+  // POST /api/tax-advisor — 税務アドバイザー（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/tax-advisor") {
+    var taxEmail = body.email;
+    var taxSystem = body.system;
+    var taxMessages = body.messages;
+    var taxMaxTokens = Math.min(body.max_tokens || 1000, 2000);
+
+    if (!taxSystem || !taxMessages || !Array.isArray(taxMessages) || taxMessages.length === 0) {
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+    }
+
+    var taxCheck = await checkPlanAndCount(taxEmail, "full");
+    if (!taxCheck.ok) {
+      return jsonRes({ error: taxCheck.error, required: taxCheck.required, current: taxCheck.current, limit: taxCheck.limit }, taxCheck.status, corsH);
+    }
+
+    try {
+      var taxRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: taxMaxTokens,
+          system: taxSystem,
+          messages: taxMessages,
+        }),
+      });
+      if (!taxRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await taxRes.text() }, taxRes.status, corsH);
+      }
+      return new Response(await taxRes.text(), {
+        status: 200,
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
+      });
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
   // POST /api/chat — Standard/Full アプリ用
   // =========================================================
   if (url.pathname === "/api/chat") {
