@@ -93,25 +93,6 @@ nav {
 }
 .nav-cta:hover { background: var(--accent) !important; color: var(--paper) !important; }
 
-.nav-mystic {
-  color: #9b7dbd !important;
-  letter-spacing: 0.22em !important;
-  font-style: italic;
-  position: relative;
-}
-.nav-mystic::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background: #9b7dbd;
-  transition: width .3s;
-}
-.nav-mystic:hover { color: #b89fdc !important; }
-.nav-mystic:hover::after { width: 100%; }
-
 @media(max-width:640px){
   nav { padding: 16px 20px; }
   .nav-links { display: none; }
@@ -583,16 +564,59 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 footer {
   background: var(--ink);
   border-top: 1px solid rgba(255,255,255,.06);
-  padding: 48px;
+  padding: 48px 24px 36px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
+  gap: 0;
+  text-align: center;
 }
-@media(max-width:640px){
-  footer { padding: 32px 20px; flex-direction: column; text-align: center; }
-  .footer-links { flex-direction: column; gap: 14px; align-items: center; }
+
+.footer-sister {
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+}
+.footer-sister-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(247,243,238,.35);
+  margin-bottom: 0.5rem;
+}
+.footer-sister-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--paper);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.06em;
+}
+.footer-sister-name span { color: #9b7dbd; }
+.footer-sister-desc {
+  font-size: 0.78rem;
+  color: rgba(247,243,238,.45);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.footer-sister-btn {
+  display: inline-block;
+  padding: 0.5rem 1.6rem;
+  border: 1px solid #9b7dbd;
+  color: #9b7dbd;
+  text-decoration: none;
+  border-radius: 40px;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  transition: all .2s;
+}
+.footer-sister-btn:hover {
+  background: #9b7dbd;
+  color: var(--ink);
 }
 
 .footer-logo {
@@ -601,10 +625,17 @@ footer {
   font-weight: 600;
   color: var(--paper);
   letter-spacing: 0.08em;
+  margin-bottom: 1.2rem;
 }
 .footer-logo span { color: var(--accent); }
 
-.footer-links { display: flex; gap: 28px; }
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1rem;
+}
 .footer-links a {
   font-size: 0.68rem;
   letter-spacing: 0.15em;
@@ -612,6 +643,8 @@ footer {
   color: rgba(247,243,238,.6);
   text-decoration: none;
   transition: color .2s;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  padding-bottom: 2px;
 }
 .footer-links a:hover { color: var(--accent); }
 
@@ -619,6 +652,7 @@ footer {
   font-size: 0.65rem;
   color: rgba(247,243,238,.25);
   letter-spacing: 0.1em;
+  margin-top: 0.5rem;
 }
 
 /* ===== ANIMATION ===== */
@@ -797,7 +831,6 @@ footer {
     <li><a href="#apps">アプリ</a></li>
     <li><a href="#pricing">プラン</a></li>
     <li><a href="#faq">FAQ</a></li>
-    <li><a href="https://tomu-ai963.github.io/tomu-mystic/" class="nav-mystic" target="_blank">✦ MYSTIC</a></li>
     <li><a href="#pricing" class="nav-cta">はじめる</a></li>
   </ul>
 </nav>
@@ -1489,6 +1522,14 @@ footer {
 
 <!-- FOOTER -->
 <footer>
+  <!-- Sister Service -->
+  <div class="footer-sister">
+    <div class="footer-sister-eyebrow">Sister Service</div>
+    <div class="footer-sister-name">とむ<span>MYSTIC</span></div>
+    <p class="footer-sister-desc">星・数・魂が紡ぐ、占い＆スピリチュアルアプリ集。<br>タロット・数秘術・オーラ診断など30本以上が揃う神秘の世界へ。</p>
+    <a href="https://tomu-ai963.github.io/tomu-mystic/" target="_blank" class="footer-sister-btn">アプリを見る →</a>
+  </div>
+
   <div class="footer-logo">とむ<span>SYSTEM</span></div>
   <nav class="footer-links">
     <a href="tokushoho.html">特定商取引法に基づく表記</a>
