@@ -475,6 +475,51 @@ async function handleRequest(request) {
   }
 
   // =========================================================
+  // POST /api/legal-advisor — 法律アドバイザー（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/legal-advisor") {
+    var legalEmail = body.email;
+    var legalSystem = body.system;
+    var legalMessages = body.messages;
+    var legalMaxTokens = Math.min(body.max_tokens || 1000, 2000);
+
+    if (!legalSystem || !legalMessages || !Array.isArray(legalMessages) || legalMessages.length === 0) {
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+    }
+
+    var legalCheck = await checkPlanAndCount(legalEmail, "full");
+    if (!legalCheck.ok) {
+      return jsonRes({ error: legalCheck.error, required: legalCheck.required, current: legalCheck.current, limit: legalCheck.limit }, legalCheck.status, corsH);
+    }
+
+    try {
+      var legalRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: legalMaxTokens,
+          system: legalSystem,
+          messages: legalMessages,
+        }),
+      });
+      if (!legalRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await legalRes.text() }, legalRes.status, corsH);
+      }
+      return new Response(await legalRes.text(), {
+        status: 200,
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
+      });
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
   // POST /api/chat — Standard/Full アプリ用
   // =========================================================
   if (url.pathname === "/api/chat") {
