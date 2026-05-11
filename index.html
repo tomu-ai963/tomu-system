@@ -93,6 +93,25 @@ nav {
 }
 .nav-cta:hover { background: var(--accent) !important; color: var(--paper) !important; }
 
+.nav-mystic {
+  color: #9b7dbd !important;
+  letter-spacing: 0.22em !important;
+  font-style: italic;
+  position: relative;
+}
+.nav-mystic::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #9b7dbd;
+  transition: width .3s;
+}
+.nav-mystic:hover { color: #b89fdc !important; }
+.nav-mystic:hover::after { width: 100%; }
+
 @media(max-width:640px){
   nav { padding: 16px 20px; }
   .nav-links { display: none; }
@@ -778,6 +797,7 @@ footer {
     <li><a href="#apps">アプリ</a></li>
     <li><a href="#pricing">プラン</a></li>
     <li><a href="#faq">FAQ</a></li>
+    <li><a href="https://tomu-ai963.github.io/tomu-mystic/" class="nav-mystic" target="_blank">✦ MYSTIC</a></li>
     <li><a href="#pricing" class="nav-cta">はじめる</a></li>
   </ul>
 </nav>
