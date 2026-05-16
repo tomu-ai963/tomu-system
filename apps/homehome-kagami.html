@@ -63,7 +63,7 @@ textarea::placeholder{color:#c4a8c0;font-style:italic}
       <p class="praise-text" id="praiseText"></p>
       <!-- MYSTIC -->
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);">
-        <button class="btn-mystic" onclick="callMystic('aura_reading',{mood:'今日の自分を鏡に映した後'})">✨ MYSTICで占う</button>
+        <button class="btn-mystic" onclick="callMystic('aura_reading',{current_state: document.getElementById('userInput').value})">✨ MYSTICで占う</button>
         <div id="mystic-result"></div>
       </div>
       <button class="reset-btn" onclick="reset()">もう一度映す</button>
