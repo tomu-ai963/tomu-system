@@ -630,7 +630,7 @@ async function callMystic(tool, args) {
       body: JSON.stringify({ tool: tool, arguments: args })
     });
     const data = await res.json();
-    const msg = data.result || data.message || '占い結果を取得できませんでした。';
+    const msg = (data.content && data.content[0] && data.content[0].text) || '占い結果を取得できませんでした。';
     const safe = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
     wrap.innerHTML = `<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC より</div>${safe}</div>`;
   } catch(e) {
