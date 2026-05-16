@@ -254,6 +254,37 @@
     gap: 8px;
   }
 
+  .style-subgroup {
+    margin-bottom: 12px;
+  }
+
+  .style-subgroup:last-child {
+    margin-bottom: 0;
+  }
+
+  .style-sublabel {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.6;
+  }
+
+  /* 長さは選択済みでも薄いアクセント、スタイルは通常アクセント */
+  .style-btn.active-length {
+    border-color: var(--accent);
+    background: rgba(201,169,110,0.1);
+    color: var(--accent2);
+  }
+
+  .style-btn.active-style {
+    border-color: var(--accent);
+    background: rgba(201,169,110,0.18);
+    color: var(--accent2);
+  }
+
   .style-btn {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -594,28 +625,57 @@
   <div class="panel controls-panel">
     <div class="panel-label">スタイル設定</div>
 
-    <!-- Hair Style -->
+    <!-- Hair Length -->
+    <div class="section">
+      <div class="section-title">ヘアーレングス</div>
+      <div class="style-subgroup">
+        <div class="style-grid">
+          <button class="style-btn" data-length="very short pixie cut hair length" onclick="selectLength(this)">
+            <span class="emoji">✂️</span>ショート
+          </button>
+          <button class="style-btn" data-length="bob cut medium short hair length" onclick="selectLength(this)">
+            <span class="emoji">💇‍♀️</span>ボブ
+          </button>
+          <button class="style-btn" data-length="medium length shoulder hair" onclick="selectLength(this)">
+            <span class="emoji">💆‍♀️</span>ミディアム
+          </button>
+          <button class="style-btn" data-length="long hair below shoulders" onclick="selectLength(this)">
+            <span class="emoji">🌿</span>ロング
+          </button>
+          <button class="style-btn" data-length="very long hair down to waist" onclick="selectLength(this)">
+            <span class="emoji">🌊</span>セミロング
+          </button>
+          <button class="style-btn" data-length="hair tied up in bun updo" onclick="selectLength(this)">
+            <span class="emoji">🎀</span>アップスタイル
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hair Style / Texture -->
     <div class="section">
       <div class="section-title">ヘアースタイル</div>
-      <div class="style-grid">
-        <button class="style-btn" data-style="long straight hair" onclick="selectStyle(this)">
-          <span class="emoji">💇‍♀️</span>ロング
-        </button>
-        <button class="style-btn" data-style="short bob haircut" onclick="selectStyle(this)">
-          <span class="emoji">✂️</span>ショート
-        </button>
-        <button class="style-btn" data-style="medium length hair" onclick="selectStyle(this)">
-          <span class="emoji">💆‍♀️</span>ミディアム
-        </button>
-        <button class="style-btn" data-style="curly permed hair" onclick="selectStyle(this)">
-          <span class="emoji">🌀</span>パーマ
-        </button>
-        <button class="style-btn" data-style="wavy hair loose waves" onclick="selectStyle(this)">
-          <span class="emoji">🌊</span>ウェーブ
-        </button>
-        <button class="style-btn" data-style="hair up in a bun updo" onclick="selectStyle(this)">
-          <span class="emoji">🎀</span>アップ
-        </button>
+      <div class="style-subgroup">
+        <div class="style-grid">
+          <button class="style-btn" data-style="straight sleek hair" onclick="selectStyle(this)">
+            <span class="emoji">〰️</span>ストレート
+          </button>
+          <button class="style-btn" data-style="natural loose waves hair" onclick="selectStyle(this)">
+            <span class="emoji">🌊</span>ウェーブ
+          </button>
+          <button class="style-btn" data-style="tight curly permed hair" onclick="selectStyle(this)">
+            <span class="emoji">🌀</span>パーマ
+          </button>
+          <button class="style-btn" data-style="loose perm natural curl hair" onclick="selectStyle(this)">
+            <span class="emoji">☁️</span>ゆるパーマ
+          </button>
+          <button class="style-btn" data-style="layered textured hair with volume" onclick="selectStyle(this)">
+            <span class="emoji">✨</span>レイヤー
+          </button>
+          <button class="style-btn" data-style="sleek glossy straight hair blowout" onclick="selectStyle(this)">
+            <span class="emoji">💨</span>ブロー仕上げ
+          </button>
+        </div>
       </div>
     </div>
 
@@ -689,9 +749,15 @@
   offscreenCanvas.width = 512;
   offscreenCanvas.height = 512;
 
+  // マスク生成用キャンバス（髪エリアのみ白、それ以外黒）
+  const maskCanvas = document.createElement('canvas');
+  maskCanvas.width = 512;
+  maskCanvas.height = 512;
+
   let uploadedFile = null;
   let previewObjectURL = null;
   let selectedStyle = '';
+  let selectedLength = '';
   let selectedColor = '';
 
   function handleFileUpload(e) {
@@ -710,6 +776,10 @@
       const ctx = offscreenCanvas.getContext('2d');
       ctx.clearRect(0, 0, 512, 512);
       ctx.drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
+
+      // マスク生成：上部40%（髪エリア）を透明、残りを不透明白
+      // DALL-E 2仕様: 透明(alpha=0)=編集対象、不透明=保護
+      generateHairMask();
 
       offscreenCanvas.toBlob(blob => {
         uploadedFile = blob;
@@ -735,9 +805,37 @@
     img.src = objectURL;
   }
 
+  // DALL-E 2 用マスク生成
+  // 透明(alpha=0)=編集対象（髪エリア）、不透明(alpha=255)=保護（顔・背景）
+  function generateHairMask() {
+    const ctx = maskCanvas.getContext('2d');
+    const W = 512, H = 512;
+
+    // 全体を不透明白（保護：顔・背景・服を変更させない）
+    ctx.fillStyle = 'rgba(255,255,255,1)';
+    ctx.fillRect(0, 0, W, H);
+
+    // 上部38%を透明にクリア（編集対象：髪エリア）
+    ctx.clearRect(0, 0, W, H * 0.38);
+
+    // 境界を自然なグラデーションで繋ぐ
+    const grad = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.43);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');   // 透明（髪側）
+    grad.addColorStop(1, 'rgba(255,255,255,1)');   // 不透明（顔側）
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, H * 0.35, W, H * 0.10);
+  }
+
+  function selectLength(btn) {
+    document.querySelectorAll('[data-length]').forEach(b => b.classList.remove('active', 'active-length'));
+    btn.classList.add('active', 'active-length');
+    selectedLength = btn.dataset.length;
+    checkReady();
+  }
+
   function selectStyle(btn) {
-    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    document.querySelectorAll('[data-style]').forEach(b => b.classList.remove('active', 'active-style'));
+    btn.classList.add('active', 'active-style');
     selectedStyle = btn.dataset.style;
     checkReady();
   }
@@ -748,12 +846,13 @@
     selectedColor = sw.dataset.color;
   }
 
+  // 長さかスタイルのどちらか一つあればOK
   function checkReady() {
-    document.getElementById('generateBtn').disabled = !(uploadedFile && selectedStyle);
+    document.getElementById('generateBtn').disabled = !(uploadedFile && (selectedLength || selectedStyle));
   }
 
   async function generate() {
-    if (!uploadedFile || !selectedStyle) return;
+    if (!uploadedFile || (!selectedLength && !selectedStyle)) return;
 
     const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
     if (!email) {
@@ -768,11 +867,24 @@
     document.getElementById('downloadBtn').classList.remove('visible');
 
     try {
+      // マスクをBlobに変換
+      const maskBlob = await new Promise(res => maskCanvas.toBlob(res, 'image/png'));
+
+      // プロンプト構築：長さ＋スタイルを組み合わせ
+      const lengthPart = selectedLength || '';
+      const stylePart = selectedStyle || '';
+      const colorPart = selectedColor || '';
+      const parts = [lengthPart, stylePart, colorPart, customPrompt].filter(Boolean);
+      const combinedPrompt = parts.join(', ');
+
       const formData = new FormData();
       formData.append('image', uploadedFile, 'photo.png');
-      formData.append('style', selectedStyle);
+      formData.append('mask', maskBlob, 'mask.png');
+      formData.append('style', combinedPrompt);
       formData.append('color', selectedColor);
       formData.append('customPrompt', customPrompt);
+      formData.append('length', selectedLength);
+      formData.append('texture', selectedStyle);
 
       const res = await fetch(`${WORKER_URL}/hair-sim`, {
         method: 'POST',

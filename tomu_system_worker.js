@@ -1,6 +1,6 @@
 /**
  * とむSYSTEM — Cloudflare Worker (API Proxy + Stripe Webhook)
- * 環境変数: ANTHROPIC_API_KEY, STRIPE_WEBHOOK_SECRET
+ * 環境変数: env.ANTHROPIC_API_KEY, env.STRIPE_WEBHOOK_SECRET
  * KV バインディング: SUBSCRIPTIONS
  *
  * エンドポイント:
@@ -90,10 +90,10 @@ async function verifyStripeSignature(body, signature, secret) {
   return hex === sig;
 }
 
-async function checkPlanAndCount(email, requiredPlan) {
+async function checkPlanAndCount(email, requiredPlan, env) {
   if (!email) return { ok: false, status: 401, error: "login_required" };
 
-  var plan = await SUBSCRIPTIONS.get(email);
+  var plan = await env.SUBSCRIPTIONS.get(email);
   if (!plan) return { ok: false, status: 403, error: "subscription_required" };
 
   if (!planMeetsRequirement(plan, requiredPlan)) {
@@ -102,14 +102,14 @@ async function checkPlanAndCount(email, requiredPlan) {
 
   var today = new Date().toISOString().slice(0, 10);
   var countKey = "count:" + email + ":" + today;
-  var currentCount = parseInt(await SUBSCRIPTIONS.get(countKey) || "0");
+  var currentCount = parseInt(await env.SUBSCRIPTIONS.get(countKey) || "0");
   var limit = DAILY_LIMITS[plan] || 50;
 
   if (currentCount >= limit) {
     return { ok: false, status: 429, error: "daily_limit_exceeded", limit: limit };
   }
 
-  await SUBSCRIPTIONS.put(countKey, String(currentCount + 1), { expirationTtl: 86400 });
+  await env.SUBSCRIPTIONS.put(countKey, String(currentCount + 1), { expirationTtl: 86400 });
   return { ok: true, plan: plan };
 }
 
@@ -121,16 +121,16 @@ function jsonRes(data, status, corsH) {
 }
 
 // ===== Google Calendar OAuth2 =====
-async function getGoogleAccessToken() {
-  var refreshToken = await SUBSCRIPTIONS.get("GOOGLE_REFRESH_TOKEN");
+async function getGoogleAccessToken(env) {
+  var refreshToken = await env.SUBSCRIPTIONS.get("GOOGLE_REFRESH_TOKEN");
   if (!refreshToken) throw new Error("refresh_token not found in KV");
 
   var res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
       refresh_token: refreshToken,
       grant_type: "refresh_token",
     }),
@@ -199,14 +199,14 @@ function getMonthMoonData() {
   return moonData;
 }
 
-async function handleYamaCalendar(request, corsH) {
+async function handleYamaCalendar(request, corsH, env) {
   var email = request.headers.get("X-Customer-Email") || request.headers.get("X-User-Email") || "";
-  var planCheck = await checkPlanAndCount(email, "standard");
+  var planCheck = await checkPlanAndCount(email, "standard", env);
   if (!planCheck.ok) {
     return jsonRes({ error: planCheck.error, required: planCheck.required, current: planCheck.current, limit: planCheck.limit }, planCheck.status, corsH);
   }
   try {
-    var accessToken = await getGoogleAccessToken();
+    var accessToken = await getGoogleAccessToken(env);
     var events = await getCalendarEvents(accessToken);
     var moonData = getMonthMoonData();
     var now = new Date();
@@ -221,7 +221,7 @@ async function handleYamaCalendar(request, corsH) {
     var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
@@ -260,11 +260,13 @@ async function handleYamaCalendar(request, corsH) {
 }
 
 // ===== メインハンドラー =====
-addEventListener("fetch", function(event) {
-  event.respondWith(handleRequest(event.request));
-});
+export default {
+  async fetch(request, env, ctx) {
+    return handleRequest(request, env);
+  },
+};
 
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   var url = new URL(request.url);
   var origin = request.headers.get("Origin") || "";
   var corsH = getCorsHeaders(origin);
@@ -277,7 +279,7 @@ async function handleRequest(request) {
   if (url.pathname === "/stripe-webhook" && request.method === "POST") {
     var rawBody = await request.text();
     var sig = request.headers.get("stripe-signature") || "";
-    var valid = await verifyStripeSignature(rawBody, sig, STRIPE_WEBHOOK_SECRET);
+    var valid = await verifyStripeSignature(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
     if (!valid) return new Response("Invalid signature", { status: 400 });
 
     try {
@@ -293,9 +295,9 @@ async function handleRequest(request) {
 
       if (whEmail) {
         if (evt.type === "customer.subscription.created" || evt.type === "customer.subscription.updated") {
-          await SUBSCRIPTIONS.put(whEmail, whPlan);
+          await env.SUBSCRIPTIONS.put(whEmail, whPlan);
         } else if (evt.type === "customer.subscription.deleted") {
-          await SUBSCRIPTIONS.delete(whEmail);
+          await env.SUBSCRIPTIONS.delete(whEmail);
         }
       }
     } catch (e) {
@@ -309,11 +311,11 @@ async function handleRequest(request) {
   }
 
   // =========================================================
-  // POST /hair-sim — ヘアーシミュレーター用（gpt-image-1 edits）
+  // POST /hair-sim — ヘアーシミュレーター用（dall-e-2 edits）
   // =========================================================
   if (url.pathname === "/hair-sim") {
     var hairEmail = request.headers.get("X-Customer-Email") || "";
-    var hairCheck = await checkPlanAndCount(hairEmail, "standard");
+    var hairCheck = await checkPlanAndCount(hairEmail, "standard", env);
     if (!hairCheck.ok) {
       return jsonRes({ error: hairCheck.error, required: hairCheck.required, current: hairCheck.current, limit: hairCheck.limit }, hairCheck.status, corsH);
     }
@@ -325,43 +327,67 @@ async function handleRequest(request) {
     try {
       var hairForm = await request.formData();
       var hairImage = hairForm.get("image");
-      var hairStyle = hairForm.get("style") || "";
-      var hairColor = hairForm.get("color") || "";
-      var hairCustom = hairForm.get("customPrompt") || "";
+      var hairMask  = hairForm.get("mask");
+      var hairLength  = hairForm.get("length")  || "";
+      var hairTexture = hairForm.get("texture") || "";
+      var hairColor   = hairForm.get("color")   || "";
+      var hairCustom  = hairForm.get("customPrompt") || "";
 
-      // DEBUG: formDataの受信内容を確認
       console.log("[hair-sim] image:", hairImage ? hairImage.size + "bytes" : "null");
-      console.log("[hair-sim] style:", hairStyle || "empty");
+      console.log("[hair-sim] mask:", hairMask ? hairMask.size + "bytes" : "null");
+      console.log("[hair-sim] length:", hairLength || "empty");
+      console.log("[hair-sim] texture:", hairTexture || "empty");
       console.log("[hair-sim] color:", hairColor || "empty");
 
-      if (!hairImage || !hairStyle) {
+      if (!hairImage || (!hairLength && !hairTexture)) {
         return jsonRes({
-          error: "image and style are required",
+          error: "image and at least one of length or texture are required",
           debug: {
             hasImage: !!hairImage,
             imageSize: hairImage ? hairImage.size : null,
-            style: hairStyle,
-            color: hairColor,
+            length: hairLength,
+            texture: hairTexture,
           }
         }, 400, corsH);
       }
 
-      var hairPrompt = "A person with " + hairStyle;
-      if (hairColor) hairPrompt += " " + hairColor;
-      hairPrompt += " hair, same face as the reference photo, realistic portrait photo";
-      if (hairCustom) hairPrompt += ". " + hairCustom;
+      // プロンプト構築：顔・背景を変えないことを明示
+      var hairParts = [];
+      if (hairLength)  hairParts.push(hairLength);
+      if (hairTexture) hairParts.push(hairTexture);
+      if (hairColor)   hairParts.push(hairColor);
+      if (hairCustom)  hairParts.push(hairCustom);
+      var hairDesc = hairParts.length > 0 ? hairParts.join(", ") : "natural hair";
+
+      var hairPrompt = [
+        "Change ONLY the hairstyle to: " + hairDesc + ".",
+        "CRITICAL RULES — do NOT change any of the following:",
+        "- The person's face, facial features, skin tone, expression, or identity.",
+        "- The background, lighting, clothing, or any non-hair elements.",
+        "- The overall composition and framing of the photo.",
+        "Apply the new hairstyle naturally as if the person visited a hair salon.",
+        "The result must look like the same real person with a new hairstyle only.",
+      ].join(" ");
 
       console.log("[hair-sim] prompt:", hairPrompt);
 
       var hairBuf = await hairImage.arrayBuffer();
-      var hairBlob = new Blob([hairBuf], { type: "image/png" });
+      var hairBlob = new Blob([new Uint8Array(hairBuf)], { type: "image/png" });
 
       var oaiForm = new FormData();
-      oaiForm.append("image", hairBlob, "photo.png");
+      oaiForm.append("model", "dall-e-2");
+      oaiForm.append("image", hairBlob, "image.png");
+
+      if (hairMask) {
+        var maskBuf = await hairMask.arrayBuffer();
+        var maskBlob = new Blob([new Uint8Array(maskBuf)], { type: "image/png" });
+        oaiForm.append("mask", maskBlob, "mask.png");
+      }
+
       oaiForm.append("prompt", hairPrompt);
-      oaiForm.append("model", "gpt-image-1");
       oaiForm.append("n", "1");
-      oaiForm.append("size", "1024x1024");
+      oaiForm.append("size", "512x512");
+      oaiForm.append("response_format", "b64_json");
 
       var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
@@ -385,7 +411,7 @@ async function handleRequest(request) {
     }
   }
 
-  if (!ANTHROPIC_API_KEY) {
+  if (!env.ANTHROPIC_API_KEY) {
     return jsonRes({ error: "API key not configured" }, 500, corsH);
   }
 
@@ -405,7 +431,7 @@ async function handleRequest(request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
+          "x-api-key": env.ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify(body),
@@ -426,7 +452,7 @@ async function handleRequest(request) {
   // POST /api/yama-calendar — 山の暦（月齢×カレンダー農作業提案）
   // =========================================================
   if (url.pathname === "/api/yama-calendar") {
-    return handleYamaCalendar(request, corsH);
+    return handleYamaCalendar(request, corsH, env);
   }
 
   // =========================================================
@@ -442,7 +468,7 @@ async function handleRequest(request) {
       return jsonRes({ error: "system and messages are required" }, 400, corsH);
     }
 
-    var taxCheck = await checkPlanAndCount(taxEmail, "full");
+    var taxCheck = await checkPlanAndCount(taxEmail, "full", env);
     if (!taxCheck.ok) {
       return jsonRes({ error: taxCheck.error, required: taxCheck.required, current: taxCheck.current, limit: taxCheck.limit }, taxCheck.status, corsH);
     }
@@ -452,7 +478,7 @@ async function handleRequest(request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
+          "x-api-key": env.ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
@@ -487,7 +513,7 @@ async function handleRequest(request) {
       return jsonRes({ error: "system and messages are required" }, 400, corsH);
     }
 
-    var legalCheck = await checkPlanAndCount(legalEmail, "full");
+    var legalCheck = await checkPlanAndCount(legalEmail, "full", env);
     if (!legalCheck.ok) {
       return jsonRes({ error: legalCheck.error, required: legalCheck.required, current: legalCheck.current, limit: legalCheck.limit }, legalCheck.status, corsH);
     }
@@ -497,7 +523,7 @@ async function handleRequest(request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
+          "x-api-key": env.ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
@@ -520,6 +546,58 @@ async function handleRequest(request) {
   }
 
   // =========================================================
+  // POST /mystic-bridge — MYSTIC MCPサーバーブリッジ
+  // =========================================================
+  if (url.pathname === "/mystic-bridge") {
+    var mysticTool = body.tool;
+    var mysticArgs = body.arguments || {};
+
+    var MYSTIC_TOOLS = [
+      "star_reading", "tarot_draw", "numerology", "lucky_color", "oracle_message",
+      "past_life", "guardian_star", "dream_reading", "compatibility", "soul_mission",
+      "moon_journal", "aura_reading", "chakra_check", "power_stone", "angel_number",
+      "spirit_animal", "mandala_reading", "rune_reading", "i_ching", "biorhythm",
+      "celtic_cross", "yearly_forecast", "monthly_fortune", "love_oracle", "career_reading",
+      "health_energy", "wealth_flow", "mercury_retrograde", "numerology_name", "cosmic_timing"
+    ];
+    if (!mysticTool || MYSTIC_TOOLS.indexOf(mysticTool) === -1) {
+      return jsonRes({ error: "invalid tool. allowed: " + MYSTIC_TOOLS.join(", ") }, 400, corsH);
+    }
+
+    try {
+      var mcpRes = await env.MYSTIC.fetch("https://mystic-system-worker/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: {
+            name: mysticTool,
+            arguments: mysticArgs,
+          },
+        }),
+      });
+
+      var mcpText = await mcpRes.text();
+      var mcpData;
+      try {
+        mcpData = JSON.parse(mcpText);
+      } catch (e) {
+        return jsonRes({ error: "MYSTIC MCP returned non-JSON", status: mcpRes.status, detail: mcpText }, 502, corsH);
+      }
+
+      if (mcpData.error) {
+        return jsonRes({ error: "MYSTIC MCP error", detail: mcpData.error }, mcpRes.status, corsH);
+      }
+
+      return jsonRes(mcpData.result !== undefined ? mcpData.result : mcpData, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
   // POST /api/chat — Standard/Full アプリ用
   // =========================================================
   if (url.pathname === "/api/chat") {
@@ -532,7 +610,7 @@ async function handleRequest(request) {
       return jsonRes({ error: "system and messages are required" }, 400, corsH);
     }
 
-    var chatCheck = await checkPlanAndCount(chatEmail, "standard");
+    var chatCheck = await checkPlanAndCount(chatEmail, "standard", env);
     if (!chatCheck.ok) {
       return jsonRes({ error: chatCheck.error, required: chatCheck.required, current: chatCheck.current, limit: chatCheck.limit }, chatCheck.status, corsH);
     }
@@ -542,7 +620,7 @@ async function handleRequest(request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
+          "x-api-key": env.ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
@@ -579,12 +657,12 @@ async function handleRequest(request) {
   // ping — プラン確認のみ
   if (appType === "ping") {
     if (!lightEmail) return jsonRes({ error: "login_required" }, 401, corsH);
-    var pingPlan = await SUBSCRIPTIONS.get(lightEmail);
+    var pingPlan = await env.SUBSCRIPTIONS.get(lightEmail);
     if (!pingPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
     return jsonRes({ ok: true, plan: pingPlan }, 200, corsH);
   }
 
-  var lightCheck = await checkPlanAndCount(lightEmail, "light");
+  var lightCheck = await checkPlanAndCount(lightEmail, "light", env);
   if (!lightCheck.ok) {
     return jsonRes({ error: lightCheck.error, limit: lightCheck.limit }, lightCheck.status, corsH);
   }
@@ -594,7 +672,7 @@ async function handleRequest(request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
