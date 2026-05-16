@@ -29,6 +29,11 @@ textarea::placeholder{color:#c4a8c0;font-style:italic}
 .praise-label{font-size:13px;color:#c08ab0;letter-spacing:0.1em;font-weight:700}
 .praise-text{font-family:'Shippori Mincho',serif;font-size:15px;color:#5a4060;line-height:1.9;letter-spacing:0.03em;margin-bottom:20px}
 .reset-btn{display:block;margin:0 auto;padding:10px 28px;border-radius:50px;border:1.5px solid rgba(210,170,230,0.6);background:transparent;color:#b090c0;font-size:13px;font-family:'Zen Kaku Gothic New',sans-serif;cursor:pointer;letter-spacing:0.06em}
+.btn-mystic{width:100%;background:linear-gradient(135deg,#1a0533,#0d1f3c);color:#d4af37;border:1px solid #d4af37;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;transition:opacity 0.2s,transform 0.1s;font-family:inherit;letter-spacing:0.05em;margin-top:8px;}
+.btn-mystic:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-mystic:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.mystic-result-card{margin-top:12px;background:linear-gradient(135deg,rgba(26,5,51,0.95),rgba(13,31,60,0.95));border:1px solid rgba(212,175,55,0.4);border-radius:8px;padding:18px 20px;color:#e8d5a3;font-size:0.88rem;line-height:1.9;white-space:pre-wrap;}
+.mystic-result-label{font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;}
 .footer{font-size:12px;color:#c4aac8;letter-spacing:0.1em;animation:fadeUp 0.8s ease-out 0.4s both}
 .hidden{display:none}
 @keyframes pulse{0%,100%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.02)}}
@@ -56,6 +61,11 @@ textarea::placeholder{color:#c4a8c0;font-style:italic}
     <div id="praise-section" class="praise-section hidden">
       <div class="praise-header"><span>🌸</span><span class="praise-label">鏡からのことば</span></div>
       <p class="praise-text" id="praiseText"></p>
+      <!-- MYSTIC -->
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);">
+        <button class="btn-mystic" onclick="callMystic('aura_reading',{mood:'今日の自分を鏡に映した後'})">✨ MYSTICで占う</button>
+        <div id="mystic-result"></div>
+      </div>
       <button class="reset-btn" onclick="reset()">もう一度映す</button>
     </div>
   </div>
@@ -104,6 +114,31 @@ function reset() {
   document.getElementById("praiseBtn").disabled = false;
   document.getElementById("input-section").classList.remove("hidden");
   document.getElementById("praise-section").classList.add("hidden");
+}
+
+async function callMystic(tool, args) {
+  const MYSTIC_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic-bridge';
+  const btn = document.querySelector('.btn-mystic');
+  const wrap = document.getElementById('mystic-result');
+  btn.disabled = true;
+  btn.textContent = '✨ 星々に問いかけています…';
+  wrap.innerHTML = '<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC</div>星々があなたのために語ります...</div>';
+  try {
+    const res = await fetch(MYSTIC_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ tool: tool, arguments: args })
+    });
+    const data = await res.json();
+    const msg = data.result || data.message || '占い結果を取得できませんでした。';
+    const safe = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    wrap.innerHTML = `<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC より</div>${safe}</div>`;
+  } catch(e) {
+    wrap.innerHTML = '<div class="mystic-result-card">⚠ 星々との通信が途絶えました。しばらくしてからお試しください。</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ MYSTICで占う';
+  }
 }
 </script>
 

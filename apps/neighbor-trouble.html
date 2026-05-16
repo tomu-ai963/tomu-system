@@ -367,6 +367,14 @@ footer a:hover { color: var(--ember-glow); }
   .card { padding: 28px 20px; }
   nav { padding: 16px 20px; }
 }
+
+/* ===== MYSTIC SECTION ===== */
+.mystic-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);}
+.btn-mystic{width:100%;background:linear-gradient(135deg,#1a0533,#0d1f3c);color:#d4af37;border:1px solid #d4af37;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;transition:opacity 0.2s,transform 0.1s;font-family:inherit;letter-spacing:0.05em;margin-top:8px;}
+.btn-mystic:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-mystic:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.mystic-result-card{margin-top:12px;background:linear-gradient(135deg,rgba(26,5,51,0.95),rgba(13,31,60,0.95));border:1px solid rgba(212,175,55,0.4);border-radius:8px;padding:18px 20px;color:#e8d5a3;font-size:0.88rem;line-height:1.9;white-space:pre-wrap;}
+.mystic-result-label{font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;}
 </style>
   <script src="/tomu-system/common/header.js"></script>
 </head>
@@ -410,6 +418,11 @@ footer a:hover { color: var(--ember-glow); }
     <div class="result-area" id="result">
       <div class="result-label">穏便な対処法と伝え方</div>
       <div class="result-text" id="result-text"></div>
+      <!-- MYSTIC -->
+      <div class="mystic-section">
+        <button class="btn-mystic" onclick="callMystic('oracle_message',{feeling:'隣人問題への対処を考えている'})">✨ MYSTICで占う</button>
+        <div id="mystic-result"></div>
+      </div>
     </div>
   </div>
 </main>
@@ -511,6 +524,31 @@ style.textContent = `
   80% { transform: translateX(5px); }
 }`;
 document.head.appendChild(style);
+
+async function callMystic(tool, args) {
+  const MYSTIC_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic-bridge';
+  const btn = document.querySelector('.btn-mystic');
+  const wrap = document.getElementById('mystic-result');
+  btn.disabled = true;
+  btn.textContent = '✨ 星々に問いかけています…';
+  wrap.innerHTML = '<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC</div>星々があなたのために語ります...</div>';
+  try {
+    const res = await fetch(MYSTIC_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ tool: tool, arguments: args })
+    });
+    const data = await res.json();
+    const msg = data.result || data.message || '占い結果を取得できませんでした。';
+    const safe = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    wrap.innerHTML = `<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC より</div>${safe}</div>`;
+  } catch(e) {
+    wrap.innerHTML = '<div class="mystic-result-card">⚠ 星々との通信が途絶えました。しばらくしてからお試しください。</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ MYSTICで占う';
+  }
+}
 </script>
 
 <!-- とむSYSTEM 共通認証モジュール -->
