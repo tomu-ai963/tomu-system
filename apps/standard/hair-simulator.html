@@ -907,12 +907,16 @@
         throw new Error(data.error + (data.debug ? ' | debug: ' + JSON.stringify(data.debug) : '') + (data.openai_error ? ' | openai: ' + JSON.stringify(data.openai_error) : ''));
       }
 
-      const imgSrc = data.image_url;
+      // レスポンスのJSONをログ出力して確認
+      console.log('[hair-sim] response keys:', Object.keys(data));
+      console.log('[hair-sim] image_base64 length:', data.image_base64 ? data.image_base64.length : 'null');
+
+      const imgSrc = `data:image/png;base64,${data.image_base64}`;
+      console.log('[hair-sim] imgSrc prefix:', imgSrc.substring(0, 50));
 
       const resultArea = document.getElementById('resultArea');
-      resultArea.innerHTML = `
-        <img src="${imgSrc}" alt="result">
-        <div class="loading-overlay" id="loadingOverlay"></div>`;
+      resultArea.innerHTML = `<img src="${imgSrc}" alt="result" onerror="console.error('img load error')">
+  <div class="loading-overlay" id="loadingOverlay"></div>`;
 
       const dl = document.getElementById('downloadBtn');
       dl.classList.add('visible');
