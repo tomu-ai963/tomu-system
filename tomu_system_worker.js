@@ -320,7 +320,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: hairCheck.error, required: hairCheck.required, current: hairCheck.current, limit: hairCheck.limit }, hairCheck.status, corsH);
     }
 
-    if (!OPENAI_API_KEY) {
+    if (!env.OPENAI_API_KEY) {
       return jsonRes({ error: "OpenAI API key not configured" }, 500, corsH);
     }
 
@@ -391,7 +391,7 @@ async function handleRequest(request, env) {
 
       var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
-        headers: { "Authorization": "Bearer " + OPENAI_API_KEY },
+        headers: { "Authorization": "Bearer " + env.OPENAI_API_KEY },
         body: oaiForm,
       });
 
