@@ -387,7 +387,6 @@ async function handleRequest(request, env) {
       oaiForm.append("prompt", hairPrompt);
       oaiForm.append("n", "1");
       oaiForm.append("size", "1024x1024");
-      oaiForm.append("response_format", "b64_json");
 
       var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
@@ -405,8 +404,7 @@ async function handleRequest(request, env) {
         }, oaiRes.status, corsH);
       }
 
-      const imageB64 = oaiData.data[0].b64_json;
-      return jsonRes({ image_base64: imageB64 }, 200, corsH);
+      return jsonRes({ image_url: oaiData.data[0].url }, 200, corsH);
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message, stack: err.stack }, 500, corsH);
     }

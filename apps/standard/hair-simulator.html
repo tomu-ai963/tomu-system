@@ -907,7 +907,7 @@
         throw new Error(data.error + (data.debug ? ' | debug: ' + JSON.stringify(data.debug) : '') + (data.openai_error ? ' | openai: ' + JSON.stringify(data.openai_error) : ''));
       }
 
-      const imgSrc = `data:image/png;base64,${data.image_base64}`;
+      const imgSrc = data.image_url;
 
       const resultArea = document.getElementById('resultArea');
       resultArea.innerHTML = `
@@ -917,7 +917,8 @@
       const dl = document.getElementById('downloadBtn');
       dl.classList.add('visible');
       dl.href = imgSrc;
-      dl.download = 'hair-sim-result.png';
+      dl.target = '_blank';
+      dl.download = '';
 
     } catch (err) {
       showToast('エラー: ' + err.message);
