@@ -375,7 +375,7 @@ async function handleRequest(request, env) {
       var hairBlob = new Blob([new Uint8Array(hairBuf)], { type: "image/png" });
 
       var oaiForm = new FormData();
-      oaiForm.append("model", "dall-e-2");
+      oaiForm.append("model", "gpt-image-1");
       oaiForm.append("image", hairBlob, "image.png");
 
       if (hairMask) {
@@ -386,7 +386,7 @@ async function handleRequest(request, env) {
 
       oaiForm.append("prompt", hairPrompt);
       oaiForm.append("n", "1");
-      oaiForm.append("size", "512x512");
+      oaiForm.append("size", "1024x1024");
 
       var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
