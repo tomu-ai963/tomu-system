@@ -777,8 +777,8 @@
       ctx.clearRect(0, 0, 512, 512);
       ctx.drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
 
-      // マスク生成：上部40%（髪エリア）を透明、残りを不透明白
-      // DALL-E 2仕様: 透明(alpha=0)=編集対象、不透明=保護
+      // マスク生成：上部40%（髪エリア）を白、残りを黒
+      // これにより顔・背景をDALL-Eが変更しにくくなる
       generateHairMask();
 
       offscreenCanvas.toBlob(blob => {
@@ -805,8 +805,8 @@
     img.src = objectURL;
   }
 
-  // DALL-E 2 用マスク生成
-  // 透明(alpha=0)=編集対象（髪エリア）、不透明(alpha=255)=保護（顔・背景）
+  // 髪エリアマスク生成
+  // DALL-E 2 仕様: 透明(alpha=0)=編集対象、不透明=保護
   function generateHairMask() {
     const ctx = maskCanvas.getContext('2d');
     const W = 512, H = 512;
@@ -846,7 +846,7 @@
     selectedColor = sw.dataset.color;
   }
 
-  // 長さかスタイルのどちらか一つあればOK
+  // 長さかスタイルのどちらか一つあればOK（両方選べばより精度UP）
   function checkReady() {
     document.getElementById('generateBtn').disabled = !(uploadedFile && (selectedLength || selectedStyle));
   }
@@ -883,6 +883,7 @@
       formData.append('style', combinedPrompt);
       formData.append('color', selectedColor);
       formData.append('customPrompt', customPrompt);
+      // 後方互換のためstyleも送る
       formData.append('length', selectedLength);
       formData.append('texture', selectedStyle);
 
@@ -908,19 +909,16 @@
       }
 
       const imgSrc = `data:image/png;base64,${data.image_base64}`;
+
       const resultArea = document.getElementById('resultArea');
-      resultArea.innerHTML = `<img src="${imgSrc}" alt="result">
-  <div class="loading-overlay" id="loadingOverlay"></div>`;
-      const dl = document.getElementById('downloadBtn');
-      dl.classList.add('visible');
-      dl.href = imgSrc;
-      dl.download = 'hair-sim-result.png';
+      resultArea.innerHTML = `
+        <img src="${imgSrc}" alt="result">
+        <div class="loading-overlay" id="loadingOverlay"></div>`;
 
       const dl = document.getElementById('downloadBtn');
       dl.classList.add('visible');
       dl.href = imgSrc;
-      dl.target = '_blank';
-      dl.download = '';
+      dl.download = 'hair-sim-result.png';
 
     } catch (err) {
       showToast('エラー: ' + err.message);
