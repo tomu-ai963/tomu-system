@@ -386,7 +386,7 @@ async function handleRequest(request, env) {
 
       oaiForm.append("prompt", hairPrompt);
       oaiForm.append("n", "1");
-      oaiForm.append("size", "1024x1024");
+      oaiForm.append("size", "512x512");
 
       var oaiRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
@@ -396,6 +396,8 @@ async function handleRequest(request, env) {
 
       var oaiData = await oaiRes.json();
       console.log("[hair-sim] OpenAI status:", oaiRes.status);
+      console.log('[hair-sim] oaiData keys:', JSON.stringify(Object.keys(oaiData)));
+      console.log('[hair-sim] data[0] keys:', JSON.stringify(Object.keys(oaiData.data[0])));
 
       if (oaiData.error) {
         return jsonRes({
@@ -413,6 +415,7 @@ async function handleRequest(request, env) {
         binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
       }
       const base64 = btoa(binary);
+      console.log('[hair-sim] base64 length:', base64.length);
 
       return jsonRes({ image_base64: base64 }, 200, corsH);
     } catch (err) {
