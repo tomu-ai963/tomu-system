@@ -405,21 +405,29 @@ async function handleRequest(request, env) {
         }, oaiRes.status, corsH);
       }
 
-      const imageUrl = oaiData.data?.[0]?.url;
-      if (!imageUrl) {
-        return jsonRes({ error: 'no image url', detail: JSON.stringify(oaiData) }, 500, corsH);
-      }
+      // data[0]の中身を確認
+      const imageData = oaiData.data?.[0];
+      const imageUrl = imageData?.url;
+      const imageB64 = imageData?.b64_json;
 
-      const imageRes = await fetch(imageUrl);
-      const imageBuffer = await imageRes.arrayBuffer();
-      const uint8 = new Uint8Array(imageBuffer);
-      let binary = '';
-      const chunkSize = 8192;
-      for (let i = 0; i < uint8.length; i += chunkSize) {
-        binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+      let base64;
+      if (imageB64) {
+        // b64_jsonで返ってきた場合はそのまま使う
+        base64 = imageB64;
+      } else if (imageUrl) {
+        // urlで返ってきた場合はfetchしてbase64に変換
+        const imageRes = await fetch(imageUrl);
+        const imageBuffer = await imageRes.arrayBuffer();
+        const uint8 = new Uint8Array(imageBuffer);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+          binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+        }
+        base64 = btoa(binary);
+      } else {
+        return jsonRes({ error: 'no image data', detail: JSON.stringify(imageData) }, 500, corsH);
       }
-      const base64 = btoa(binary);
-      console.log('[hair-sim] base64 length:', base64.length);
 
       return jsonRes({ image_base64: base64 }, 200, corsH);
     } catch (err) {
