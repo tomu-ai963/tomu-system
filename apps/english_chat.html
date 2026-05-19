@@ -655,45 +655,23 @@ async function generatePhrase() {
   }
 }
 
-// 結果表示（フレーズ・和訳・カタカナを抽出して整形）
+// 結果表示（JSON形式を優先パース、失敗時はテキストパーサーにフォールバック）
 function displayResult(raw, situation) {
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-
-  // フレーズ / 日本語訳 / カタカナを抽出するシンプルなパーサー
   let phraseEn = '', phraseJa = '', phraseKana = '';
 
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
-
-    // 英語フレーズ行（英字が多く含まれる行）
-    if (!phraseEn && /[A-Za-z]{3,}/.test(l) && !/カタカナ|発音|Pronunciation/i.test(l)) {
-      // 「フレーズ：」などのプレフィックスを除去
-      phraseEn = l.replace(/^(フレーズ|英語|phrase|English)\s*[：:]\s*/i, '');
+  try {
+    const obj = JSON.parse(raw);
+    phraseEn = obj.en || '';
+    phraseJa = obj.ja || '';
+    phraseKana = obj.kana || '';
+  } catch(e) {
+    // JSONパース失敗時はテキストパーサーで抽出
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const l of lines) {
+      if (!phraseEn && /[A-Za-z]{3,}/.test(l)) phraseEn = l;
+      if (!phraseJa && /[^\x00-\x7F]/.test(l) && !/[A-Za-z]/.test(l) && !/^[ァ-ヶー\s・]+$/.test(l)) phraseJa = l;
+      if (!phraseKana && /^[ァ-ヶー\s・]+$/.test(l) && l.length > 3) phraseKana = l;
     }
-    // 日本語訳行
-    if (!phraseJa && /日本語|和訳|意味|訳/.test(l)) {
-      phraseJa = l.replace(/^(日本語訳?|和訳|意味|訳)\s*[：:]\s*/i, '');
-    }
-    // カタカナ行
-    if (!phraseKana && /カタカナ|発音/.test(l)) {
-      phraseKana = l.replace(/^(カタカナ発音|カタカナ|発音)\s*[：:]\s*/i, '');
-    }
-    // 行自体がカタカナのみの場合
-    if (!phraseKana && /^[ァ-ヶー\s・]+$/.test(l) && l.length > 3) {
-      phraseKana = l;
-    }
-  }
-
-  // 全行を結合して日本語訳・カタカナをフォールバック抽出
-  if (!phraseJa || !phraseKana) {
-    lines.forEach(l => {
-      if (!phraseJa && /[^\x00-\x7F]/.test(l) && !/[A-Za-z]/.test(l) && !/^[ァ-ヶー\s・]+$/.test(l) && l.length > 2) {
-        phraseJa = l;
-      }
-      if (!phraseKana && /^[ァ-ヶー\s・]+$/.test(l) && l.length > 3) {
-        phraseKana = l;
-      }
-    });
   }
 
   const display = document.getElementById('phraseDisplay');
@@ -707,15 +685,12 @@ function displayResult(raw, situation) {
         <div class="phrase-katakana">
           <span class="label">発音</span>
           <span class="kana">${escHtml(phraseKana)}</span>
-        </div>
-      ` : ''}
+        </div>` : ''}
       <div class="divider"></div>
       <div style="font-size:0.75rem;color:var(--muted);padding-left:16px;">
         Scene: ${escHtml(situation)}
-      </div>
-    `;
+      </div>`;
   } else {
-    // フォールバック：整形せずそのまま表示
     currentPhrase = raw;
     display.innerHTML = `<div class="raw-result">${escHtml(raw)}</div>`;
   }
