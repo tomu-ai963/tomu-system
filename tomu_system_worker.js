@@ -41,7 +41,7 @@ function getSystemPrompt(appType, extra) {
     case "lunch":
       return "あなたは『昼飯ルーレット』のAIアシスタントです。ユーザーの気分や状況に合わせて、今日のランチを1つだけ提案し、その理由を一言添えてください。150文字以内で返してください。";
     case "future-letter":
-      return "あなたは1年後のユーザー自身です。今日の努力や頑張りを聞いて、未来の自分として感謝と励ましのメッセージを届けてください。情緒的で温かく、200文字以内で返してください。";
+      return "あなたは5年後のユーザー自身です。今日の努力や頑張りを聞いて、5年後の自分として感謝と励ましのメッセージを届けてください。情緒的で温かく、詩的な言葉で200文字以内で返してください。";
     case "three-tasks":
       return "あなたは『三行タスク整理』のAIです。ユーザーが入力した雑多なタスクや思考を分析し、今日中に完了すべき最重要タスクを3つだけ、箇条書きで出力してください。余計な説明は不要です。";
     case "lucky-action":
@@ -66,6 +66,10 @@ function getMaxTokens(appType) {
     "praise": 200, "lunch": 150, "future-letter": 250,
     "three-tasks": 200, "lucky-action": 150, "kokoro_detox": 350,
     "rapid-reply": 200, "book-log": 100, "english": 150, "dinner": 150,
+    "subscript-checker": 2000,
+    "drink-excuse": 500, "etiquette": 800, "hangover": 800,
+    "neighbor-trouble": 1000, "oshi": 600, "outing": 1000,
+    "parent-message": 600, "polite-decline": 500, "small-talk": 600,
   };
   return map[appType] || 300;
 }
@@ -359,15 +363,13 @@ async function handleRequest(request, env) {
       if (hairCustom)  hairParts.push(hairCustom);
       var hairDesc = hairParts.length > 0 ? hairParts.join(", ") : "natural hair";
 
-      var hairPrompt = [
-        "Change ONLY the hairstyle to: " + hairDesc + ".",
-        "CRITICAL RULES — do NOT change any of the following:",
-        "- The person's face, facial features, skin tone, expression, or identity.",
-        "- The background, lighting, clothing, or any non-hair elements.",
-        "- The overall composition and framing of the photo.",
-        "Apply the new hairstyle naturally as if the person visited a hair salon.",
-        "The result must look like the same real person with a new hairstyle only.",
-      ].join(" ");
+      var hairPrompt =
+        "Portrait photo retouching: change ONLY the hairstyle to " + hairDesc + ". " +
+        "Preserve exactly: the person's face shape, eyes, nose, mouth, skin tone, " +
+        "facial expression, age appearance, and identity. " +
+        "Preserve exactly: background, lighting, clothing, shoulders and below. " +
+        "Only the hair region above the forehead should change. " +
+        "Output must look like the identical person after a hair salon visit.";
 
       console.log("[hair-sim] prompt:", hairPrompt);
 
@@ -375,7 +377,7 @@ async function handleRequest(request, env) {
       var hairBlob = new Blob([new Uint8Array(hairBuf)], { type: "image/png" });
 
       var oaiForm = new FormData();
-      oaiForm.append("model", "gpt-image-1");
+      oaiForm.append("model", "gpt-image-1.5");
       oaiForm.append("image", hairBlob, "image.png");
 
       if (hairMask) {
