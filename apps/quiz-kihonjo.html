@@ -89,6 +89,7 @@ function nextQuestion(){if(state.currentIdx<state.questions.length-1){state.curr
 function showResult(){const total=state.questions.length,correct=state.correctCount,rate=Math.round(correct/total*100);document.getElementById('result-score').textContent=correct;document.getElementById('result-denom').textContent=`/ ${total} 問正解`;document.getElementById('bd-correct').textContent=correct+' 問';document.getElementById('bd-wrong').textContent=(total-correct)+' 問';document.getElementById('bd-rate').textContent=rate+'%';const msgs=rate>=90?['🏆 完璧！','合格ライン突破！素晴らしい実力です']:rate>=70?['✨ 合格圏内！','もう少しで完璧。苦手分野を復習しよう']:rate>=50?['📚 あと少し！','基礎をしっかり固めていきましょう']:['💪 ファイト！','問題を繰り返して慣れていきましょう'];document.getElementById('result-msg').innerHTML=`${msgs[0]}<span class="sub">${msgs[1]}</span>`;showScreen('screen-result');}
 function retryQuiz(){startQuiz();}async function moreQuiz(){await startQuiz();}
 </script>
+<script>window.requirePlan=function(p){if(p)window.TOMU_REQUIRED_PLAN=p;};requirePlan('light');</script>
 <script src="../tomu-login.js"></script>
 </body>
 </html>
