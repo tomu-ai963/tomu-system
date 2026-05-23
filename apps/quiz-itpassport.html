@@ -668,13 +668,19 @@ answerは正解の選択肢インデックス（0〜3）。
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      message: prompt,
-      systemPrompt: "あなたは資格試験の問題作成専門家です。指定された形式のJSONのみを返してください。"
+      system: "あなたは資格試験の問題作成専門家です。指定された形式のJSONのみを返してください。",
+      messages: [{ role: "user", content: prompt }],
+      email: TomuAuth.getEmail(),
+      max_tokens: 2000
     })
   });
 
   const data = await res.json();
-  const text = data.reply || data.content || '';
+  if (data.error === "subscription_required" || data.error === "login_required") {
+    TomuAuth.showOverlay();
+    throw new Error(data.error);
+  }
+  const text = (data.content && data.content[0] && data.content[0].text) || '';
   const clean = text.replace(/```json\n?|```\n?/g, '').trim();
   const parsed = JSON.parse(clean);
   return parsed;
