@@ -44,7 +44,7 @@
       <div class="mode-card" data-mode="ml" onclick="selectMode(this,'ml')"><div class="mode-icon">📈</div><div class="mode-name">機械学習・統計</div><div class="mode-desc">回帰・分類・確率統計</div></div>
       <div class="mode-card" data-mode="ethics" onclick="selectMode(this,'ethics')"><div class="mode-icon">⚖️</div><div class="mode-name">AI倫理・法律</div><div class="mode-desc">個人情報・著作権</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -75,7 +75,7 @@
 <script>
 const QUIZ_CONFIG={title:"G検定",category:"IT・DX系",subject:"G検定（ジェネラリスト検定）",difficulty:"G検定レベル（AI/DXに関心のあるビジネスパーソン向け）",modes:{mixed:"数理統計・機械学習・ディープラーニング・法律倫理の全分野",dl:"ディープラーニング基礎（CNN・RNN・転移学習・過学習）",ml:"機械学習・数理統計（回帰・分類・クラスタリング・確率）",ethics:"AI倫理・法律・ビジネス活用（個人情報保護法・著作権）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

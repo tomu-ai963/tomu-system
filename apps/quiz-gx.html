@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="energy" onclick="selectMode(this,'energy')"><div class="mode-icon">☀️</div><div class="mode-name">エネルギー転換</div><div class="mode-desc">再エネ・省エネ・水素</div></div>
       <div class="mode-card" data-mode="seido" onclick="selectMode(this,'seido')"><div class="mode-icon">📋</div><div class="mode-name">制度・政策</div><div class="mode-desc">GX推進法・炭素税・ESG</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"脱炭素アドバイザー検定",category:"2026年注目",subject:"脱炭素アドバイザー検定（環境・GX系資格）",difficulty:"脱炭素アドバイザーレベル（環境・エネルギーに関心のあるビジネスパーソン向け）",modes:{mixed:"GX基礎・エネルギー転換・制度政策の全分野",gx:"GX・脱炭素基礎（カーボンニュートラル・CO2排出量・スコープ1〜3）",energy:"エネルギー転換（再生可能エネルギー・省エネ・水素・蓄電）",seido:"制度・政策（GX推進法・炭素税・排出権取引・ESG投資）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}
@@ -89,7 +89,6 @@ async function fetchQuestions(batchCount, modeDesc) {
 answerは正解の選択肢インデックス（0〜3）。
 問題は実際の試験に出そうなリアルな内容で。
 重複なし、各問題で難易度にバラつきを持たせること。`;
-  console.log('prompt:', prompt);
   const res = await fetch("https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -106,7 +105,6 @@ answerは正解の選択肢インデックス（0〜3）。
     throw new Error(data.error);
   }
   const text = (data.content && data.content[0] && data.content[0].text) || '';
-  console.log('response raw:', text);
   return JSON.parse(text.replace(/```json\n?|```\n?/g, '').trim());
 }
 

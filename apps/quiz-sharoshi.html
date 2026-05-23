@@ -44,7 +44,7 @@
       <div class="mode-card" data-mode="hoken" onclick="selectMode(this,'hoken')"><div class="mode-icon">🏥</div><div class="mode-name">社会保険</div><div class="mode-desc">健康保険・厚生年金</div></div>
       <div class="mode-card" data-mode="koyo" onclick="selectMode(this,'koyo')"><div class="mode-icon">💼</div><div class="mode-name">雇用保険・労災</div><div class="mode-desc">雇用保険・労務管理</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -75,7 +75,7 @@
 <script>
 const QUIZ_CONFIG={title:"社会保険労務士",category:"ビジネス・国家資格",subject:"社会保険労務士試験",difficulty:"社労士試験レベル（中〜上級者向け）",modes:{mixed:"労働法・社会保険・雇用保険・労務管理の全分野",rodo:"労働法（労働基準法・労働安全衛生法・労働契約法）",hoken:"社会保険（健康保険・厚生年金・国民年金）",koyo:"雇用保険・労災保険・労務管理"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

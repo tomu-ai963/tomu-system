@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="line" onclick="selectMode(this,'line')"><div class="mode-icon">👥</div><div class="mode-name">ラインケア</div><div class="mode-desc">管理職・部下対応</div></div>
       <div class="mode-card" data-mode="kanky" onclick="selectMode(this,'kanky')"><div class="mode-icon">🏢</div><div class="mode-name">職場環境改善</div><div class="mode-desc">制度・相談窓口・法制</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"メンタルヘルス・マネジメント検定",category:"ライフスタイル・趣味",subject:"メンタルヘルス・マネジメント検定（大阪商工会議所）",difficulty:"メンタルヘルス・マネジメント検定Ⅱ種（ラインケアコース）〜Ⅲ種レベル",modes:{mixed:"セルフケア・ラインケア・職場環境改善の全分野",stress:"セルフケア（ストレス反応・コーピング・睡眠・相談行動）",line:"ラインケア（管理職の役割・部下の変化への気づき・対応）",kanky:"職場環境改善（産業保健スタッフ・相談窓口・労働関係法令）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

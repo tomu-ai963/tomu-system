@@ -45,7 +45,7 @@
       <div class="mode-card" data-mode="minpo" onclick="selectMode(this,'minpo')"><div class="mode-icon">⚖️</div><div class="mode-name">民法</div><div class="mode-desc">総則・物権・債権・家族</div></div>
       <div class="mode-card" data-mode="kenpo" onclick="selectMode(this,'kenpo')"><div class="mode-icon">🏛️</div><div class="mode-name">憲法・商法</div><div class="mode-desc">憲法・商法・一般知識</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -76,7 +76,7 @@
 <script>
 const QUIZ_CONFIG={title:"行政書士",category:"ビジネス・国家資格",subject:"行政書士試験",difficulty:"行政書士試験レベル（中〜上級者向け）",modes:{mixed:"行政法・民法・憲法・商法・一般知識の全分野",gyosei:"行政法（行政手続法・行政不服申立て・行政事件訴訟法）",minpo:"民法（総則・物権・債権・親族相続）",kenpo:"憲法・商法・一般知識"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

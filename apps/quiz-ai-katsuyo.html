@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="risk" onclick="selectMode(this,'risk')"><div class="mode-icon">⚠️</div><div class="mode-name">AIリスク管理</div><div class="mode-desc">バイアス・プライバシー・規制</div></div>
       <div class="mode-card" data-mode="jirei" onclick="selectMode(this,'jirei')"><div class="mode-icon">🏭</div><div class="mode-name">活用事例</div><div class="mode-desc">製造・医療・金融・小売</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"AI利活用推進士",category:"2026年注目",subject:"AI利活用推進士（企業AI推進・DX実務系資格）",difficulty:"AI利活用推進士レベル（企業のAI推進担当・DXリーダー向け）",modes:{mixed:"AI導入・リスク管理・活用事例の全分野",dounyu:"AI導入推進（AI戦略立案・ROI算定・変革管理・ステークホルダー調整）",risk:"AIリスク管理（バイアス・プライバシー・AI規制・説明責任・セキュリティ）",jirei:"業界別AI活用事例（製造・医療・金融・小売・農業・物流）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="katsuyo" onclick="selectMode(this,'katsuyo')"><div class="mode-icon">💡</div><div class="mode-name">ビジネス活用</div><div class="mode-desc">業務効率化・自動化</div></div>
       <div class="mode-card" data-mode="ethics" onclick="selectMode(this,'ethics')"><div class="mode-icon">🔒</div><div class="mode-name">倫理・セキュリティ</div><div class="mode-desc">著作権・ハルシネーション</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"生成AIパスポート",category:"IT・DX系",subject:"生成AIパスポート試験",difficulty:"生成AIパスポートレベル（AI初学者〜ビジネス活用者向け）",modes:{mixed:"生成AI基礎・活用・倫理・セキュリティの全分野",kiso:"生成AI基礎（LLM・プロンプト・RAG・ファインチューニング）",katsuyo:"ビジネス活用（業務効率化・コンテンツ生成・自動化）",ethics:"倫理・セキュリティ・著作権・ハルシネーション対策"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="sdgs" onclick="selectMode(this,'sdgs')"><div class="mode-icon">🌐</div><div class="mode-name">SDGs・国際目標</div><div class="mode-desc">17目標・169ターゲット</div></div>
       <div class="mode-card" data-mode="kaiji" onclick="selectMode(this,'kaiji')"><div class="mode-icon">📊</div><div class="mode-name">情報開示・制度</div><div class="mode-desc">TCFD・ISSB・有価証券報告</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"サステナビリティ検定（ESG・SDGs）",category:"2026年注目",subject:"サステナビリティ検定・ESG関連資格",difficulty:"サステナビリティ検定レベル（ESG・SDGsに関心のあるビジネスパーソン向け）",modes:{mixed:"ESG投資・SDGs・情報開示・サステナビリティ制度の全分野",esg:"ESG投資（E環境・S社会・Gガバナンス評価・ESGインデックス・格付け）",sdgs:"SDGs・国際目標（17目標・169ターゲット・2030アジェンダ・国際条約）",kaiji:"情報開示・制度（TCFD・ISSB基準・非財務情報・有価証券報告書・GRI）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

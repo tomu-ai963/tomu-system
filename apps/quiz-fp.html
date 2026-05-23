@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="hoken" onclick="selectMode(this,'hoken')"><div class="mode-icon">🛡️</div><div class="mode-name">保険・リスク</div><div class="mode-desc">生命保険・損害保険</div></div>
       <div class="mode-card" data-mode="toushi" onclick="selectMode(this,'toushi')"><div class="mode-icon">📈</div><div class="mode-name">資産・投資</div><div class="mode-desc">株式・投信・年金・NISA</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"FP3級（ファイナンシャルプランナー）",category:"ライフスタイル・趣味",subject:"ファイナンシャルプランニング技能検定3級",difficulty:"FP3級レベル（初学者〜入門）",modes:{mixed:"税金・保険・投資・不動産・相続の全分野",tax:"タックスプランニング・不動産（所得税・相続税・贈与税・宅地建物）",hoken:"リスクと保険（生命保険・損害保険・社会保険）",toushi:"金融資産運用（株式・投資信託・年金・NISA・iDeCo）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

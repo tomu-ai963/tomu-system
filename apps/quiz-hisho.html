@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="taiou" onclick="selectMode(this,'taiou')"><div class="mode-icon">📞</div><div class="mode-name">来客・電話応対</div><div class="mode-desc">受付・案内・電話マナー</div></div>
       <div class="mode-card" data-mode="bunsho" onclick="selectMode(this,'bunsho')"><div class="mode-icon">📄</div><div class="mode-name">文書・事務知識</div><div class="mode-desc">ビジネス文書・スケジュール</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"秘書検定",category:"ライフスタイル・趣味",subject:"秘書技能検定試験（公益財団法人実務技能検定協会）",difficulty:"秘書検定2〜3級レベル（ビジネス基礎〜中級）",modes:{mixed:"マナー・来客応対・電話・文書・事務知識の全分野",manner:"マナーと接遇（敬語・挨拶・服装・態度・気配り）",taiou:"来客・電話応対（受付・案内・名刺交換・電話マナー）",bunsho:"文書・事務知識（ビジネス文書・スケジュール管理・会議準備）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

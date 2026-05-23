@@ -119,7 +119,7 @@
     <div class="count-selector">
       <span style="font-size:13px;color:var(--text-dim);">問題数</span>
       <button class="count-btn" onclick="changeCount(-5)">−</button>
-      <span id="count-display">10</span>
+      <span id="count-display">5</span>
       <button class="count-btn" onclick="changeCount(5)">＋</button>
       <span style="font-size:13px;color:var(--text-dim);">問</span>
     </div>
@@ -160,7 +160,7 @@ const QUIZ_CONFIG = {
   modes:{ mixed:"宅建業法・権利関係・法令制限・税金の全分野", takkenho:"宅建業法（免許・重要事項説明・37条書面など）", kenri:"権利関係（民法・借地借家法・区分所有法）", horei:"法令制限・税金（都市計画法・建築基準法・税務）" }
 };
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

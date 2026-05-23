@@ -31,7 +31,7 @@
       <div class="mode-card" data-mode="dx" onclick="selectMode(this,'dx')"><div class="mode-icon">💻</div><div class="mode-name">DXスキル</div><div class="mode-desc">デジタルリテラシー・AI活用</div></div>
       <div class="mode-card" data-mode="soshiki" onclick="selectMode(this,'soshiki')"><div class="mode-icon">🏢</div><div class="mode-name">組織・制度</div><div class="mode-desc">雇用政策・キャリア支援</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -62,7 +62,7 @@
 <script>
 const QUIZ_CONFIG={title:"リスキリング検定",category:"2026年注目",subject:"リスキリング検定（人材開発・DX推進系資格）",difficulty:"リスキリング検定レベル（人材育成・DXに関わるビジネスパーソン・HR担当者向け）",modes:{mixed:"人材育成・DXスキル・組織制度の全分野",ikusei:"人材育成（学習設計・OJT・メンター制度・スキルマップ・人事評価）",dx:"DXスキル（デジタルリテラシー・AI活用・データ分析・クラウド基礎）",soshiki:"組織・制度（リスキリング政策・キャリア支援・雇用保険・能開制度）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}

@@ -44,7 +44,7 @@
       <div class="mode-card" data-mode="network" onclick="selectMode(this,'network')"><div class="mode-icon">🌐</div><div class="mode-name">ネットワーク・DB</div><div class="mode-desc">ネットワーク・セキュリティ</div></div>
       <div class="mode-card" data-mode="mgmt" onclick="selectMode(this,'mgmt')"><div class="mode-icon">📊</div><div class="mode-name">マネジメント</div><div class="mode-desc">プロジェクト管理・経営</div></div>
     </div>
-    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">10</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
     <button class="btn-start" onclick="startQuiz()">はじめる</button>
   </div>
   <div id="screen-quiz" class="screen">
@@ -75,7 +75,7 @@
 <script>
 const QUIZ_CONFIG={title:"基本情報技術者",category:"IT・DX系",subject:"基本情報技術者試験（FE）",difficulty:"基本情報技術者試験レベル（初級〜中級エンジニア向け）",modes:{mixed:"テクノロジ・マネジメント・ストラテジの全分野",algo:"アルゴリズム・プログラミング（擬似コード・データ構造）",network:"ネットワーク・データベース・セキュリティ",mgmt:"マネジメント・ストラテジ（プロジェクト管理・経営）"}};
 const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
-let state={mode:'mixed',totalCount:10,questions:[],currentIdx:0,correctCount:0,answered:false};
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function showStart(){showScreen('screen-start');}
 function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}
