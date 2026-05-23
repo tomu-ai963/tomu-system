@@ -222,7 +222,26 @@ async function startQuiz() {
 
 async function generateQuestions(count, mode) {
   const modeDesc = QUIZ_CONFIG.modes[mode];
-  const prompt = `あなたは${QUIZ_CONFIG.title}の問題作成専門家です。以下の条件で問題を${count}問生成してください。\n\n対象分野：${modeDesc}\n難易度：${QUIZ_CONFIG.difficulty}\n形式：4択問題\n\n必ずJSON配列のみを返してください（説明文・コードブロック不要）：\n[\n  {\n    "q": "問題文",\n    "choices": ["選択肢1","選択肢2","選択肢3","選択肢4"],\n    "answer": 0,\n    "explanation": "解説文"\n  }\n]\n\nanswerは正解インデックス（0〜3）。実際の試験に出そうなリアルな内容で、重複なし。`;
+  const prompt = `あなたは${QUIZ_CONFIG.title}の問題作成専門家です。
+以下の条件で問題を${count}問生成してください。
+
+対象分野：${modeDesc}
+難易度：${QUIZ_CONFIG.difficulty}
+形式：4択問題
+
+必ずJSON配列のみを返してください（説明文・コードブロック不要）：
+[
+  {
+    "q": "問題文（改行は\nで表現）",
+    "choices": ["選択肢1","選択肢2","選択肢3","選択肢4"],
+    "answer": 0,
+    "explanation": "解説文"
+  }
+]
+
+answerは正解の選択肢インデックス（0〜3）。
+問題は実際の試験に出そうなリアルな内容で。
+重複なし、各問題で難易度にバラつきを持たせること。`;
   const res = await fetch("https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ system: "あなたは資格試験の問題作成専門家です。指定された形式のJSONのみを返してください。", messages: [{ role: "user", content: prompt }], email: TomuAuth.getEmail(), max_tokens: 4000 })
