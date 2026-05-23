@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -664,18 +664,17 @@ answerは正解の選択肢インデックス（0〜3）。
 問題は実際の試験に出そうなリアルな内容で。
 重複なし、各問題で難易度にバラつきを持たせること。`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
-      messages: [{ role: "user", content: prompt }]
+      message: prompt,
+      systemPrompt: "あなたは資格試験の問題作成専門家です。指定された形式のJSONのみを返してください。"
     })
   });
 
   const data = await res.json();
-  const text = data.content.map(b => b.text || '').join('');
+  const text = data.reply || data.content || '';
   const clean = text.replace(/```json\n?|```\n?/g, '').trim();
   const parsed = JSON.parse(clean);
   return parsed;
