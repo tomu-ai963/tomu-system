@@ -809,6 +809,7 @@ footer {
 .cat-biz    { background: #edf0f8; color: #3a5080; }
 .cat-play   { background: #f8ede8; color: #8a4030; }
 .cat-learn  { background: #ede8f8; color: #5030a0; }
+.cat-shikaku { background: rgba(200,160,70,0.15); color: #C9A84C; }
 .cat-comm   { background: #edf8f0; color: #2d6040; }
 .apps-card.hidden { display: none; }
 .apps-empty-msg {
@@ -893,12 +894,13 @@ footer {
     <button class="apps-filter-btn" data-filter="ビジネス">ビジネス</button>
     <button class="apps-filter-btn" data-filter="コミュニケーション">コミュニケーション</button>
     <button class="apps-filter-btn" data-filter="学習">学習</button>
+    <button class="apps-filter-btn" data-filter="資格">資格</button>
     <button class="apps-filter-btn" data-filter="遊び">遊び</button>
   </div>
 
   <!-- Light Plan -->
   <div class="apps-section-label">Light Plan <span class="apps-plan-tag">¥480/月</span></div>
-  <div class="apps-count-label" id="light-count">36本</div>
+  <div class="apps-count-label" id="light-count">20本</div>
   <div class="apps-grid-v2" id="light-grid">
 
     <div class="apps-card" data-cat="メンタルケア">
@@ -1181,231 +1183,6 @@ footer {
       </div>
     </div>
 
-    <!-- 資格問題集 -->
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">💻</div>
-        <div class="apps-card-name">ITパスポート 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">テクノロジ・マネジメント・ストラテジ全分野。AIが毎回新しい問題を生成するITパスポート対策アプリ。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-itpassport.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">📒</div>
-        <div class="apps-card-name">日商簿記3級 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">仕訳・財務諸表・決算まで。AIが簿記3級レベルの4択問題を無限生成。分野別学習にも対応。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-boki.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🏠</div>
-        <div class="apps-card-name">宅建士 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">宅建業法・民法・法令上の制限をAIが出題。中級者向け4択で本番さながらの実力チェック。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-takken.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">📜</div>
-        <div class="apps-card-name">行政書士 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">行政法・民法・憲法をAIが徹底出題。中〜上級者向けリアルな行政書士試験対策問題集。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-gyosei.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">👔</div>
-        <div class="apps-card-name">社会保険労務士 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">労働法・社会保険・雇用保険をAIが出題。社労士試験の重要論点を4択で効率的にマスター。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-sharoshi.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🖥️</div>
-        <div class="apps-card-name">基本情報技術者 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">アルゴリズム・ネットワーク・マネジメントをAIが出題。エンジニア必須の基本情報技術者試験対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-kihonjo.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🧠</div>
-        <div class="apps-card-name">G検定 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">深層学習・機械学習・AI倫理をAIが出題。JDLA G検定対策に最適な4択問題集。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-gkentei.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🤖</div>
-        <div class="apps-card-name">生成AIパスポート 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">生成AI基礎・ビジネス活用・倫理・セキュリティをAIが出題。GUGA認定の新資格を効率対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-seisaipass.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">💴</div>
-        <div class="apps-card-name">FP3級 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">税金・保険・投資・年金・相続をAIが出題。生活に直結するお金の知識を4択で効率的に学習。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-fp.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🌍</div>
-        <div class="apps-card-name">世界遺産検定 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">日本・アジア・欧米の世界遺産をAIが出題。旅行好きも楽しめる人気検定の4択問題集。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-sekaiisan.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🧘</div>
-        <div class="apps-card-name">メンタルヘルス検定 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">セルフケア・ラインケア・職場環境改善をAIが出題。大阪商工会議所主催の実務直結検定対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-mental.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🤝</div>
-        <div class="apps-card-name">秘書検定 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">マナー・敬語・来客応対・ビジネス文書をAIが出題。社会人の基礎力を磨く秘書検定2・3級対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-hisho.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🌿</div>
-        <div class="apps-card-name">脱炭素アドバイザー 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">カーボンニュートラル・再エネ・GX制度をAIが出題。2026年注目の脱炭素アドバイザー検定対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-gx.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">💹</div>
-        <div class="apps-card-name">サステナビリティ検定 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">ESG投資・SDGs・TCFD情報開示をAIが出題。サステナビリティ経営に必要な知識を4択で学習。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-esg.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">📚</div>
-        <div class="apps-card-name">リスキリング検定 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">人材育成・DXスキル・雇用政策をAIが出題。2026年注目のリスキリング検定を4択で効率対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-reskilling.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="apps-card" data-cat="学習">
-      <div class="apps-card-face">
-        <div class="apps-card-emoji">🚀</div>
-        <div class="apps-card-name">AI利活用推進士 問題集</div>
-        <div class="apps-card-cat cat-learn">学習</div>
-      </div>
-      <div class="apps-card-panel">
-        <div class="apps-card-panel-inner">
-          <div class="apps-card-desc">AI導入推進・リスク管理・業界別活用事例をAIが出題。企業AI推進担当者向け2026年注目資格対策。</div>
-          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-ai-katsuyo.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-        </div>
-      </div>
-    </div>
-
     <div class="apps-empty-msg" id="light-empty">該当するアプリがありません</div>
   </div>
 
@@ -1627,6 +1404,245 @@ footer {
     <div class="apps-empty-msg" id="std-empty">該当するアプリがありません</div>
   </div>
 </section>
+<!-- 資格問題集セクション -->
+<section class="apps" id="shikaku-apps">
+  <div class="section-header">
+    <div class="section-eyebrow">資格問題集 — LIGHT PLAN</div>
+    <h2 class="section-title">一問一答で、<em>合格へ</em></h2>
+    <p class="section-desc">AIが出題する4択問題集。スキマ時間に実力をつける。</p>
+  </div>
+
+  <!-- 料金バッジ -->
+  <div class="apps-section-label">資格問題集 <span class="apps-plan-tag">¥480/月</span></div>
+  <div class="apps-count-label" id="shikaku-count">16本</div>
+  <div class="apps-grid-v2" id="shikaku-grid">
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💻</div>
+        <div class="apps-card-name">ITパスポート 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">テクノロジ・マネジメント・ストラテジ全分野。AIが毎回新しい問題を生成するITパスポート対策アプリ。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-itpassport.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📒</div>
+        <div class="apps-card-name">日商簿記3級 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">仕訳・財務諸表・決算まで。AIが簿記3級レベルの4択問題を無限生成。分野別学習にも対応。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-boki.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🏠</div>
+        <div class="apps-card-name">宅建士 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">宅建業法・民法・法令上の制限をAIが出題。中級者向け4択で本番さながらの実力チェック。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-takken.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📜</div>
+        <div class="apps-card-name">行政書士 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">行政法・民法・憲法をAIが徹底出題。中〜上級者向けリアルな行政書士試験対策問題集。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-gyosei.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">👔</div>
+        <div class="apps-card-name">社会保険労務士 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">労働法・社会保険・雇用保険をAIが出題。社労士試験の重要論点を4択で効率的にマスター。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-sharoshi.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🖥️</div>
+        <div class="apps-card-name">基本情報技術者 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">アルゴリズム・ネットワーク・マネジメントをAIが出題。エンジニア必須の基本情報技術者試験対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-kihonjo.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🧠</div>
+        <div class="apps-card-name">G検定 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">深層学習・機械学習・AI倫理をAIが出題。JDLA G検定対策に最適な4択問題集。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-gkentei.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🤖</div>
+        <div class="apps-card-name">生成AIパスポート 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">生成AI基礎・ビジネス活用・倫理・セキュリティをAIが出題。GUGA認定の新資格を効率対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-seisaipass.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💴</div>
+        <div class="apps-card-name">FP3級 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">税金・保険・投資・年金・相続をAIが出題。生活に直結するお金の知識を4択で効率的に学習。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-fp.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🌍</div>
+        <div class="apps-card-name">世界遺産検定 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">日本・アジア・欧米の世界遺産をAIが出題。旅行好きも楽しめる人気検定の4択問題集。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-sekaiisan.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🧘</div>
+        <div class="apps-card-name">メンタルヘルス検定 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">セルフケア・ラインケア・職場環境改善をAIが出題。大阪商工会議所主催の実務直結検定対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-mental.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🤝</div>
+        <div class="apps-card-name">秘書検定 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">マナー・敬語・来客応対・ビジネス文書をAIが出題。社会人の基礎力を磨く秘書検定2・3級対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-hisho.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🌿</div>
+        <div class="apps-card-name">脱炭素アドバイザー 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">カーボンニュートラル・再エネ・GX制度をAIが出題。2026年注目の脱炭素アドバイザー検定対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-gx.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💹</div>
+        <div class="apps-card-name">サステナビリティ検定 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">ESG投資・SDGs・TCFD情報開示をAIが出題。サステナビリティ経営に必要な知識を4択で学習。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-esg.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📚</div>
+        <div class="apps-card-name">リスキリング検定 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">人材育成・DXスキル・雇用政策をAIが出題。2026年注目のリスキリング検定を4択で効率対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-reskilling.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="資格">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">🚀</div>
+        <div class="apps-card-name">AI利活用推進士 問題集</div>
+        <div class="apps-card-cat cat-shikaku">資格</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">AI導入推進・リスク管理・業界別活用事例をAIが出題。企業AI推進担当者向け2026年注目資格対策。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/quiz-ai-katsuyo.html" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="apps-empty-msg" id="shikaku-empty">該当するアプリがありません</div>
+  </div>
+</section>
+
 <section class="pricing" id="pricing">
   <div class="section-header">
     <div class="section-eyebrow">Pricing</div>
@@ -1808,7 +1824,7 @@ document.querySelectorAll('.apps-filter-btn').forEach(btn => {
     btn.classList.add('active');
     const filter = btn.dataset.filter;
     if (openCard) { openCard.classList.remove('open'); openCard = null; }
-    let lv = 0, sv = 0;
+    let lv = 0, sv = 0, qv = 0;
     document.querySelectorAll('#light-grid .apps-card').forEach(c => {
       const show = filter === 'all' || c.dataset.cat === filter;
       c.classList.toggle('hidden', !show);
@@ -1819,10 +1835,17 @@ document.querySelectorAll('.apps-filter-btn').forEach(btn => {
       c.classList.toggle('hidden', !show);
       if (show) sv++;
     });
+    document.querySelectorAll('#shikaku-grid .apps-card').forEach(c => {
+      const show = filter === 'all' || c.dataset.cat === filter;
+      c.classList.toggle('hidden', !show);
+      if (show) qv++;
+    });
     document.getElementById('light-count').textContent = lv + '本';
     document.getElementById('std-count').textContent = sv + '本';
+    document.getElementById('shikaku-count').textContent = qv + '本';
     document.getElementById('light-empty').classList.toggle('visible', lv === 0);
     document.getElementById('std-empty').classList.toggle('visible', sv === 0);
+    document.getElementById('shikaku-empty').classList.toggle('visible', qv === 0);
   });
 });
 
