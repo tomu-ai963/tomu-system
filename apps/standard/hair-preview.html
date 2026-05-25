@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAIR ASSET PREVIEW</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --border: #2a2a2a;
+  --accent: #c9a96e;
+  --text: #f0ece4;
+  --muted: #555;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  gap: 28px;
+}
+h1 {
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.stage-wrap {
+  position: relative;
+  width: 360px;
+  height: 480px;
+  border: 1px solid var(--border);
+  background: #111;
+  overflow: hidden;
+  border-radius: 2px;
+}
+/* チェッカー背景（透過確認用） */
+.checker {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+    linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  opacity: 0.4;
+}
+#faceImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+#hairImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.no-asset {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+}
+/* スライダー */
+.slider-wrap {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slider-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+/* ボタン群 */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 360px;
+}
+.preset-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 4px;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 2px;
+  text-align: center;
+  line-height: 1.6;
+  transition: all 0.15s;
+}
+.preset-btn:hover { border-color: var(--accent); }
+.preset-btn.active {
+  border-color: var(--accent);
+  background: rgba(201,169,110,0.12);
+  color: var(--accent);
+}
+.upload-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  width: 360px;
+  text-align: center;
+}
+.upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+#fileInput { display: none; }
+.hint {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.8;
+}
+/* オフセット調整 */
+.adjust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 360px;
+}
+.adjust-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.section-title {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  width: 360px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<h1>HAIR ASSET PREVIEW</h1>
+
+<!-- ステージ -->
+<div class="stage-wrap" id="stage">
+  <div class="checker"></div>
+  <img id="faceImg" alt="face">
+  <img id="hairImg" src="" alt="hair" style="opacity:0;">
+  <div class="no-asset" id="noAsset">SELECT A PRESET</div>
+</div>
+
+<!-- 不透明度スライダー -->
+<div class="slider-wrap">
+  <div class="slider-label">
+    <span>HAIR OPACITY</span>
+    <span id="opacityVal">100%</span>
+  </div>
+  <input type="range" min="0" max="100" value="100" id="opacitySlider">
+</div>
+
+<!-- Y位置調整スライダー -->
+<div class="slider-wrap">
+  <div class="slider-label">
+    <span>VERTICAL POSITION</span>
+    <span id="posVal">0px</span>
+  </div>
+  <input type="range" min="-100" max="100" value="0" id="posSlider">
+</div>
+
+<!-- スケール調整 -->
+<div class="slider-wrap">
+  <div class="slider-label">
+    <span>SCALE</span>
+    <span id="scaleVal">100%</span>
+  </div>
+  <input type="range" min="60" max="160" value="100" id="scaleSlider">
+</div>
+
+<!-- プリセット選択 -->
+<div class="section-title">HAIR PRESET</div>
+<div class="preset-grid">
+  <button class="preset-btn" onclick="selectPreset('short')" data-id="short">
+    ✂<br>ショート
+  </button>
+  <button class="preset-btn" onclick="selectPreset('bob')" data-id="bob">
+    💇<br>ボブ
+  </button>
+  <button class="preset-btn" onclick="selectPreset('long-straight')" data-id="long-straight">
+    〜<br>ロング
+  </button>
+  <button class="preset-btn" onclick="selectPreset('long-wave')" data-id="long-wave">
+    ✿<br>ウェーブ
+  </button>
+</div>
+
+<!-- 顔写真アップロード -->
+<div class="section-title">FACE PHOTO</div>
+<button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+  📷 顔写真をアップロードして重ねて確認
+</button>
+<input type="file" id="fileInput" accept="image/*" onchange="loadFace(event)">
+
+<div class="hint">
+  ← 顔写真なしでも透過の確認ができます<br>
+  スライダーで位置・サイズを調整して最適値をメモしてください
+</div>
+
+<script>
+// assets パス（GitHub Pages）
+const ASSETS = {
+  'short':         '/tomu-system/apps/standard/assets/hair-short.png',
+  'bob':           '/tomu-system/apps/standard/assets/hair-bob.png',
+  'long-straight': '/tomu-system/apps/standard/assets/hair-long-straight.png',
+  'long-wave':     '/tomu-system/apps/standard/assets/hair-long-wave.png',
+};
+
+const hairImg = document.getElementById('hairImg');
+const noAsset = document.getElementById('noAsset');
+
+function selectPreset(id) {
+  document.querySelectorAll('.preset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.id === id));
+  hairImg.src = ASSETS[id];
+  hairImg.style.opacity = document.getElementById('opacitySlider').value / 100;
+  noAsset.style.display = 'none';
+  applyTransform();
+}
+
+function applyTransform() {
+  const pos   = parseInt(document.getElementById('posSlider').value);
+  const scale = parseInt(document.getElementById('scaleSlider').value);
+  hairImg.style.transform = `translateY(${pos}px) scale(${scale / 100})`;
+  hairImg.style.transformOrigin = 'top center';
+}
+
+document.getElementById('opacitySlider').oninput = function() {
+  hairImg.style.opacity = this.value / 100;
+  document.getElementById('opacityVal').textContent = this.value + '%';
+};
+document.getElementById('posSlider').oninput = function() {
+  document.getElementById('posVal').textContent = this.value + 'px';
+  applyTransform();
+};
+document.getElementById('scaleSlider').oninput = function() {
+  document.getElementById('scaleVal').textContent = this.value + '%';
+  applyTransform();
+};
+
+function loadFace(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('faceImg');
+  img.src = url;
+  img.style.display = 'block';
+}
+</script>
+</body>
+</html>
