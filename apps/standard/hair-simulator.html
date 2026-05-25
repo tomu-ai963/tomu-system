@@ -930,13 +930,13 @@ function buildHairCanvas(preset) {
 }
 
 function _hairGrad(c, W, H, HL, TOP, extraAlpha) {
-  // Vertical gradient: dark root → mid brown → transparent at hairline
+  // Vertical gradient: jet-black root → dark cog-brown → transparent at hairline
   const g = c.createLinearGradient(W/2, TOP, W/2, HL * 1.02);
-  g.addColorStop(0.00, `rgba(22, 12,  6, ${extraAlpha ?? 0.97})`);
-  g.addColorStop(0.35, `rgba(36, 20,  8, ${extraAlpha ?? 0.97})`);
-  g.addColorStop(0.72, `rgba(28, 14,  6, ${extraAlpha ?? 0.96})`);
-  g.addColorStop(0.90, `rgba(18,  9,  3, 0.55)`);
-  g.addColorStop(1.00, `rgba(12,  6,  2, 0.00)`);
+  g.addColorStop(0.00, `rgba(15,  8,  4, ${extraAlpha ?? 0.97})`);
+  g.addColorStop(0.30, `rgba(28, 14,  6, ${extraAlpha ?? 0.97})`);
+  g.addColorStop(0.65, `rgba(40, 20,  8, ${extraAlpha ?? 0.96})`);
+  g.addColorStop(0.88, `rgba(20, 10,  4, 0.55)`);
+  g.addColorStop(1.00, `rgba(10,  5,  2, 0.00)`);
   return g;
 }
 
@@ -944,7 +944,7 @@ function _addHighlight(c, W, TOP, HL) {
   // Sheen highlight across the crown
   c.save();
   c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.13;
+  c.globalAlpha = 0.22;
   const g = c.createRadialGradient(W*0.48, TOP + (HL-TOP)*0.18, 0, W*0.48, TOP + (HL-TOP)*0.18, W*0.38);
   g.addColorStop(0.0, 'rgba(255,220,160,1)');
   g.addColorStop(0.6, 'rgba(200,160,90,0.4)');
@@ -958,7 +958,7 @@ function _addStrands(c, W, TOP, HL, count) {
   // Fine strand texture lines
   c.save();
   c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.055;
+  c.globalAlpha = 0.12;
   c.strokeStyle = 'rgba(255,220,140,1)';
   c.lineWidth = 1.2;
   for (let i = 0; i < count; i++) {
@@ -969,6 +969,31 @@ function _addStrands(c, W, TOP, HL, count) {
     c.quadraticCurveTo(x + bend, (TOP + HL) * 0.5, x + bend * 0.3, HL * 0.88);
     c.stroke();
   }
+  c.restore();
+}
+
+function _cutFace(c, W, H, HL) {
+  // Punch out the central face window (W*0.25–W*0.75, forehead → HL)
+  // using destination-out + elliptical radial gradient for soft feathered edges.
+  const cx = W * 0.50;
+  const cy = H * 0.49;      // midpoint of forehead(H*0.18) → hairline(H*0.80)
+  const rx = W * 0.25;      // half of [0.25–0.75] = 0.25*W per spec
+  const ry = H * 0.31;      // (0.80-0.18)/2 * H
+  const aspect = ry / rx;   // scale y so arc(rx) becomes ellipse(rx, ry)
+  c.save();
+  c.globalCompositeOperation = 'destination-out';
+  c.save();
+  c.translate(cx, cy);
+  c.scale(1, aspect);
+  // Radial gradient: full cutout at core, feathered at boundary
+  const g = c.createRadialGradient(0, 0, rx * 0.60, 0, 0, rx);
+  g.addColorStop(0.0, 'rgba(0,0,0,1)');
+  g.addColorStop(1.0, 'rgba(0,0,0,0)');
+  c.beginPath();
+  c.arc(0, 0, rx, 0, Math.PI * 2);
+  c.fillStyle = g;
+  c.fill();
+  c.restore();
   c.restore();
 }
 
@@ -1003,8 +1028,9 @@ function _drawShort(c, W, H, HL, TOP) {
   c.fillStyle = sg2; c.fillRect(0, 0, W, H);
   c.restore();
 
+  _cutFace(c, W, H, HL);
   _addHighlight(c, W, TOP, HL);
-  _addStrands(c, W, TOP, HL, 22);
+  _addStrands(c, W, TOP, HL, 30);
 
   // Parting line (subtle)
   c.save();
@@ -1064,8 +1090,9 @@ function _drawBob(c, W, H, HL, TOP) {
   c.stroke();
   c.restore();
 
+  _cutFace(c, W, H, HL);
   _addHighlight(c, W, TOP, HL);
-  _addStrands(c, W, TOP, HL, 28);
+  _addStrands(c, W, TOP, HL, 38);
 }
 
 function _drawLong(c, W, H, HL, TOP) {
@@ -1128,8 +1155,9 @@ function _drawLong(c, W, H, HL, TOP) {
   }
   c.restore();
 
+  _cutFace(c, W, H, HL);
   _addHighlight(c, W, TOP, HL);
-  _addStrands(c, W, TOP, HL, 35);
+  _addStrands(c, W, TOP, HL, 48);
 
   // Centre parting
   c.save();
