@@ -30,16 +30,11 @@ git push origin main
 
 ### 1. 既存 Worker コードを取得
 
-```bash
-curl -s \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
-  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/orange-sound-354b" \
-  -o worker-current.js
-```
+ローカルの `src/index.js`（または wrangler.toml で指定した main ファイル）を確認する。
 
 ### 2. コードをマージ
 
-`worker-current.js` の fetch ハンドラ内（他のルート分岐と同じ場所）に追加：
+Worker の fetch ハンドラ内（他のルート分岐と同じ場所）に追加：
 
 ```javascript
 // ルーティング追加（既存の if ブロックと同列に）
@@ -48,30 +43,13 @@ if (url.pathname === '/coord-ai') return handleCoordAI(request, env);
 
 さらにファイル末尾に `worker-addition.js` の内容（`handleCoordAI` 関数と `COORD_AI_CORS_HEADERS`）をコピー。
 
-### 3. curl でデプロイ
+### 3. wrangler でデプロイ
 
 ```bash
-curl -s -X PUT \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
-  -F "metadata={\"main_module\":\"worker.js\"};type=application/json" \
-  -F "worker.js=@worker-merged.js;type=application/javascript+module" \
-  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/orange-sound-354b"
+wrangler deploy
 ```
 
-> `$CF_API_TOKEN`：Cloudflare ダッシュボード > My Profile > API Tokens  
-> `$CF_ACCOUNT_ID`：Cloudflare ダッシュボード > 右サイドバー > Account ID
-
-#### スクリプトが ES Modules 形式でない場合（Service Worker 形式）
-
-マージ後のファイル先頭に以下を追加してから `main_module` を削除してデプロイ：
-
-```bash
-curl -s -X PUT \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
-  -H "Content-Type: application/javascript" \
-  --data-binary @worker-merged.js \
-  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/orange-sound-354b"
-```
+※ `wrangler.toml` に `name = "orange-sound-354b"` が設定されていること
 
 ---
 
