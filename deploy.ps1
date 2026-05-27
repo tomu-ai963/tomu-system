@@ -34,7 +34,7 @@ if (-not (Test-Path $WorkerFile)) {
 
 $metadata = @"
 {
-  "body_part": "script",
+  "main_module": "worker.js",
   "compatibility_date": "2024-01-01",
   "bindings": [
     {
@@ -56,7 +56,7 @@ $curlArgs = @(
     "https://api.cloudflare.com/client/v4/accounts/$AccountId/workers/scripts/$ScriptName",
     "-H", "Authorization: Bearer $Token",
     "-F", "metadata=@$metaPath;type=application/json",
-    "-F", "script=@$WorkerFile;type=application/javascript"
+    "-F", "worker.js=@$WorkerFile;type=application/javascript+module"
 )
 
 $result = & curl.exe @curlArgs
