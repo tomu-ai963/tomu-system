@@ -401,7 +401,8 @@ async function callMcpTool(name, args, env) {
 }
 
 async function handleMcp(request, env) {
-  var token = request.headers.get("MCP-Token") || "";
+  var mcpUrl = new URL(request.url);
+  var token = request.headers.get("MCP-Token") || mcpUrl.searchParams.get("token") || "";
   if (!env.MCP_TOKEN || token !== env.MCP_TOKEN) {
     return new Response(JSON.stringify({
       jsonrpc: "2.0", id: null,
