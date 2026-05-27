@@ -263,6 +263,196 @@ async function handleYamaCalendar(request, corsH, env) {
   }
 }
 
+// ===== MCP サーバー (POST /mcp) =====
+
+var MCP_TOOLS_LIST = [
+  {
+    name: "summarize_and_reply",
+    description: "長文メール・資料を3行で要約し、返信案を生成します",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "要約・返信したいメール・資料のテキスト" },
+        direction: { type: "string", description: "返信の方向性（例：承諾、断り、確認依頼）。省略可" }
+      },
+      required: ["text"]
+    }
+  },
+  {
+    name: "task_to_action",
+    description: "議事録のテキストをアクションプラン（担当者・期限付き）に変換します",
+    inputSchema: {
+      type: "object",
+      properties: {
+        minutes: { type: "string", description: "議事録のテキスト" }
+      },
+      required: ["minutes"]
+    }
+  },
+  {
+    name: "resume_rewrite",
+    description: "職務経歴書をリライトし、成果・数値・能動的な表現に強化します",
+    inputSchema: {
+      type: "object",
+      properties: {
+        resume: { type: "string", description: "現在の職務経歴書のテキスト" },
+        target_job: { type: "string", description: "応募先・希望職種の説明。省略可" }
+      },
+      required: ["resume"]
+    }
+  },
+  {
+    name: "weekly_coach",
+    description: "週次の振り返りをもとに承認・深掘り質問・来週の実験を提案します",
+    inputSchema: {
+      type: "object",
+      properties: {
+        reflection: { type: "string", description: "今週の振り返り・できごと・感じたこと" }
+      },
+      required: ["reflection"]
+    }
+  },
+  {
+    name: "lucky_action",
+    description: "今の気分・状況に合わせて1分でできるラッキーアクションを提案します",
+    inputSchema: {
+      type: "object",
+      properties: {
+        mood: { type: "string", description: "今日の気分・状況・やりたいこと" }
+      },
+      required: ["mood"]
+    }
+  }
+];
+
+var MCP_SYSTEM_PROMPTS = {
+  summarize_and_reply:
+    "あなたは優秀なビジネスアシスタントです。受け取った長文メール・資料を分析し、" +
+    "以下の形式で出力してください。返信の方向性が指定されている場合はそれに従ってください。\n" +
+    "## 要約\n（3行で核心のみ）\n\n## 返信案\n（本文のみ、件名不要）",
+  task_to_action:
+    "あなたは優秀なプロジェクトマネージャーです。議事録を分析し、以下の形式で出力してください。\n" +
+    "## アクションプラン\n- [ ] タスク名（担当者）期限\n\n## 決定事項\n- 内容",
+  resume_rewrite:
+    "あなたは採用コンサルタントです。職務経歴書を読み、成果・数値・能動的な動詞を使って" +
+    "説得力のある表現にリライトしてください。" +
+    "応募先・希望職種が指定されている場合はその観点でキーワードを強調してください。",
+  weekly_coach:
+    "あなたは内省コーチです。ユーザーの週次振り返りを受け取り、" +
+    "①今週のよかった点を承認し、②気づきを深掘りする質問を2つ投げ、" +
+    "③来週への小さな実験を1つ提案してください。温かく前向きなトーンで。",
+  lucky_action:
+    "あなたは『ラッキーアクション』のAIです。ユーザーの今日の気分を聞いて、" +
+    "1分以内に実行できる具体的でちょっと意外な開運行動を1つだけ提案してください。" +
+    "理由も一言添えて、150文字以内で。"
+};
+
+var MCP_MAX_TOKENS = {
+  summarize_and_reply: 1000,
+  task_to_action: 1000,
+  resume_rewrite: 2000,
+  weekly_coach: 800,
+  lucky_action: 200
+};
+
+async function callMcpTool(name, args, env) {
+  var systemPrompt = MCP_SYSTEM_PROMPTS[name];
+  if (!systemPrompt) {
+    return { content: [{ type: "text", text: "Unknown tool: " + name }], isError: true };
+  }
+
+  var userContent;
+  if (name === "summarize_and_reply") {
+    userContent = (args.direction ? "【返信の方向性】" + args.direction + "\n\n" : "") + "【本文】\n" + (args.text || "");
+  } else if (name === "task_to_action") {
+    userContent = args.minutes || "";
+  } else if (name === "resume_rewrite") {
+    userContent = (args.target_job ? "【応募先・希望職種】" + args.target_job + "\n\n" : "") + "【職務経歴書】\n" + (args.resume || "");
+  } else if (name === "weekly_coach") {
+    userContent = args.reflection || "";
+  } else if (name === "lucky_action") {
+    userContent = args.mood || "";
+  }
+
+  try {
+    var res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: MCP_MAX_TOKENS[name] || 800,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userContent }],
+      }),
+    });
+    var data = await res.json();
+    if (data.error) {
+      return { content: [{ type: "text", text: "AI error: " + data.error.message }], isError: true };
+    }
+    var text = (data.content && data.content[0]) ? data.content[0].text : "";
+    return { content: [{ type: "text", text: text }] };
+  } catch (err) {
+    return { content: [{ type: "text", text: "Worker error: " + err.message }], isError: true };
+  }
+}
+
+async function handleMcp(request, env) {
+  var token = request.headers.get("MCP-Token") || "";
+  if (!env.MCP_TOKEN || token !== env.MCP_TOKEN) {
+    return new Response(JSON.stringify({
+      jsonrpc: "2.0", id: null,
+      error: { code: -32001, message: "Unauthorized" }
+    }), { status: 401, headers: { "Content-Type": "application/json" } });
+  }
+
+  var body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({
+      jsonrpc: "2.0", id: null,
+      error: { code: -32700, message: "Parse error" }
+    }), { status: 400, headers: { "Content-Type": "application/json" } });
+  }
+
+  var rpcId = body.id !== undefined ? body.id : null;
+  var method = body.method;
+  var params = body.params || {};
+  var h = { "Content-Type": "application/json" };
+
+  function ok(result) {
+    return new Response(JSON.stringify({ jsonrpc: "2.0", id: rpcId, result: result }), { status: 200, headers: h });
+  }
+  function rpcErr(code, message) {
+    return new Response(JSON.stringify({ jsonrpc: "2.0", id: rpcId, error: { code: code, message: message } }), { status: 200, headers: h });
+  }
+
+  if (method === "initialize") {
+    return ok({
+      protocolVersion: "2024-11-05",
+      capabilities: { tools: {} },
+      serverInfo: { name: "tomu-system", version: "1.0.0" }
+    });
+  }
+
+  if (method === "tools/list") {
+    return ok({ tools: MCP_TOOLS_LIST });
+  }
+
+  if (method === "tools/call") {
+    var toolName = params.name;
+    var toolArgs = params.arguments || {};
+    var result = await callMcpTool(toolName, toolArgs, env);
+    return ok(result);
+  }
+
+  return rpcErr(-32601, "Method not found: " + method);
+}
+
 // ===== メインハンドラー =====
 export default {
   async fetch(request, env, ctx) {
@@ -435,6 +625,13 @@ async function handleRequest(request, env) {
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message, stack: err.stack }, 500, corsH);
     }
+  }
+
+  // =========================================================
+  // POST /mcp — とむSYSTEM MCPサーバー (JSON-RPC 2.0)
+  // =========================================================
+  if (url.pathname === "/mcp") {
+    return handleMcp(request, env);
   }
 
   if (!env.ANTHROPIC_API_KEY) {

@@ -1,6 +1,18 @@
 # orange-sound-354b Worker デプロイスクリプト
 # 使い方: .\deploy.ps1 -Token "your_cf_api_token"
 #         または $env:CF_API_TOKEN を設定して .\deploy.ps1 を実行
+#
+# エンドポイント一覧:
+#   POST /                  — Light アプリ用
+#   POST /api/chat          — Standard/Full アプリ用
+#   POST /api/plant-diagnose
+#   POST /api/yama-calendar
+#   POST /api/tax-advisor   — Full プラン専用
+#   POST /api/legal-advisor — Full プラン専用
+#   POST /mystic-bridge     — MYSTIC MCP ブリッジ (tools/call)
+#   POST /mcp               — とむSYSTEM MCPサーバー (JSON-RPC 2.0, MCP-Token 認証)
+#   POST /hair-sim          — ヘアーシミュレーター
+#   POST /stripe-webhook    — Stripe Webhook
 
 param(
     [string]$Token = $env:CF_API_TOKEN
