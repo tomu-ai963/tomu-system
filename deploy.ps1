@@ -56,7 +56,7 @@ $curlArgs = @(
     "https://api.cloudflare.com/client/v4/accounts/$AccountId/workers/scripts/$ScriptName",
     "-H", "Authorization: Bearer $Token",
     "-F", "metadata=@$metaPath;type=application/json",
-    "-F", "worker.js=@$WorkerFile;type=application/javascript+module"
+    "-F", "worker.js=@$WorkerFile;filename=worker.js;type=application/javascript+module"
 )
 
 $result = & curl.exe @curlArgs
