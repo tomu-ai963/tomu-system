@@ -501,6 +501,25 @@ async function handleRequest(request, env) {
     return new Response("OK", { status: 200 });
   }
 
+  // =========================================================
+  // GET /api/vision-board/board — ボードデータ取得
+  // =========================================================
+  if (url.pathname === "/api/vision-board/board" && request.method === "GET") {
+    var vbGetEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("email") || "";
+    if (!vbGetEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var vbGetPlan = await env.SUBSCRIPTIONS.get(vbGetEmail);
+    if (!vbGetPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(vbGetPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: vbGetPlan }, 403, corsH);
+    }
+    try {
+      var vbBoardStr = await env.SUBSCRIPTIONS.get("vision_board_" + vbGetEmail);
+      return jsonRes({ board: vbBoardStr ? JSON.parse(vbBoardStr) : { cards: [] } }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to load board", detail: err.message }, 500, corsH);
+    }
+  }
+
   if (request.method !== "POST") {
     return jsonRes({ error: "Method not allowed" }, 405, corsH);
   }
@@ -635,6 +654,93 @@ async function handleRequest(request, env) {
     return handleMcp(request, env);
   }
 
+  // =========================================================
+  // POST /send-email — Resend メール送信
+  // =========================================================
+  if (url.pathname === "/send-email") {
+    var emailBody;
+    try {
+      emailBody = await request.json();
+    } catch (e) {
+      return jsonRes({ error: "Invalid JSON" }, 400, corsH);
+    }
+    var sendTo = emailBody.to;
+    var sendSubject = emailBody.subject;
+    var sendHtml = emailBody.html;
+    if (!sendTo || !sendSubject || !sendHtml) {
+      return jsonRes({ error: "to, subject, html are required" }, 400, corsH);
+    }
+    if (!env.RESEND_API_KEY) {
+      return jsonRes({ error: "RESEND_API_KEY not configured" }, 500, corsH);
+    }
+    try {
+      var resendRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + env.RESEND_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "onboarding@resend.dev",
+          to: Array.isArray(sendTo) ? sendTo : [sendTo],
+          subject: sendSubject,
+          html: sendHtml,
+        }),
+      });
+      var resendData = await resendRes.json();
+      if (!resendRes.ok) {
+        return jsonRes({ error: "Resend API error", detail: resendData }, resendRes.status, corsH);
+      }
+      return jsonRes({ success: true, id: resendData.id }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // POST /api/vision-board/upload-image — 画像アップロード (multipart)
+  // =========================================================
+  if (url.pathname === "/api/vision-board/upload-image") {
+    var vbUpEmail = request.headers.get("X-Customer-Email") || "";
+    var vbUpCheck = await checkPlanAndCount(vbUpEmail, "standard", env);
+    if (!vbUpCheck.ok) {
+      return jsonRes({ error: vbUpCheck.error, required: vbUpCheck.required, current: vbUpCheck.current, limit: vbUpCheck.limit }, vbUpCheck.status, corsH);
+    }
+    try {
+      var vbUpForm = await request.formData();
+      var vbUpFile = vbUpForm.get("file");
+      var vbUpCardId = vbUpForm.get("cardId") || ("card_" + Date.now());
+
+      if (!vbUpFile) return jsonRes({ error: "file is required" }, 400, corsH);
+      if (vbUpFile.size > 5 * 1024 * 1024) return jsonRes({ error: "file too large (max 5MB)" }, 400, corsH);
+
+      var vbUpType = vbUpFile.type;
+      var vbUpExt = "png";
+      if (vbUpType === "image/jpeg") vbUpExt = "jpg";
+      else if (vbUpType === "image/webp") vbUpExt = "webp";
+      else if (vbUpType !== "image/png") return jsonRes({ error: "unsupported file type. Use JPEG, PNG, or WebP" }, 400, corsH);
+
+      var vbUpBuf = await vbUpFile.arrayBuffer();
+
+      if (env.VISION_R2 && env.VISION_R2_BASE_URL) {
+        var vbUpKey = encodeURIComponent(vbUpEmail) + "/" + vbUpCardId + "." + vbUpExt;
+        await env.VISION_R2.put(vbUpKey, vbUpBuf, { httpMetadata: { contentType: vbUpType } });
+        return jsonRes({ imageUrl: env.VISION_R2_BASE_URL + "/" + vbUpKey }, 200, corsH);
+      } else {
+        // R2未設定時: base64 data URLで返す（ローカルテスト用）
+        var vbUpBytes = new Uint8Array(vbUpBuf);
+        var vbUpBin = "";
+        var vbUpChunk = 8192;
+        for (var vi = 0; vi < vbUpBytes.length; vi += vbUpChunk) {
+          vbUpBin += String.fromCharCode.apply(null, vbUpBytes.subarray(vi, vi + vbUpChunk));
+        }
+        return jsonRes({ imageUrl: "data:" + vbUpType + ";base64," + btoa(vbUpBin) }, 200, corsH);
+      }
+    } catch (err) {
+      return jsonRes({ error: "Upload failed", detail: err.message }, 500, corsH);
+    }
+  }
+
   if (!env.ANTHROPIC_API_KEY) {
     return jsonRes({ error: "API key not configured" }, 500, corsH);
   }
@@ -644,6 +750,161 @@ async function handleRequest(request, env) {
     body = await request.json();
   } catch (e) {
     return jsonRes({ error: "Invalid JSON" }, 400, corsH);
+  }
+
+  // =========================================================
+  // POST /api/vision-board/board — ボードデータ保存
+  // =========================================================
+  if (url.pathname === "/api/vision-board/board") {
+    var vbSaveEmail = body.email;
+    if (!vbSaveEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var vbSavePlan = await env.SUBSCRIPTIONS.get(vbSaveEmail);
+    if (!vbSavePlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(vbSavePlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: vbSavePlan }, 403, corsH);
+    }
+    var vbSaveBoard = body.board;
+    if (!vbSaveBoard) return jsonRes({ error: "board data required" }, 400, corsH);
+    try {
+      await env.SUBSCRIPTIONS.put("vision_board_" + vbSaveEmail, JSON.stringify(vbSaveBoard));
+      return jsonRes({ success: true }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to save board", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // POST /api/vision-board/chat — AIチャット（プロンプト生成含む）
+  // =========================================================
+  if (url.pathname === "/api/vision-board/chat") {
+    var vbChatEmail = body.email;
+    var vbChatMessages = body.messages;
+    var vbChatMode = body.mode || "chat";
+
+    if (!Array.isArray(vbChatMessages) || vbChatMessages.length === 0) {
+      return jsonRes({ error: "messages array is required" }, 400, corsH);
+    }
+
+    var vbChatCheck = await checkPlanAndCount(vbChatEmail, "standard", env);
+    if (!vbChatCheck.ok) {
+      return jsonRes({ error: vbChatCheck.error, required: vbChatCheck.required, current: vbChatCheck.current, limit: vbChatCheck.limit }, vbChatCheck.status, corsH);
+    }
+
+    var vbChatSystem, vbChatMaxTokens;
+    if (vbChatMode === "generate_prompt") {
+      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。これまでの会話内容を元に、gpt-image-1.5に渡す英語プロンプトのみを生成してください。必ず以下のJSON形式のみで返してください（マークダウン・コードブロック不要）：{\"prompt\": \"...\"}";
+      vbChatMaxTokens = 300;
+    } else {
+      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。ユーザーが「こんな画像が欲しい」と言ったら、どんな雰囲気か（明るい・落ち着いた・神秘的など）、スタイル（リアル・イラスト・水彩など）、色のトーンを会話で引き出してください。日本語で自然に会話してください。150文字以内で応答してください。";
+      vbChatMaxTokens = 200;
+    }
+
+    try {
+      var vbChatApiRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: vbChatMaxTokens,
+          system: vbChatSystem,
+          messages: vbChatMessages,
+        }),
+      });
+      if (!vbChatApiRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await vbChatApiRes.text() }, vbChatApiRes.status, corsH);
+      }
+      var vbChatData = await vbChatApiRes.json();
+      var vbChatText = (vbChatData.content && vbChatData.content[0]) ? vbChatData.content[0].text : "";
+
+      if (vbChatMode === "generate_prompt") {
+        try {
+          var vbParsed = JSON.parse(vbChatText);
+          return jsonRes({ prompt: vbParsed.prompt || vbChatText }, 200, corsH);
+        } catch (e) {
+          return jsonRes({ prompt: vbChatText }, 200, corsH);
+        }
+      } else {
+        return jsonRes({ reply: vbChatText }, 200, corsH);
+      }
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // POST /api/vision-board/generate-image — AI画像生成 → R2保存
+  // =========================================================
+  if (url.pathname === "/api/vision-board/generate-image") {
+    var vbGenEmail = body.email;
+    var vbGenPrompt = body.prompt;
+    var vbGenCardId = body.cardId || ("card_" + Date.now());
+
+    if (!vbGenPrompt) return jsonRes({ error: "prompt is required" }, 400, corsH);
+
+    var vbGenCheck = await checkPlanAndCount(vbGenEmail, "standard", env);
+    if (!vbGenCheck.ok) {
+      return jsonRes({ error: vbGenCheck.error, required: vbGenCheck.required, current: vbGenCheck.current, limit: vbGenCheck.limit }, vbGenCheck.status, corsH);
+    }
+
+    if (!env.OPENAI_API_KEY) {
+      return jsonRes({ error: "OpenAI API key not configured" }, 500, corsH);
+    }
+
+    try {
+      var vbGenOaiRes = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + env.OPENAI_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt: vbGenPrompt,
+          n: 1,
+          size: "1024x1024",
+        }),
+      });
+
+      var vbGenOaiData = await vbGenOaiRes.json();
+      if (vbGenOaiData.error) {
+        return jsonRes({ error: vbGenOaiData.error.message, openai_error: vbGenOaiData.error }, vbGenOaiRes.status, corsH);
+      }
+
+      var vbGenImgData = vbGenOaiData.data && vbGenOaiData.data[0];
+      if (!vbGenImgData) return jsonRes({ error: "No image data returned" }, 500, corsH);
+
+      var vbGenBytes;
+      if (vbGenImgData.b64_json) {
+        var vbGenBin = atob(vbGenImgData.b64_json);
+        vbGenBytes = new Uint8Array(vbGenBin.length);
+        for (var vgi = 0; vgi < vbGenBin.length; vgi++) vbGenBytes[vgi] = vbGenBin.charCodeAt(vgi);
+      } else if (vbGenImgData.url) {
+        var vbGenFetch = await fetch(vbGenImgData.url);
+        vbGenBytes = new Uint8Array(await vbGenFetch.arrayBuffer());
+      } else {
+        return jsonRes({ error: "No image data", detail: JSON.stringify(vbGenImgData) }, 500, corsH);
+      }
+
+      if (env.VISION_R2 && env.VISION_R2_BASE_URL) {
+        var vbGenKey = encodeURIComponent(vbGenEmail) + "/" + vbGenCardId + ".png";
+        await env.VISION_R2.put(vbGenKey, vbGenBytes.buffer, { httpMetadata: { contentType: "image/png" } });
+        return jsonRes({ imageUrl: env.VISION_R2_BASE_URL + "/" + vbGenKey }, 200, corsH);
+      } else {
+        // R2未設定時: base64 data URLで返す（ローカルテスト用）
+        var vbGenB64out = "";
+        var vbGenChunk = 8192;
+        for (var vgj = 0; vgj < vbGenBytes.length; vgj += vbGenChunk) {
+          vbGenB64out += String.fromCharCode.apply(null, vbGenBytes.subarray(vgj, vgj + vbGenChunk));
+        }
+        return jsonRes({ imageUrl: "data:image/png;base64," + btoa(vbGenB64out) }, 200, corsH);
+      }
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
   }
 
   // =========================================================
@@ -761,6 +1022,141 @@ async function handleRequest(request, env) {
         return jsonRes({ error: "Anthropic API error", detail: await legalRes.text() }, legalRes.status, corsH);
       }
       return new Response(await legalRes.text(), {
+        status: 200,
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
+      });
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // POST /api/gyosei-advisor — 行政書士アドバイザー（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/gyosei-advisor") {
+    var gyoseiEmail = body.email;
+    var gyoseiSystem = body.system;
+    var gyoseiMessages = body.messages;
+    var gyoseiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
+
+    if (!gyoseiSystem || !gyoseiMessages || !Array.isArray(gyoseiMessages) || gyoseiMessages.length === 0) {
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+    }
+
+    var gyoseiCheck = await checkPlanAndCount(gyoseiEmail, "full", env);
+    if (!gyoseiCheck.ok) {
+      return jsonRes({ error: gyoseiCheck.error, required: gyoseiCheck.required, current: gyoseiCheck.current, limit: gyoseiCheck.limit }, gyoseiCheck.status, corsH);
+    }
+
+    try {
+      var gyoseiRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: gyoseiMaxTokens,
+          system: gyoseiSystem,
+          messages: gyoseiMessages,
+        }),
+      });
+      if (!gyoseiRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await gyoseiRes.text() }, gyoseiRes.status, corsH);
+      }
+      return new Response(await gyoseiRes.text(), {
+        status: 200,
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
+      });
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // POST /api/sharoshi-advisor — 社労士アドバイザー（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/sharoshi-advisor") {
+    var sharoshiEmail = body.email;
+    var sharoshiSystem = body.system;
+    var sharoshiMessages = body.messages;
+    var sharoshiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
+
+    if (!sharoshiSystem || !sharoshiMessages || !Array.isArray(sharoshiMessages) || sharoshiMessages.length === 0) {
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+    }
+
+    var sharoshiCheck = await checkPlanAndCount(sharoshiEmail, "full", env);
+    if (!sharoshiCheck.ok) {
+      return jsonRes({ error: sharoshiCheck.error, required: sharoshiCheck.required, current: sharoshiCheck.current, limit: sharoshiCheck.limit }, sharoshiCheck.status, corsH);
+    }
+
+    try {
+      var sharoshiRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: sharoshiMaxTokens,
+          system: sharoshiSystem,
+          messages: sharoshiMessages,
+        }),
+      });
+      if (!sharoshiRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await sharoshiRes.text() }, sharoshiRes.status, corsH);
+      }
+      return new Response(await sharoshiRes.text(), {
+        status: 200,
+        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
+      });
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // POST /api/benrishi-advisor — 弁理士アドバイザー（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/benrishi-advisor") {
+    var benrishiEmail = body.email;
+    var benrishiSystem = body.system;
+    var benrishiMessages = body.messages;
+    var benrishiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
+
+    if (!benrishiSystem || !benrishiMessages || !Array.isArray(benrishiMessages) || benrishiMessages.length === 0) {
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+    }
+
+    var benrishiCheck = await checkPlanAndCount(benrishiEmail, "full", env);
+    if (!benrishiCheck.ok) {
+      return jsonRes({ error: benrishiCheck.error, required: benrishiCheck.required, current: benrishiCheck.current, limit: benrishiCheck.limit }, benrishiCheck.status, corsH);
+    }
+
+    try {
+      var benrishiRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: benrishiMaxTokens,
+          system: benrishiSystem,
+          messages: benrishiMessages,
+        }),
+      });
+      if (!benrishiRes.ok) {
+        return jsonRes({ error: "Anthropic API error", detail: await benrishiRes.text() }, benrishiRes.status, corsH);
+      }
+      return new Response(await benrishiRes.text(), {
         status: 200,
         headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
       });
