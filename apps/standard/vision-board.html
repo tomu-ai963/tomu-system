@@ -849,6 +849,7 @@ document.getElementById('fileInput').addEventListener('change', async function(e
     toast('画像を追加しました');
 
   } catch (err) {
+    console.error('[upload-image] エラー:', err);
     board.cards = board.cards.filter(function(c) { return c.id !== cardId; });
     renderBoard();
     toast('アップロードに失敗しました', true);
@@ -1120,6 +1121,7 @@ document.getElementById('addTextBtn').addEventListener('click', function() {
 document.addEventListener('tomu:unlocked', function() { loadBoard(); });
 
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('vision-board loaded');
   setTimeout(function() {
     const email = getEmail();
     if (email && !boardLoaded) loadBoard();
