@@ -997,7 +997,8 @@ document.getElementById('vbGenerateBtn').addEventListener('click', async functio
       throw new Error(promptData.error);
     }
 
-    const imagePrompt = promptData.prompt;
+    // ```json ... ``` が混入していた場合の除去フォールバック
+    const imagePrompt = (promptData.prompt || '').replace(/```json|```/g, '').trim();
     console.log('[generate_prompt] imagePrompt:', imagePrompt);
     genBtn.textContent = '🎨 画像を生成中... (約30秒)';
 

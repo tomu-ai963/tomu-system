@@ -702,6 +702,7 @@ async function handleRequest(request, env) {
   // =========================================================
   if (url.pathname === "/api/vision-board/upload-image") {
     var vbUpEmail = request.headers.get("X-Customer-Email") || "";
+    console.log("[upload-image] email:", vbUpEmail, "origin:", origin);
     var vbUpCheck = await checkPlanAndCount(vbUpEmail, "standard", env);
     if (!vbUpCheck.ok) {
       return jsonRes({ error: vbUpCheck.error, required: vbUpCheck.required, current: vbUpCheck.current, limit: vbUpCheck.limit }, vbUpCheck.status, corsH);
@@ -711,14 +712,23 @@ async function handleRequest(request, env) {
       var vbUpFile = vbUpForm.get("file");
       var vbUpCardId = vbUpForm.get("cardId") || ("card_" + Date.now());
 
-      if (!vbUpFile) return jsonRes({ error: "file is required" }, 400, corsH);
-      if (vbUpFile.size > 5 * 1024 * 1024) return jsonRes({ error: "file too large (max 5MB)" }, 400, corsH);
+      console.log("[upload-image] file:", vbUpFile ? (vbUpFile.name + " " + vbUpFile.size + "bytes type=" + vbUpFile.type) : "null", "cardId:", vbUpCardId);
+
+      if (!vbUpFile) return jsonRes({ error: "file is required", hint: "FormDataのkeyを'file'にしてください" }, 400, corsH);
+      if (vbUpFile.size > 5 * 1024 * 1024) return jsonRes({ error: "file too large (max 5MB)", size: vbUpFile.size }, 400, corsH);
 
       var vbUpType = vbUpFile.type;
+      // ファイルタイプ未設定時はファイル名拡張子から推定
+      if (!vbUpType && vbUpFile.name) {
+        var vbUpNameL = vbUpFile.name.toLowerCase();
+        if (vbUpNameL.endsWith(".jpg") || vbUpNameL.endsWith(".jpeg")) vbUpType = "image/jpeg";
+        else if (vbUpNameL.endsWith(".png")) vbUpType = "image/png";
+        else if (vbUpNameL.endsWith(".webp")) vbUpType = "image/webp";
+      }
       var vbUpExt = "png";
       if (vbUpType === "image/jpeg") vbUpExt = "jpg";
       else if (vbUpType === "image/webp") vbUpExt = "webp";
-      else if (vbUpType !== "image/png") return jsonRes({ error: "unsupported file type. Use JPEG, PNG, or WebP" }, 400, corsH);
+      else if (vbUpType !== "image/png") return jsonRes({ error: "unsupported file type. Use JPEG, PNG, or WebP", received_type: vbUpType, file_name: vbUpFile.name }, 400, corsH);
 
       var vbUpBuf = await vbUpFile.arrayBuffer();
 
@@ -792,7 +802,7 @@ async function handleRequest(request, env) {
 
     var vbChatSystem, vbChatMaxTokens;
     if (vbChatMode === "generate_prompt") {
-      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。これまでの会話内容を元に、gpt-image-1.5に渡す英語プロンプトのみを生成してください。必ず以下のJSON形式のみで返してください（マークダウン・コードブロック不要）：{\"prompt\": \"...\"}";
+      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。これまでの会話内容を元に、gpt-image-1.5に渡す英語プロンプトのみを生成してください。出力は必ず次の形式の純粋なJSONのみにしてください。コードブロック（```）・マークダウン・説明文は一切含めないこと：{\"prompt\": \"...\"}";
       vbChatMaxTokens = 300;
     } else {
       vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。ユーザーが「こんな画像が欲しい」と言ったら、どんな雰囲気か（明るい・落ち着いた・神秘的など）、スタイル（リアル・イラスト・水彩など）、色のトーンを会話で引き出してください。日本語で自然に会話してください。150文字以内で応答してください。Markdownを使わず普通のテキストで返答してください。";
@@ -822,10 +832,11 @@ async function handleRequest(request, env) {
 
       if (vbChatMode === "generate_prompt") {
         try {
-          var vbParsed = JSON.parse(vbChatText);
-          return jsonRes({ prompt: vbParsed.prompt || vbChatText }, 200, corsH);
+          var vbClean = vbChatText.replace(/```json|```/g, "").trim();
+          var vbParsed = JSON.parse(vbClean);
+          return jsonRes({ prompt: vbParsed.prompt || vbClean }, 200, corsH);
         } catch (e) {
-          return jsonRes({ prompt: vbChatText }, 200, corsH);
+          return jsonRes({ prompt: vbChatText.replace(/```json|```/g, "").trim() }, 200, corsH);
         }
       } else {
         return jsonRes({ reply: vbChatText }, 200, corsH);
@@ -839,16 +850,20 @@ async function handleRequest(request, env) {
   // POST /api/vision-board/generate-image — AI画像生成 → R2保存
   // =========================================================
   if (url.pathname === "/api/vision-board/generate-image") {
-    var vbGenEmail = body.email;
+    // emailはJSON bodyまたはX-Customer-Emailヘッダーから取得（upload-imageと同じ認証パターンに対応）
+    var vbGenEmail = body.email || request.headers.get("X-Customer-Email") || "";
     var vbGenPrompt = body.prompt;
     var vbGenCardId = body.cardId || ("card_" + Date.now());
 
-    if (!vbGenPrompt) return jsonRes({ error: "prompt is required" }, 400, corsH);
+    console.log("[generate-image] email:", vbGenEmail, "promptLen:", vbGenPrompt ? vbGenPrompt.length : 0, "cardId:", vbGenCardId);
 
+    // 認証チェックをpromptチェックより先に実施
     var vbGenCheck = await checkPlanAndCount(vbGenEmail, "standard", env);
     if (!vbGenCheck.ok) {
       return jsonRes({ error: vbGenCheck.error, required: vbGenCheck.required, current: vbGenCheck.current, limit: vbGenCheck.limit }, vbGenCheck.status, corsH);
     }
+
+    if (!vbGenPrompt) return jsonRes({ error: "prompt is required", received_keys: Object.keys(body) }, 400, corsH);
 
     if (!env.OPENAI_API_KEY) {
       return jsonRes({ error: "OpenAI API key not configured" }, 500, corsH);
