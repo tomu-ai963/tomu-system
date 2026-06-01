@@ -723,7 +723,7 @@ async function handleRequest(request, env) {
       var vbUpBuf = await vbUpFile.arrayBuffer();
 
       if (env.VISION_R2 && env.VISION_R2_BASE_URL) {
-        var vbUpKey = encodeURIComponent(vbUpEmail) + "/" + vbUpCardId + "." + vbUpExt;
+        var vbUpKey = encodeURIComponent(vbUpEmail) + "/" + vbUpCardId + ".png";
         await env.VISION_R2.put(vbUpKey, vbUpBuf, { httpMetadata: { contentType: vbUpType } });
         return jsonRes({ imageUrl: env.VISION_R2_BASE_URL + "/" + vbUpKey }, 200, corsH);
       } else {
@@ -795,7 +795,7 @@ async function handleRequest(request, env) {
       vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。これまでの会話内容を元に、gpt-image-1.5に渡す英語プロンプトのみを生成してください。必ず以下のJSON形式のみで返してください（マークダウン・コードブロック不要）：{\"prompt\": \"...\"}";
       vbChatMaxTokens = 300;
     } else {
-      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。ユーザーが「こんな画像が欲しい」と言ったら、どんな雰囲気か（明るい・落ち着いた・神秘的など）、スタイル（リアル・イラスト・水彩など）、色のトーンを会話で引き出してください。日本語で自然に会話してください。150文字以内で応答してください。";
+      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。ユーザーが「こんな画像が欲しい」と言ったら、どんな雰囲気か（明るい・落ち着いた・神秘的など）、スタイル（リアル・イラスト・水彩など）、色のトーンを会話で引き出してください。日本語で自然に会話してください。150文字以内で応答してください。Markdownを使わず普通のテキストで返答してください。";
       vbChatMaxTokens = 200;
     }
 
