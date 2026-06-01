@@ -825,12 +825,15 @@ document.getElementById('fileInput').addEventListener('change', async function(e
     fd.append('file', file);
     fd.append('cardId', cardId);
 
+    console.log('[upload-image] fetch開始', { email, fileName: file.name, fileSize: file.size, fileType: file.type, cardId });
     const res = await fetch(WORKER_URL + '/api/vision-board/upload-image', {
       method: 'POST',
       headers: { 'X-Customer-Email': email },
       body: fd,
     });
+    console.log('[upload-image] response status:', res.status);
     const data = await res.json();
+    console.log('[upload-image] response data:', data);
 
     if (data.error) {
       board.cards = board.cards.filter(function(c) { return c.id !== cardId; });
@@ -966,6 +969,8 @@ document.getElementById('vbGenerateBtn').addEventListener('click', async functio
   const email = getEmail();
   if (!email) { closeChatPanel(); window.TomuAuth?.showOverlay(); return; }
 
+  console.log('[生成ボタン] 押下', { email, chatCategory, messageCount: chatMessages.length });
+
   const genBtn = document.getElementById('vbGenerateBtn');
   const sendBtn = document.getElementById('vbChatSend');
   genBtn.disabled = true;
@@ -974,12 +979,15 @@ document.getElementById('vbGenerateBtn').addEventListener('click', async functio
 
   try {
     // Step 1: Claude でプロンプト生成
+    console.log('[generate_prompt] fetch開始', { email, mode: 'generate_prompt', messageCount: chatMessages.length });
     const promptRes = await fetch(WORKER_URL + '/api/vision-board/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email, messages: chatMessages, mode: 'generate_prompt' }),
     });
+    console.log('[generate_prompt] response status:', promptRes.status);
     const promptData = await promptRes.json();
+    console.log('[generate_prompt] response data:', promptData);
 
     if (promptData.error) {
       if (promptData.error === 'login_required' || promptData.error === 'subscription_required' || promptData.error === 'plan_upgrade_required') {
@@ -989,16 +997,20 @@ document.getElementById('vbGenerateBtn').addEventListener('click', async functio
     }
 
     const imagePrompt = promptData.prompt;
+    console.log('[generate_prompt] imagePrompt:', imagePrompt);
     genBtn.textContent = '🎨 画像を生成中... (約30秒)';
 
     // Step 2: 画像生成
     const cardId = makeId();
+    console.log('[generate-image] fetch開始', { email, prompt: imagePrompt, cardId });
     const genRes = await fetch(WORKER_URL + '/api/vision-board/generate-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email, prompt: imagePrompt, cardId: cardId }),
     });
+    console.log('[generate-image] response status:', genRes.status);
     const genData = await genRes.json();
+    console.log('[generate-image] response data:', genData);
 
     if (genData.error) throw new Error(genData.error);
 
@@ -1015,6 +1027,7 @@ document.getElementById('vbGenerateBtn').addEventListener('click', async functio
     toast('画像をボードに追加しました！');
 
   } catch (err) {
+    console.error('[generate-image] エラー:', err);
     toast('生成に失敗しました: ' + err.message, true);
     genBtn.disabled = false;
     genBtn.textContent = '✨ プロンプトを確定して画像を生成';
