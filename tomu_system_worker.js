@@ -800,13 +800,19 @@ async function handleRequest(request, env) {
       return jsonRes({ error: vbChatCheck.error, required: vbChatCheck.required, current: vbChatCheck.current, limit: vbChatCheck.limit }, vbChatCheck.status, corsH);
     }
 
-    var vbChatSystem, vbChatMaxTokens;
+    var vbChatSystem, vbChatMaxTokens, vbChatMessagesToSend;
     if (vbChatMode === "generate_prompt") {
-      vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。これまでの会話内容を元に、gpt-image-1.5に渡す英語プロンプトのみを生成してください。出力は必ず次の形式の純粋なJSONのみにしてください。コードブロック（```）・マークダウン・説明文は一切含めないこと：{\"prompt\": \"...\"}";
+      vbChatSystem = "あなたは画像生成プロンプト変換AIです。会話の内容を元に gpt-image-1.5 用の英語プロンプトを生成します。必ず {\"prompt\": \"...\"} のJSON形式のみ返してください。他の文字・説明・質問は一切含めないこと。";
       vbChatMaxTokens = 300;
+      // 会話履歴の末尾に「今すぐJSON出力」を命令するuserメッセージを追加
+      vbChatMessagesToSend = vbChatMessages.concat([{
+        role: "user",
+        content: "上記の会話を元に、今すぐ画像生成プロンプトをJSON形式で出力してください。{\"prompt\": \"英語プロンプト\"} の形式のみ返すこと。"
+      }]);
     } else {
       vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。ユーザーが「こんな画像が欲しい」と言ったら、どんな雰囲気か（明るい・落ち着いた・神秘的など）、スタイル（リアル・イラスト・水彩など）、色のトーンを会話で引き出してください。日本語で自然に会話してください。150文字以内で応答してください。Markdownを使わず普通のテキストで返答してください。";
       vbChatMaxTokens = 200;
+      vbChatMessagesToSend = vbChatMessages;
     }
 
     try {
@@ -821,7 +827,7 @@ async function handleRequest(request, env) {
           model: "claude-haiku-4-5-20251001",
           max_tokens: vbChatMaxTokens,
           system: vbChatSystem,
-          messages: vbChatMessages,
+          messages: vbChatMessagesToSend,
         }),
       });
       if (!vbChatApiRes.ok) {
