@@ -6,3 +6,11 @@ account_id = "b6815ad2ee3097cc0f9e79b8536776b9"
 [[kv_namespaces]]
 binding = "SUBSCRIPTIONS"
 id = "3d4d66de96b449e28198fdceb322b9d4"
+
+[[services]]
+binding = "MYSTIC"
+service = "mystic-system-worker"
+
+[[r2_buckets]]
+binding = "VISION_R2"
+bucket_name = "tomu-vision-board"

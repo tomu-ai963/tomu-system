@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビジョンボード — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Noto+Sans+JP:wght@200;300;400&display=swap" rel="stylesheet">
+<script src="/tomu-system/common/header.js"></script>
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+  --muted: #8a7e72;
+  --light-accent: #eedfc8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+}
+
+/* ── Toolbar ── */
+.vb-toolbar {
+  position: sticky;
+  top: calc(44px + env(safe-area-inset-top));
+  z-index: 100;
+  background: rgba(247,243,238,0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vb-toolbar-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  flex: 1;
+  min-width: 100px;
+}
+.vb-toolbar-title span { color: var(--accent); }
+
+.vb-save-indicator {
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.vb-save-indicator.visible { opacity: 1; }
+
+.vb-plan-badge {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: var(--light-accent);
+  color: var(--accent);
+  border: 1px solid rgba(184,115,51,0.4);
+  flex-shrink: 0;
+}
+
+.vb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.vb-btn:hover { border-color: var(--accent); color: var(--accent); }
+.vb-btn.primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.vb-btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+/* Dropdown */
+.vb-drop-wrap { position: relative; flex-shrink: 0; }
+.vb-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(26,22,18,0.1);
+  overflow: hidden;
+  display: none;
+  min-width: 190px;
+  z-index: 200;
+}
+.vb-dropdown.open { display: block; }
+.vb-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--ink);
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
+}
+.vb-dropdown-item:last-child { border-bottom: none; }
+.vb-dropdown-item:hover { background: var(--warm); }
+
+/* ── Board ── */
+.vb-board {
+  padding: 16px;
+  min-height: calc(100vh - 120px);
+}
+
+.vb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  text-align: center;
+  gap: 14px;
+  color: var(--muted);
+  padding: 40px 20px;
+}
+.vb-empty-icon { font-size: 2.8rem; opacity: 0.25; }
+.vb-empty-text { font-size: 0.85rem; line-height: 1.9; }
+
+.vb-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 480px) {
+  .vb-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 720px) {
+  .vb-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── Cards ── */
+.vb-card {
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 3/4;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.vb-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,22,18,0.1); }
+
+.vb-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vb-card-footer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(26,22,18,0.65), transparent);
+  padding: 20px 8px 7px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.vb-card-cat {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: rgba(247,243,238,0.9);
+  color: var(--accent);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.vb-card-del {
+  background: rgba(247,243,238,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.vb-card:hover .vb-card-del,
+.vb-card.text:hover .vb-card-del { opacity: 1; }
+.vb-card-del:hover { color: #c0392b; background: white; }
+
+/* Text card */
+.vb-card.text {
+  display: flex;
+  flex-direction: column;
+}
+.vb-card-text-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink);
+  word-break: break-all;
+}
+.vb-card.text .vb-card-footer {
+  position: relative;
+  background: none;
+  padding: 0 8px 7px;
+  border-top: 1px solid var(--border);
+}
+
+/* Loading state on card */
+.vb-card-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(247,243,238,0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+}
+.vb-card-loading-text {
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+.vb-card-loading-dots {
+  display: flex; gap: 5px;
+}
+.vb-card-loading-dots span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: vbDot 1.1s ease-in-out infinite;
+}
+.vb-card-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.vb-card-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes vbDot { 0%,100% { opacity: 0.2; transform: scale(0.75); } 50% { opacity: 1; transform: scale(1); } }
+
+/* ── AI Chat Panel ── */
+.vb-chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(26,22,18,0.38);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: flex-end;
+}
+.vb-chat-overlay.open { display: flex; }
+
+.vb-chat-panel {
+  width: 100%;
+  max-height: 78vh;
+  background: var(--paper);
+  border-radius: 22px 22px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  border-top: 1px solid var(--border);
+}
+.vb-chat-overlay.open .vb-chat-panel { transform: translateY(0); }
+
+.vb-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vb-chat-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.vb-chat-close {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.vb-chat-close:hover { border-color: var(--accent); color: var(--accent); }
+
+.vb-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+
+.vb-msg {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 16px;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  font-weight: 300;
+}
+.vb-msg.ai {
+  background: var(--warm);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+  border-radius: 4px 16px 16px 16px;
+}
+.vb-msg.user {
+  background: var(--ink);
+  color: var(--paper);
+  align-self: flex-end;
+  border-radius: 16px 4px 16px 16px;
+}
+
+.vb-chat-footer {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+/* カテゴリ選択（チャットパネル内） */
+.vb-chat-cat-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.vb-chat-cat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  align-self: center;
+  white-space: nowrap;
+}
+.vb-cat-chip-sm {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.68rem;
+  font-weight: 300;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.vb-cat-chip-sm.active {
+  border-color: var(--accent);
+  background: var(--light-accent);
+  color: var(--accent);
+}
+
+.vb-chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.vb-chat-input {
+  flex: 1;
+  padding: 9px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  background: var(--paper);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.84rem;
+  font-weight: 300;
+  color: var(--ink);
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  min-height: 40px;
+  max-height: 90px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+.vb-chat-input:focus { border-color: var(--accent); }
+.vb-chat-input::placeholder { color: var(--muted); opacity: 0.7; }
+
+.vb-chat-send {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+  transition: background 0.2s;
+}
+.vb-chat-send:hover { background: var(--accent); }
+.vb-chat-send:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.vb-gen-btn {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 11px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vb-gen-btn:hover { background: #ca8040; transform: translateY(-1px); }
+.vb-gen-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* ── Text Card Modal ── */
+.vb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(26,22,18,0.45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.vb-modal-overlay.open { display: flex; }
+
+.vb-modal {
+  background: var(--paper);
+  border-radius: 22px;
+  width: 100%;
+  max-width: 380px;
+  padding: 26px 22px 22px;
+  box-shadow: 0 24px 60px rgba(26,22,18,0.18);
+}
+.vb-modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  letter-spacing: 0.03em;
+}
+.vb-modal label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.vb-modal textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 300;
+  color: var(--ink);
+  resize: none;
+  outline: none;
+  height: 90px;
+  transition: border-color 0.2s;
+  margin-bottom: 14px;
+}
+.vb-modal textarea:focus { border-color: var(--accent); }
+.vb-modal textarea::placeholder { color: var(--muted); opacity: 0.55; }
+
+.vb-cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.vb-cat-chip {
+  padding: 4px 11px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 0.7rem;
+  font-weight: 300;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.vb-cat-chip.active {
+  border-color: var(--accent);
+  background: var(--light-accent);
+  color: var(--accent);
+}
+
+.vb-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+.vb-modal-actions button {
+  flex: 1;
+  padding: 11px;
+  border-radius: 11px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vb-modal-cancel {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+}
+.vb-modal-cancel:hover { border-color: var(--muted); }
+.vb-modal-submit {
+  background: var(--ink);
+  border: 1.5px solid var(--ink);
+  color: var(--paper);
+}
+.vb-modal-submit:hover { background: var(--accent); border-color: var(--accent); }
+
+/* ── Toast ── */
+.vb-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 9px 18px;
+  border-radius: 18px;
+  font-size: 0.78rem;
+  transition: transform 0.3s;
+  z-index: 9999;
+  white-space: nowrap;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.vb-toast.show { transform: translateX(-50%) translateY(0); }
+.vb-toast.error { background: #c0392b; }
+</style>
+</head>
+<body>
+
+<div class="vb-toast" id="vbToast"></div>
+
+<!-- Toolbar -->
+<div class="vb-toolbar">
+  <div class="vb-toolbar-title">Vision <span>Board</span></div>
+  <div class="vb-save-indicator" id="vbSaveIndicator">保存中...</div>
+  <div class="vb-plan-badge">STANDARD</div>
+
+  <div class="vb-drop-wrap">
+    <button class="vb-btn primary" id="addImgBtn">＋ 画像を追加</button>
+    <div class="vb-dropdown" id="addImgDropdown">
+      <div class="vb-dropdown-item" id="uploadFromFileBtn">📁 ファイルからアップロード</div>
+      <div class="vb-dropdown-item" id="createWithAiBtn">✨ AIで作成</div>
+    </div>
+  </div>
+
+  <button class="vb-btn" id="addTextBtn">＋ テキストカード</button>
+
+  <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+</div>
+
+<!-- Board -->
+<div class="vb-board" id="vbBoard">
+  <div class="vb-empty" id="vbEmpty">
+    <div class="vb-empty-icon">🌟</div>
+    <div class="vb-empty-text">
+      ビジョンボードはまだ空です。<br>
+      「画像を追加」または「テキストカード」から<br>
+      理想の未来を描きましょう。
+    </div>
+  </div>
+  <div class="vb-grid" id="vbGrid"></div>
+</div>
+
+<!-- AI Chat Panel -->
+<div class="vb-chat-overlay" id="vbChatOverlay">
+  <div class="vb-chat-panel">
+    <div class="vb-chat-header">
+      <div class="vb-chat-title">✨ AIで画像を作る</div>
+      <button class="vb-chat-close" id="vbChatClose">✕</button>
+    </div>
+    <div class="vb-chat-messages" id="vbChatMessages">
+      <div class="vb-msg ai">どんな画像を作りたいですか？<br>「海の見える家」「カフェで仕事する自分」など、自由に教えてください。</div>
+    </div>
+    <div class="vb-chat-footer">
+      <div class="vb-chat-cat-row">
+        <span class="vb-chat-cat-label">カテゴリ：</span>
+        <div id="vbChatCatChips"></div>
+      </div>
+      <div class="vb-chat-input-row">
+        <textarea class="vb-chat-input" id="vbChatInput" placeholder="メッセージを入力（Enterで送信）" rows="1"></textarea>
+        <button class="vb-chat-send" id="vbChatSend">→</button>
+      </div>
+      <button class="vb-gen-btn" id="vbGenerateBtn" disabled>
+        ✨ プロンプトを確定して画像を生成
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Text Card Modal -->
+<div class="vb-modal-overlay" id="vbTextModal">
+  <div class="vb-modal">
+    <div class="vb-modal-title">テキストカードを追加</div>
+    <label>テキスト</label>
+    <textarea id="vbTextInput" placeholder="例：2027年までに月収100万円"></textarea>
+    <label>カテゴリ</label>
+    <div class="vb-cat-chips" id="vbCatChips"></div>
+    <div class="vb-modal-actions">
+      <button class="vb-modal-cancel" id="vbTextCancel">キャンセル</button>
+      <button class="vb-modal-submit" id="vbTextSubmit">追加する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+const CATEGORIES = ['仕事', 'お金', '住まい', '健康', '人間関係', '自己実現', 'その他'];
+
+let board = { cards: [] };
+let chatMessages = [];
+let chatHasMessages = false;
+let chatCategory = 'その他';
+let saveTimeout = null;
+let boardLoaded = false;
+
+// ── HELPERS ──
+
+function getEmail() {
+  return window.TomuAuth?.getEmail() || null;
+}
+
+function makeId() {
+  return 'card_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, isError) {
+  const el = document.getElementById('vbToast');
+  el.textContent = msg;
+  el.className = 'vb-toast' + (isError ? ' error' : '');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── BOARD PERSISTENCE ──
+
+async function loadBoard() {
+  if (boardLoaded) return;
+  const email = getEmail();
+  if (!email) return;
+  boardLoaded = true;
+  try {
+    const res = await fetch(WORKER_URL + '/api/vision-board/board', {
+      headers: { 'X-Customer-Email': email },
+    });
+    const data = await res.json();
+    if (data.error === 'login_required' || data.error === 'subscription_required') return;
+    if (data.board) { board = data.board; renderBoard(); }
+  } catch (e) {
+    console.warn('[VB] Board load failed:', e.message);
+  }
+}
+
+async function saveBoard() {
+  const email = getEmail();
+  if (!email) return;
+  document.getElementById('vbSaveIndicator').classList.add('visible');
+  try {
+    await fetch(WORKER_URL + '/api/vision-board/board', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, board: board }),
+    });
+  } catch (e) {
+    console.warn('[VB] Board save failed:', e.message);
+  } finally {
+    setTimeout(() => document.getElementById('vbSaveIndicator').classList.remove('visible'), 700);
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveBoard, 1500);
+}
+
+function addCard(card) {
+  board.cards.push(card);
+  renderBoard();
+  scheduleSave();
+}
+
+function deleteCard(id) {
+  board.cards = board.cards.filter(c => c.id !== id);
+  renderBoard();
+  scheduleSave();
+}
+
+// ── RENDER ──
+
+function renderBoard() {
+  const grid = document.getElementById('vbGrid');
+  const empty = document.getElementById('vbEmpty');
+  grid.innerHTML = '';
+
+  if (!board.cards || board.cards.length === 0) {
+    empty.style.display = 'flex';
+    grid.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+
+  board.cards.forEach(function(card) {
+    const el = document.createElement('div');
+    el.className = 'vb-card' + (card.type === 'text' ? ' text' : '');
+    el.dataset.id = card.id;
+
+    let inner = '';
+    if (card.type === 'image') {
+      if (card.imageUrl) {
+        inner += '<img class="vb-card-img" src="' + escHtml(card.imageUrl) + '" alt="' + escHtml(card.title || '') + '">';
+      } else {
+        inner += '<div style="width:100%;height:100%;background:linear-gradient(135deg,var(--warm),var(--light-accent));display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:0.3;">🖼</div>';
+      }
+    } else {
+      inner += '<div class="vb-card-text-content">' + escHtml(card.content || '') + '</div>';
+    }
+
+    inner += '<div class="vb-card-footer">' +
+      '<div class="vb-card-cat">' + escHtml(card.category || 'その他') + '</div>' +
+      '<button class="vb-card-del" onclick="event.stopPropagation();deleteCard(\'' + card.id + '\')">✕</button>' +
+      '</div>';
+
+    el.innerHTML = inner;
+    grid.appendChild(el);
+  });
+}
+
+// ── FILE UPLOAD ──
+
+document.getElementById('fileInput').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+
+  const email = getEmail();
+  if (!email) { window.TomuAuth?.showOverlay(); return; }
+
+  const cardId = makeId();
+  const tempCard = { id: cardId, type: 'image', imageUrl: null, title: '', category: 'その他', createdAt: today() };
+  board.cards.push(tempCard);
+  renderBoard();
+
+  // ローディング表示
+  const cardEl = document.querySelector('[data-id="' + cardId + '"]');
+  if (cardEl) {
+    const loadEl = document.createElement('div');
+    loadEl.className = 'vb-card-loading';
+    loadEl.innerHTML = '<div class="vb-card-loading-dots"><span></span><span></span><span></span></div><div class="vb-card-loading-text">アップロード中</div>';
+    cardEl.appendChild(loadEl);
+  }
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('cardId', cardId);
+
+    const res = await fetch(WORKER_URL + '/api/vision-board/upload-image', {
+      method: 'POST',
+      headers: { 'X-Customer-Email': email },
+      body: fd,
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      board.cards = board.cards.filter(function(c) { return c.id !== cardId; });
+      renderBoard();
+      toast(data.error, true);
+      return;
+    }
+
+    const idx = board.cards.findIndex(function(c) { return c.id === cardId; });
+    if (idx !== -1) board.cards[idx].imageUrl = data.imageUrl;
+    renderBoard();
+    scheduleSave();
+    toast('画像を追加しました');
+
+  } catch (err) {
+    board.cards = board.cards.filter(function(c) { return c.id !== cardId; });
+    renderBoard();
+    toast('アップロードに失敗しました', true);
+  }
+});
+
+// ── AI CHAT PANEL ──
+
+function initChatCatChips() {
+  const wrap = document.getElementById('vbChatCatChips');
+  wrap.innerHTML = '';
+  wrap.style.display = 'flex';
+  wrap.style.flexWrap = 'wrap';
+  wrap.style.gap = '5px';
+  CATEGORIES.forEach(function(cat) {
+    const chip = document.createElement('button');
+    chip.className = 'vb-cat-chip-sm' + (cat === chatCategory ? ' active' : '');
+    chip.textContent = cat;
+    chip.addEventListener('click', function() {
+      chatCategory = cat;
+      wrap.querySelectorAll('.vb-cat-chip-sm').forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function openChatPanel() {
+  chatMessages = [];
+  chatHasMessages = false;
+  chatCategory = 'その他';
+  document.getElementById('vbChatMessages').innerHTML = '<div class="vb-msg ai">どんな画像を作りたいですか？<br>「海の見える家」「カフェで仕事する自分」など、自由に教えてください。</div>';
+  document.getElementById('vbGenerateBtn').disabled = true;
+  document.getElementById('vbGenerateBtn').textContent = '✨ プロンプトを確定して画像を生成';
+  document.getElementById('vbChatInput').value = '';
+  document.getElementById('vbChatSend').disabled = false;
+  initChatCatChips();
+  document.getElementById('vbChatOverlay').classList.add('open');
+}
+
+function closeChatPanel() {
+  document.getElementById('vbChatOverlay').classList.remove('open');
+}
+
+document.getElementById('vbChatClose').addEventListener('click', closeChatPanel);
+document.getElementById('vbChatOverlay').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('vbChatOverlay')) closeChatPanel();
+});
+
+async function sendChat() {
+  const input = document.getElementById('vbChatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const email = getEmail();
+  if (!email) { closeChatPanel(); window.TomuAuth?.showOverlay(); return; }
+
+  input.value = '';
+  chatMessages.push({ role: 'user', content: text });
+  appendMsg('user', text);
+  chatHasMessages = true;
+  document.getElementById('vbGenerateBtn').disabled = false;
+
+  const sendBtn = document.getElementById('vbChatSend');
+  sendBtn.disabled = true;
+
+  const typingId = 'typing_' + Date.now();
+  appendMsg('ai', '…', typingId);
+
+  try {
+    const res = await fetch(WORKER_URL + '/api/vision-board/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, messages: chatMessages, mode: 'chat' }),
+    });
+    const data = await res.json();
+    removeMsg(typingId);
+
+    if (data.error === 'login_required' || data.error === 'subscription_required' || data.error === 'plan_upgrade_required') {
+      closeChatPanel(); window.TomuAuth?.showOverlay(); return;
+    }
+    if (data.error) { appendMsg('ai', 'エラーが発生しました。もう一度お試しください。'); return; }
+
+    chatMessages.push({ role: 'assistant', content: data.reply });
+    appendMsg('ai', data.reply);
+
+  } catch (err) {
+    removeMsg(typingId);
+    appendMsg('ai', 'ネットワークエラーが発生しました。');
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+document.getElementById('vbChatSend').addEventListener('click', sendChat);
+document.getElementById('vbChatInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+
+function appendMsg(role, text, id) {
+  const container = document.getElementById('vbChatMessages');
+  const el = document.createElement('div');
+  el.className = 'vb-msg ' + role;
+  if (id) el.id = id;
+  el.textContent = text;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeMsg(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+document.getElementById('vbGenerateBtn').addEventListener('click', async function() {
+  if (!chatHasMessages) return;
+
+  const email = getEmail();
+  if (!email) { closeChatPanel(); window.TomuAuth?.showOverlay(); return; }
+
+  const genBtn = document.getElementById('vbGenerateBtn');
+  const sendBtn = document.getElementById('vbChatSend');
+  genBtn.disabled = true;
+  genBtn.textContent = '✨ プロンプトを生成中...';
+  sendBtn.disabled = true;
+
+  try {
+    // Step 1: Claude でプロンプト生成
+    const promptRes = await fetch(WORKER_URL + '/api/vision-board/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, messages: chatMessages, mode: 'generate_prompt' }),
+    });
+    const promptData = await promptRes.json();
+
+    if (promptData.error) {
+      if (promptData.error === 'login_required' || promptData.error === 'subscription_required' || promptData.error === 'plan_upgrade_required') {
+        closeChatPanel(); window.TomuAuth?.showOverlay(); return;
+      }
+      throw new Error(promptData.error);
+    }
+
+    const imagePrompt = promptData.prompt;
+    genBtn.textContent = '🎨 画像を生成中... (約30秒)';
+
+    // Step 2: 画像生成
+    const cardId = makeId();
+    const genRes = await fetch(WORKER_URL + '/api/vision-board/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, prompt: imagePrompt, cardId: cardId }),
+    });
+    const genData = await genRes.json();
+
+    if (genData.error) throw new Error(genData.error);
+
+    addCard({
+      id: cardId,
+      type: 'image',
+      imageUrl: genData.imageUrl,
+      title: '',
+      category: chatCategory,
+      memo: '',
+      createdAt: today(),
+    });
+    closeChatPanel();
+    toast('画像をボードに追加しました！');
+
+  } catch (err) {
+    toast('生成に失敗しました: ' + err.message, true);
+    genBtn.disabled = false;
+    genBtn.textContent = '✨ プロンプトを確定して画像を生成';
+    sendBtn.disabled = false;
+  }
+});
+
+// ── TEXT CARD MODAL ──
+
+let selectedTextCat = 'その他';
+
+function initTextCatChips() {
+  const wrap = document.getElementById('vbCatChips');
+  wrap.innerHTML = '';
+  selectedTextCat = 'その他';
+  CATEGORIES.forEach(function(cat) {
+    const chip = document.createElement('button');
+    chip.className = 'vb-cat-chip' + (cat === 'その他' ? ' active' : '');
+    chip.textContent = cat;
+    chip.addEventListener('click', function() {
+      selectedTextCat = cat;
+      wrap.querySelectorAll('.vb-cat-chip').forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function openTextModal() {
+  document.getElementById('vbTextInput').value = '';
+  initTextCatChips();
+  document.getElementById('vbTextModal').classList.add('open');
+  setTimeout(function() { document.getElementById('vbTextInput').focus(); }, 100);
+}
+
+function closeTextModal() {
+  document.getElementById('vbTextModal').classList.remove('open');
+}
+
+document.getElementById('vbTextCancel').addEventListener('click', closeTextModal);
+document.getElementById('vbTextModal').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('vbTextModal')) closeTextModal();
+});
+
+document.getElementById('vbTextSubmit').addEventListener('click', function() {
+  const text = document.getElementById('vbTextInput').value.trim();
+  if (!text) { document.getElementById('vbTextInput').focus(); return; }
+  addCard({
+    id: makeId(),
+    type: 'text',
+    content: text,
+    category: selectedTextCat,
+    createdAt: today(),
+  });
+  closeTextModal();
+  toast('テキストカードを追加しました');
+});
+
+// ── TOOLBAR ──
+
+const addImgDropdown = document.getElementById('addImgDropdown');
+
+document.getElementById('addImgBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  addImgDropdown.classList.toggle('open');
+});
+
+document.addEventListener('click', function() { addImgDropdown.classList.remove('open'); });
+
+document.getElementById('uploadFromFileBtn').addEventListener('click', function() {
+  addImgDropdown.classList.remove('open');
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('createWithAiBtn').addEventListener('click', function() {
+  addImgDropdown.classList.remove('open');
+  const email = getEmail();
+  if (!email) { window.TomuAuth?.showOverlay(); return; }
+  openChatPanel();
+});
+
+document.getElementById('addTextBtn').addEventListener('click', function() {
+  const email = getEmail();
+  if (!email) { window.TomuAuth?.showOverlay(); return; }
+  openTextModal();
+});
+
+// ── INIT ──
+
+document.addEventListener('tomu:unlocked', function() { loadBoard(); });
+
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    const email = getEmail();
+    if (email && !boardLoaded) loadBoard();
+  }, 900);
+});
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="/tomu-system/tomu-login.js"></script>
+
+<!-- ▼▼▼ LOCAL TEST MOCK ▼▼▼ -->
+<script>
+(function () {
+  const host = location.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1'
+    || /^192\.168\./.test(host) || /^10\./.test(host)
+    || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+  if (!isLocal) return;
+
+  window.TomuAuth = {
+    getEmail:    function() { return 'inverted.triangle.leef@gmail.com'; },
+    getPlan:     function() { return 'standard'; },
+    isLoggedIn:  function() { return true; },
+    showOverlay: function() { console.log('[LOCAL MOCK] showOverlay() は無効化されています'); },
+  };
+
+  const hideOverlay = function() {
+    document.querySelectorAll('[id*="auth"],[id*="login"],[class*="auth"],[class*="login"]').forEach(function(el) {
+      if (el.id === 'vbChatOverlay' || el.id === 'vbTextModal') return;
+      el.style.display = 'none';
+    });
+    // tomu-auth-overlayを明示的に非表示
+    const authEl = document.getElementById('tomu-auth-overlay');
+    if (authEl) authEl.style.display = 'none';
+    const badgeEl = document.getElementById('tomu-user-badge');
+    if (badgeEl) { badgeEl.classList.add('active'); }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    hideOverlay();
+    loadBoard();
+  });
+  setTimeout(hideOverlay, 600);
+
+  const badge = document.createElement('div');
+  badge.textContent = '🔓 LOCAL MOCK';
+  Object.assign(badge.style, {
+    position: 'fixed', bottom: '8px', left: '8px', zIndex: '9999',
+    background: 'rgba(184,115,51,0.12)', color: '#b87333',
+    fontFamily: 'sans-serif', fontSize: '9px', letterSpacing: '2px',
+    padding: '4px 8px', borderRadius: '10px', border: '1px solid rgba(184,115,51,0.3)',
+    pointerEvents: 'none',
+  });
+  document.body.appendChild(badge);
+
+  console.log('[LOCAL MOCK] TomuAuth スキップ済み — email:', window.TomuAuth.getEmail());
+})();
+</script>
+<!-- ▲▲▲ LOCAL TEST MOCK END ▲▲▲ -->
+
+</body>
+</html>
