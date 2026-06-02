@@ -1,0 +1,21 @@
+{
+  "name": "Kids Activity",
+  "short_name": "Kids Activity",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#6c63ff",
+  "description": "とむSYSTEM - Kids Activity",
+  "icons": [
+    {
+      "src": "/common/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/common/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

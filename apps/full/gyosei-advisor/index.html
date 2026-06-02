@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行政書士アドバイザー | tomu SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Serif+JP:wght@300;400&display=swap" rel="stylesheet">
+<script src="/tomu-system/common/header.js"></script>
+<style>
+  :root {
+    --bg: #edf0f5;
+    --surface: #f5f7fb;
+    --surface2: #e3e8f0;
+    --border: #c8d0de;
+    --accent: #2d4a7a;
+    --accent-light: #7a96c4;
+    --text: #1a2236;
+    --text-muted: #6a7a96;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 44px;
+    z-index: 100;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 10px; }
+
+  .header-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #f5f7fb; font-size: 18px;
+  }
+
+  .header-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 300; letter-spacing: 0.05em;
+  }
+
+  .header-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 0.1em; margin-top: 1px; }
+
+  .mode-toggle {
+    display: flex; background: var(--surface2);
+    border-radius: 20px; padding: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-btn {
+    padding: 5px 12px; border-radius: 16px; border: none;
+    background: transparent; font-family: 'Noto Serif JP', serif;
+    font-size: 11px; color: var(--text-muted); cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.05em;
+  }
+
+  .mode-btn.active { background: var(--accent); color: #f5f7fb; }
+
+  .quick-actions {
+    padding: 16px 16px 8px;
+    display: flex; gap: 8px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+
+  .quick-actions::-webkit-scrollbar { display: none; }
+
+  .quick-btn {
+    flex-shrink: 0; padding: 8px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; font-family: 'Noto Serif JP', serif;
+    font-size: 12px; color: var(--text); cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+
+  .quick-btn:hover { background: var(--accent); color: #f5f7fb; border-color: var(--accent); }
+
+  .chat-area {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .welcome {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 20px; text-align: center;
+    animation: fadeUp 0.5s ease;
+  }
+
+  .welcome-icon { font-size: 32px; margin-bottom: 12px; }
+
+  .welcome-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 300; margin-bottom: 8px; color: var(--accent);
+  }
+
+  .welcome-text { font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+
+  .disclaimer {
+    margin-top: 14px; padding: 10px 14px;
+    background: var(--surface2); border-radius: 8px;
+    font-size: 11px; color: var(--text-muted); line-height: 1.6;
+    text-align: left; border-left: 2px solid var(--accent-light);
+  }
+
+  .message { display: flex; gap: 10px; animation: fadeUp 0.3s ease; }
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+
+  .avatar.ai { background: var(--accent); color: #f5f7fb; }
+  .avatar.user { background: var(--text); color: #f5f7fb; }
+
+  .bubble {
+    max-width: 80%; padding: 12px 16px; border-radius: 16px;
+    font-size: 14px; line-height: 1.8;
+  }
+
+  .message.ai .bubble {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px; color: var(--text);
+  }
+
+  .message.user .bubble {
+    background: var(--text); color: #f5f7fb;
+    border-radius: 16px 4px 16px 16px;
+  }
+
+  .bubble h4 { font-size: 13px; font-weight: 400; margin-bottom: 6px; color: var(--accent); }
+  .bubble ul { padding-left: 16px; margin-top: 6px; }
+  .bubble li { margin-bottom: 4px; font-size: 13px; }
+
+  .loading {
+    display: flex; gap: 6px; padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px; width: fit-content;
+  }
+
+  .dot {
+    width: 6px; height: 6px; background: var(--accent-light);
+    border-radius: 50%; animation: bounce 1.2s infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  .input-area {
+    padding: 12px 16px 20px;
+    background: var(--surface); border-top: 1px solid var(--border);
+  }
+
+  .mode-indicator {
+    font-size: 11px; color: var(--text-muted);
+    text-align: center; margin-bottom: 8px; letter-spacing: 0.05em;
+  }
+
+  .input-wrap {
+    display: flex; gap: 10px; align-items: flex-end;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 24px; padding: 10px 10px 10px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within { border-color: var(--accent-light); }
+
+  textarea {
+    flex: 1; border: none; background: transparent;
+    font-family: 'Noto Serif JP', serif; font-size: 14px;
+    color: var(--text); resize: none; outline: none;
+    max-height: 120px; line-height: 1.6;
+  }
+
+  textarea::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    width: 38px; height: 38px; background: var(--accent);
+    border: none; border-radius: 50%; color: #f5f7fb;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 16px;
+  }
+
+  .send-btn:hover { background: var(--text); }
+  .send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+</style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#6c63ff">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script></head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">📋</div>
+    <div>
+      <div class="header-title">行政書士アドバイザー</div>
+      <div class="header-subtitle">GYOSEI ADVISOR</div>
+    </div>
+  </div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" onclick="setMode('general', this)">一般</button>
+    <button class="mode-btn" onclick="setMode('pro', this)">専門家</button>
+  </div>
+</div>
+
+<div class="quick-actions">
+  <button class="quick-btn" onclick="quickAsk('許認可申請の手続きを教えてほしい')">🏛️ 許認可申請</button>
+  <button class="quick-btn" onclick="quickAsk('ビザ・在留資格の申請について')">✈️ ビザ・在留</button>
+  <button class="quick-btn" onclick="quickAsk('車庫証明の取り方を教えてほしい')">🚗 車庫証明</button>
+  <button class="quick-btn" onclick="quickAsk('会社設立の手続きと必要書類は？')">🏢 会社設立</button>
+  <button class="quick-btn" onclick="quickAsk('農地転用の手続きについて知りたい')">🌾 農地転用</button>
+  <button class="quick-btn" onclick="quickAsk('遺産分割協議書の作成方法は？')">📜 遺産分割</button>
+  <button class="quick-btn" onclick="quickAsk('建設業許可の申請方法を教えてほしい')">🔨 建設業許可</button>
+</div>
+
+<div class="chat-area" id="chatArea">
+  <div class="welcome">
+    <div class="welcome-icon">🏛️</div>
+    <div class="welcome-title">Gyosei Advisor</div>
+    <div class="welcome-text">
+      許認可申請・ビザ・車庫証明・会社設立など<br>
+      行政手続きに関するご質問にお答えします。<br>
+      上のボタンからよくある相談を選ぶか<br>
+      お気軽にメッセージをどうぞ。
+    </div>
+    <div class="disclaimer">
+      ⚠️ 本サービスはAIによる一般的な行政手続き情報の提供を目的としています。個別の申請・許認可については、必ず行政書士等の専門家にご相談ください。
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="mode-indicator" id="modeIndicator">一般向けモード — わかりやすく解説します</div>
+  <div class="input-wrap">
+    <textarea
+      id="userInput"
+      placeholder="許認可・ビザ・届出書類などについて質問してください..."
+      rows="1"
+      oninput="autoResize(this)"
+      onkeydown="handleKey(event)"
+    ></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/gyosei-advisor';
+
+let currentMode = 'general';
+let isLoading = false;
+let conversationHistory = [];
+
+const systemPrompts = {
+  general: `あなたは「行政書士アドバイザー」です。一般の方向けに、許認可申請・ビザ・車庫証明・各種届出書類などの行政手続きについて、わかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 専門用語は使わず、または使う場合は必ず解説を加える
+- 必要書類・手順・費用の目安を具体的に伝える
+- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
+- 管轄官庁・窓口についても案内する
+
+【必ず守ること】
+- 個別の申請可否・審査結果について断定的な回答はしない
+- 「詳細は行政書士または管轄官庁にご確認ください」を適切に案内する
+- 法改正・手数料変更については「最新情報はご確認ください」と添える
+
+【対応範囲】
+許認可申請（飲食店・建設業・古物商等）、ビザ・在留資格申請、車庫証明、会社設立（定款作成・設立登記の概要）、農地転用、遺産分割協議書、各種契約書・内容証明、補助金・助成金の概要など`,
+
+  pro: `あなたは「行政書士アドバイザー（専門家モード）」です。行政書士・司法書士・企業の法務担当者など専門家向けに、行政法・手続き法の専門的な情報を提供してください。
+
+【回答スタイル】
+- 行政法・各業法の専門用語を適切に使用する
+- 根拠となる法令・条文・通達を可能な範囲で示す
+- 実務的な申請フロー・審査基準・注意点を重視する
+- 複数の申請経路がある場合は比較して提示する
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 解釈が分かれる事項・行政裁量が広い事項は明示する
+- 法改正・省令改正については確認を促す
+
+【対応範囲】
+許認可申請（業法別要件・欠格事由・更新・廃業届）、出入国管理法・在留資格認定・変更・更新の実務、車庫証明・自動車登録、会社設立（定款・登記）の概要、農地法・都市計画法の手続き、遺産分割・相続手続き書類の下書き補助、申請書類の文案生成など`
+};
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const indicator = document.getElementById('modeIndicator');
+  indicator.textContent = mode === 'general'
+    ? '一般向けモード — わかりやすく解説します'
+    : '専門家モード — 実務的な情報を提供します';
+  conversationHistory = [];
+}
+
+function quickAsk(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+
+  const loadingEl = appendLoading();
+
+  try {
+    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        system: systemPrompts[currentMode],
+        messages: conversationHistory,
+        max_tokens: 1000,
+      })
+    });
+
+    const data = await response.json();
+    loadingEl.remove();
+
+    const reply = data.content?.[0]?.text || 'エラーが発生しました。';
+    conversationHistory.push({ role: 'assistant', content: reply });
+    appendMessage('ai', reply);
+
+  } catch (e) {
+    loadingEl.remove();
+    appendMessage('ai', '通信エラーが発生しました。もう一度お試しください。');
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function appendMessage(role, text) {
+  const chatArea = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role}`;
+  avatar.textContent = role === 'ai' ? '📋' : '人';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = formatText(text);
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  chatArea.appendChild(msg);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return msg;
+}
+
+function appendLoading() {
+  const chatArea = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'message ai';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar ai';
+  avatar.textContent = '📋';
+
+  const loading = document.createElement('div');
+  loading.className = 'loading';
+  loading.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+
+  msg.appendChild(avatar);
+  msg.appendChild(loading);
+  chatArea.appendChild(msg);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return msg;
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/### (.+)/g, '<h4>$1</h4>')
+    .replace(/## (.+)/g, '<h4>$1</h4>')
+    .replace(/^[-・] (.+)/gm, '<li>$1</li>')
+    .replace(/\n/g, '<br>');
+}
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'full';</script>
+<script src="/tomu-system/tomu-login.js"></script>
+</body>
+</html>

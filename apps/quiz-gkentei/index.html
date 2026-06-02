@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G検定 問題集 | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#C9A84C;--gold-light:#E8C96A;--gold-dim:#7A6028;--dark:#0A0A0F;--dark2:#111118;--dark3:#1A1A24;--dark4:#22222E;--text:#E8E8F0;--text-dim:#888899;--correct:#4CAF82;--wrong:#E05555;--correct-bg:rgba(76,175,130,0.12);--wrong-bg:rgba(224,85,85,0.12)}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:var(--dark);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse 60% 40% at 70% 20%,rgba(201,168,76,0.06) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 20% 80%,rgba(201,168,76,0.04) 0%,transparent 50%);pointer-events:none;z-index:0}
+  .app{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:0 16px;min-height:100vh;display:flex;flex-direction:column}
+  .header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;border-bottom:1px solid rgba(201,168,76,0.15)}.header-logo{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;color:var(--gold-dim)}.header-title{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px}
+  #screen-start{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;gap:32px}
+  .badge{display:inline-block;background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--dark);font-size:11px;font-weight:700;letter-spacing:2px;padding:4px 14px;border-radius:2px}
+  .start-title{text-align:center;line-height:1.2}.start-title .main{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,10vw,72px);letter-spacing:4px;background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block}.start-title .sub{font-size:14px;color:var(--text-dim);font-weight:400;display:block;margin-top:6px}
+  .start-desc{text-align:center;font-size:14px;color:var(--text-dim);line-height:1.8;max-width:360px}
+  .mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:440px}.mode-card{background:var(--dark3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:18px 16px;cursor:pointer;transition:all 0.2s;text-align:center}.mode-card:hover,.mode-card.selected{border-color:var(--gold);background:rgba(201,168,76,0.08)}.mode-card .mode-icon{font-size:26px;margin-bottom:8px}.mode-card .mode-name{font-size:13px;font-weight:700;color:var(--text)}.mode-card .mode-desc{font-size:11px;color:var(--text-dim);margin-top:4px}
+  .count-selector{display:flex;align-items:center;gap:16px;font-size:14px;color:var(--text-dim)}.count-selector span{color:var(--text);font-weight:700;font-size:20px}.count-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(201,168,76,0.3);background:transparent;color:var(--gold);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}.count-btn:hover{background:rgba(201,168,76,0.1);border-color:var(--gold)}
+  .btn-start{width:100%;max-width:360px;padding:18px;background:linear-gradient(135deg,#A07820,var(--gold));border:none;border-radius:10px;color:var(--dark);font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 24px rgba(201,168,76,0.3)}.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(201,168,76,0.4)}
+  #screen-quiz{flex:1;display:flex;flex-direction:column;padding:20px 0;gap:20px}.progress-area{display:flex;align-items:center;gap:12px}.progress-bar-wrap{flex:1;height:4px;background:var(--dark4);border-radius:2px;overflow:hidden}.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;transition:width 0.4s ease}.progress-label{font-size:12px;color:var(--text-dim);white-space:nowrap}.score-badge{font-size:12px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);padding:2px 10px;border-radius:12px;white-space:nowrap}
+  .question-card{background:var(--dark2);border:1px solid rgba(201,168,76,0.12);border-radius:14px;padding:28px 24px;position:relative;overflow:hidden}.question-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--gold),transparent)}.q-num{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:14px}.q-text{font-size:15px;line-height:1.85;color:var(--text)}
+  .choices{display:flex;flex-direction:column;gap:10px}.choice-btn{background:var(--dark3);border:1px solid rgba(201,168,76,0.12);border-radius:10px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:all 0.2s;text-align:left;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:14px;line-height:1.6}.choice-btn:hover:not(:disabled){border-color:rgba(201,168,76,0.4);background:rgba(201,168,76,0.06);transform:translateX(3px)}.choice-btn:disabled{cursor:default;transform:none}.choice-label{min-width:26px;height:26px;border-radius:6px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all 0.2s}
+  .choice-btn.correct{border-color:var(--correct);background:var(--correct-bg)}.choice-btn.correct .choice-label{background:var(--correct);border-color:var(--correct);color:white}.choice-btn.wrong{border-color:var(--wrong);background:var(--wrong-bg)}.choice-btn.wrong .choice-label{background:var(--wrong);border-color:var(--wrong);color:white}.choice-btn.dimmed{opacity:0.35}
+  .explanation{background:var(--dark3);border-radius:10px;padding:18px 20px;border-left:3px solid var(--gold-dim);animation:fadeSlide 0.3s ease}.explanation.correct-exp{border-left-color:var(--correct)}.explanation.wrong-exp{border-left-color:var(--wrong)}@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.exp-header{font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:8px}.exp-header.ok{color:var(--correct)}.exp-header.ng{color:var(--wrong)}.exp-text{font-size:13px;line-height:1.8;color:var(--text-dim)}
+  .btn-next{padding:16px;background:linear-gradient(135deg,#A07820,var(--gold));border:none;border-radius:10px;color:var(--dark);font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s}.btn-next:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,0.3)}
+  #screen-result{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;gap:28px}.result-circle{width:140px;height:140px;border-radius:50%;border:3px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(201,168,76,0.08),transparent);box-shadow:0 0 40px rgba(201,168,76,0.15)}.result-score{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.result-denom{font-size:13px;color:var(--text-dim);margin-top:2px}.result-msg{text-align:center;font-size:18px;font-weight:700;color:var(--text)}.result-msg .sub{font-size:13px;font-weight:400;color:var(--text-dim);margin-top:6px;display:block}
+  .result-breakdown{width:100%;max-width:380px;background:var(--dark2);border:1px solid rgba(201,168,76,0.1);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px}.breakdown-row{display:flex;justify-content:space-between;align-items:center;font-size:14px}.breakdown-row .label{color:var(--text-dim)}.breakdown-row .val{font-weight:700}.breakdown-row .val.ok{color:var(--correct)}.breakdown-row .val.ng{color:var(--wrong)}
+  .result-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:380px}.btn-retry,.btn-more{padding:15px;border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:1px}.btn-retry{background:linear-gradient(135deg,#A07820,var(--gold));border:none;color:var(--dark)}.btn-retry:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,0.3)}.btn-more{background:transparent;border:1px solid rgba(201,168,76,0.3);color:var(--gold)}.btn-more:hover{background:rgba(201,168,76,0.08);border-color:var(--gold)}
+  .loading-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px;flex:1;justify-content:center}.spinner{width:40px;height:40px;border:3px solid rgba(201,168,76,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-text{font-size:13px;color:var(--text-dim)}
+  .screen{display:none}.screen.active{display:flex;flex-direction:column;flex:1}html{scroll-behavior:smooth}
+</style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#6c63ff">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script></head>
+<body>
+<div class="app">
+  <header class="header">
+    <a href="/tomu-system/index.html" style="display:flex;align-items:center;gap:6px;color:var(--gold-dim);text-decoration:none;font-size:13px;letter-spacing:1px;transition:color 0.2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--gold-dim)'">
+      ← 戻る
+    </a>
+    <span class="header-title">資格問題集</span>
+  </header>
+  <div id="screen-start" class="screen active">
+    <div class="badge">IT・DX系</div>
+    <div class="start-title"><span class="main">G検定</span><span class="sub">JDLA認定 / 4択問題集</span></div>
+    <p class="start-desc">ディープラーニング・機械学習・AI倫理・ビジネス活用まで。<br>DX推進人材の必須資格。</p>
+    <div class="mode-cards">
+      <div class="mode-card selected" data-mode="mixed" onclick="selectMode(this,'mixed')"><div class="mode-icon">🔀</div><div class="mode-name">ランダム</div><div class="mode-desc">全分野から出題</div></div>
+      <div class="mode-card" data-mode="dl" onclick="selectMode(this,'dl')"><div class="mode-icon">🧠</div><div class="mode-name">ディープラーニング</div><div class="mode-desc">CNN・RNN・転移学習</div></div>
+      <div class="mode-card" data-mode="ml" onclick="selectMode(this,'ml')"><div class="mode-icon">📈</div><div class="mode-name">機械学習・統計</div><div class="mode-desc">回帰・分類・確率統計</div></div>
+      <div class="mode-card" data-mode="ethics" onclick="selectMode(this,'ethics')"><div class="mode-icon">⚖️</div><div class="mode-name">AI倫理・法律</div><div class="mode-desc">個人情報・著作権</div></div>
+    </div>
+    <div class="count-selector"><span style="font-size:13px;color:var(--text-dim);">問題数</span><button class="count-btn" onclick="changeCount(-5)">−</button><span id="count-display">5</span><button class="count-btn" onclick="changeCount(5)">＋</button><span style="font-size:13px;color:var(--text-dim);">問</span></div>
+    <button class="btn-start" onclick="startQuiz()">はじめる</button>
+  </div>
+  <div id="screen-quiz" class="screen">
+    <div id="loading-area" class="loading-wrap"><div class="spinner"></div><div class="loading-text">AIが問題を生成中…</div></div>
+    <div id="quiz-content" style="display:none;flex-direction:column;gap:20px;flex:1;padding:20px 0;">
+      <div class="progress-area"><div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div><span class="progress-label" id="progress-label">1 / 10</span><span class="score-badge" id="score-badge">✓ 0</span></div>
+      <div class="question-card"><div class="q-num" id="q-num">Q1</div><div class="q-text" id="q-text"></div></div>
+      <div class="choices" id="choices"></div>
+      <div id="explanation" style="display:none"></div>
+      <button id="btn-next" class="btn-next" style="display:none" onclick="nextQuestion()">次の問題へ →</button>
+    </div>
+  </div>
+  <div id="screen-result" class="screen">
+    <div class="result-circle"><div class="result-score" id="result-score">0</div><div class="result-denom" id="result-denom">/ 10 問正解</div></div>
+    <div class="result-msg" id="result-msg">お疲れ様でした！<span class="sub" id="result-sub"></span></div>
+    <div class="result-breakdown">
+      <div class="breakdown-row"><span class="label">正解数</span><span class="val ok" id="bd-correct">0</span></div>
+      <div class="breakdown-row"><span class="label">不正解数</span><span class="val ng" id="bd-wrong">0</span></div>
+      <div class="breakdown-row"><span class="label">正解率</span><span class="val" id="bd-rate" style="color:var(--gold)">0%</span></div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-retry" onclick="retryQuiz()">もう一度チャレンジ</button>
+      <button class="btn-more" onclick="moreQuiz()">さらに問題を解く（AI生成）</button>
+      <button class="btn-more" onclick="showStart()" style="border-color:rgba(255,255,255,0.1);color:var(--text-dim)">トップに戻る</button>
+    </div>
+  </div>
+</div>
+<script>
+const QUIZ_CONFIG={title:"G検定",category:"IT・DX系",subject:"G検定（ジェネラリスト検定）",difficulty:"G検定レベル（AI/DXに関心のあるビジネスパーソン向け）",modes:{mixed:"数理統計・機械学習・ディープラーニング・法律倫理の全分野",dl:"ディープラーニング基礎（CNN・RNN・転移学習・過学習）",ml:"機械学習・数理統計（回帰・分類・クラスタリング・確率）",ethics:"AI倫理・法律・ビジネス活用（個人情報保護法・著作権）"}};
+const BUNDLED_QUESTIONS=[{q:"問題の取得に失敗しました。接続を確認して再度「はじめる」を押してください。",choices:["再試行する","─","─","─"],answer:0,explanation:"ネットワークエラーです。"}];
+let state={mode:'mixed',totalCount:5,questions:[],currentIdx:0,correctCount:0,answered:false};
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function showStart(){showScreen('screen-start');}
+function selectMode(el,mode){document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');state.mode=mode;}
+function changeCount(delta){state.totalCount=Math.max(5,Math.min(20,state.totalCount+delta));document.getElementById('count-display').textContent=state.totalCount;}
+async function startQuiz(){state.currentIdx=0;state.correctCount=0;state.questions=[];showScreen('screen-quiz');document.getElementById('loading-area').style.display='flex';document.getElementById('quiz-content').style.display='none';try{state.questions=await generateQuestions(state.totalCount,state.mode);}catch(e){console.error(e);state.questions=[...BUNDLED_QUESTIONS];}document.getElementById('loading-area').style.display='none';document.getElementById('quiz-content').style.display='flex';renderQuestion();}
+async function fetchQuestions(batchCount, modeDesc) {
+  const prompt = `あなたは${QUIZ_CONFIG.title}の問題作成専門家です。
+以下の条件で問題を${batchCount}問生成してください。
+
+対象分野：${modeDesc}
+難易度：${QUIZ_CONFIG.difficulty}
+形式：4択問題
+
+必ずJSON配列のみを返してください（説明文・コードブロック不要）：
+[
+  {
+    "q": "問題文（改行は\\nで表現）",
+    "choices": ["選択肢1","選択肢2","選択肢3","選択肢4"],
+    "answer": 0,
+    "explanation": "解説文"
+  }
+]
+
+answerは正解の選択肢インデックス（0〜3）。
+問題は実際の試験に出そうなリアルな内容で。
+重複なし、各問題で難易度にバラつきを持たせること。`;
+  const res = await fetch("https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system: "あなたは資格試験の問題作成専門家です。指定された形式のJSONのみを返してください。",
+      messages: [{ role: "user", content: prompt }],
+      email: TomuAuth.getEmail(),
+      max_tokens: 4000
+    })
+  });
+  const data = await res.json();
+  if (data.error === "subscription_required" || data.error === "login_required") {
+    TomuAuth.showOverlay();
+    throw new Error(data.error);
+  }
+  const text = (data.content && data.content[0] && data.content[0].text) || '';
+  return JSON.parse(text.replace(/```json\n?|```\n?/g, '').trim());
+}
+
+async function generateQuestions(count, mode) {
+  const modeDesc = QUIZ_CONFIG.modes[mode];
+  const results = [];
+  const batchSize = 5;
+  const batches = Math.ceil(count / batchSize);
+  for (let i = 0; i < batches; i++) {
+    const batchCount = Math.min(batchSize, count - i * batchSize);
+    const questions = await fetchQuestions(batchCount, modeDesc);
+    results.push(...questions);
+  }
+  return results;
+}
+
+function renderQuestion(){const q=state.questions[state.currentIdx];const total=state.questions.length;state.answered=false;document.getElementById('progress-fill').style.width=(state.currentIdx/total*100)+'%';document.getElementById('progress-label').textContent=`${state.currentIdx+1} / ${total}`;document.getElementById('score-badge').textContent=`✓ ${state.correctCount}`;document.getElementById('q-num').textContent=`Q${state.currentIdx+1}`;document.getElementById('q-text').innerHTML=escHtml(q.q).replace(/\n/g,'<br>');const choicesEl=document.getElementById('choices');choicesEl.innerHTML='';['A','B','C','D'].forEach((lbl,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML=`<span class="choice-label">${lbl}</span><span>${escHtml(q.choices[i])}</span>`;btn.onclick=()=>answer(i);choicesEl.appendChild(btn);});document.getElementById('explanation').style.display='none';document.getElementById('btn-next').style.display='none';}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function answer(selected){if(state.answered)return;state.answered=true;const q=state.questions[state.currentIdx];const isCorrect=selected===q.answer;if(isCorrect)state.correctCount++;document.querySelectorAll('.choice-btn').forEach((btn,i)=>{btn.disabled=true;if(i===q.answer)btn.classList.add('correct');else if(i===selected&&!isCorrect)btn.classList.add('wrong');else btn.classList.add('dimmed');});const expEl=document.getElementById('explanation');expEl.style.display='block';expEl.className=`explanation ${isCorrect?'correct-exp':'wrong-exp'}`;expEl.innerHTML=`<div class="exp-header ${isCorrect?'ok':'ng'}">${isCorrect?'✓ 正解！':'✗ 不正解'}</div><div class="exp-text">${escHtml(q.explanation)}</div>`;const nextBtn=document.getElementById('btn-next');nextBtn.textContent=state.currentIdx===state.questions.length-1?'結果を見る':'次の問題へ →';nextBtn.style.display='block';setTimeout(()=>expEl.scrollIntoView({behavior:'smooth',block:'nearest'}),100);}
+function nextQuestion(){if(state.currentIdx<state.questions.length-1){state.currentIdx++;renderQuestion();window.scrollTo(0,0);}else{showResult();}}
+function showResult(){const total=state.questions.length,correct=state.correctCount,rate=Math.round(correct/total*100);document.getElementById('result-score').textContent=correct;document.getElementById('result-denom').textContent=`/ ${total} 問正解`;document.getElementById('bd-correct').textContent=correct+' 問';document.getElementById('bd-wrong').textContent=(total-correct)+' 問';document.getElementById('bd-rate').textContent=rate+'%';const msgs=rate>=90?['🏆 完璧！','合格ライン突破！素晴らしい実力です']:rate>=70?['✨ 合格圏内！','もう少しで完璧。苦手分野を復習しよう']:rate>=50?['📚 あと少し！','基礎をしっかり固めていきましょう']:['💪 ファイト！','問題を繰り返して慣れていきましょう'];document.getElementById('result-msg').innerHTML=`${msgs[0]}<span class="sub">${msgs[1]}</span>`;showScreen('screen-result');}
+function retryQuiz(){startQuiz();}async function moreQuiz(){await startQuiz();}
+</script>
+<script>window.requirePlan=function(p){if(p)window.TOMU_REQUIRED_PLAN=p;};requirePlan('light');</script>
+<script src="../../tomu-login.js"></script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>職務経歴書リライター | とむSYSTEM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Serif+Display&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #faf8f4;
+    --warm-white: #f5f0e8;
+    --gold: #b8933f;
+    --gold-light: #d4aa5a;
+    --gold-pale: #f5edd8;
+    --slate: #4a5568;
+    --slate-light: #718096;
+    --border: #e2d9c8;
+    --red-error: #c0392b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    background: var(--ink);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    color: var(--gold-light);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  /* ── ヒーロー ── */
+  .hero {
+    background: linear-gradient(135deg, var(--ink) 0%, #2d3561 100%);
+    padding: 56px 32px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 40px,
+      rgba(184,147,63,0.04) 40px,
+      rgba(184,147,63,0.04) 41px
+    );
+  }
+
+  .hero-badge {
+    display: inline-block;
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 4px 16px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .hero h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: #fff;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--gold-light);
+  }
+
+  .hero p {
+    color: #aaa;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── メイン ── */
+  main {
+    flex: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    width: 100%;
+  }
+
+  /* ── ステップラベル ── */
+  .step-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .step-num {
+    width: 24px;
+    height: 24px;
+    background: var(--ink);
+    color: var(--gold-light);
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .step-label span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--slate);
+    letter-spacing: 0.04em;
+  }
+
+  .section { margin-bottom: 28px; }
+
+  label.field-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--slate);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  textarea, input[type="text"], select {
+    width: 100%;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    transition: border-color .2s, box-shadow .2s;
+    resize: vertical;
+    line-height: 1.7;
+  }
+
+  textarea:focus, input[type="text"]:focus, select:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(184,147,63,0.12);
+  }
+
+  textarea { min-height: 160px; }
+  textarea.tall { min-height: 220px; }
+
+  .char-count {
+    text-align: right;
+    font-size: 0.72rem;
+    color: var(--slate-light);
+    margin-top: 4px;
+  }
+  .char-count.warn { color: var(--red-error); }
+
+  .options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--ink);
+    color: var(--gold-light);
+    border: none;
+    border-radius: 4px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: #2d3561;
+    transform: translateY(-1px);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .loading-area {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .loading-area.active { display: block; }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-area p {
+    font-size: 0.85rem;
+    color: var(--slate-light);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  #result-area {
+    display: none;
+    margin-top: 36px;
+    animation: fadeIn .4s ease;
+  }
+  #result-area.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .result-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result-title::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 2px;
+    background: var(--gold);
+  }
+
+  .action-btns { display: flex; gap: 8px; }
+
+  .action-btn {
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all .2s;
+  }
+
+  .btn-copy {
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--slate);
+  }
+  .btn-copy:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-copy.copied { border-color: #27ae60; color: #27ae60; }
+
+  .btn-retry {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--slate-light);
+  }
+  .btn-retry:hover { border-color: var(--slate); color: var(--slate); }
+
+  .result-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 24px 20px;
+    font-size: 0.88rem;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--ink);
+    max-height: 520px;
+    overflow-y: auto;
+    border-radius: 0 4px 4px 0;
+  }
+
+  #form-area { transition: opacity .2s; }
+  #form-area.hidden { display: none; }
+
+  .error-msg {
+    display: none;
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-left: 3px solid var(--red-error);
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.82rem;
+    color: var(--red-error);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .error-msg.active { display: block; }
+
+  .hint-box {
+    background: var(--gold-pale);
+    border: 1px solid #e8d5a3;
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 0.8rem;
+    color: #7a5c1e;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+  .hint-box strong { font-weight: 500; }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.72rem;
+    color: #bbb;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .options-row { grid-template-columns: 1fr; }
+    header { padding: 14px 20px; }
+    main { padding: 28px 16px 48px; }
+    .hero { padding: 40px 20px 36px; }
+  }
+
+/* ===== MYSTIC SECTION ===== */
+.mystic-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);}
+.btn-mystic{width:100%;background:linear-gradient(135deg,#1a0533,#0d1f3c);color:#d4af37;border:1px solid #d4af37;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;transition:opacity 0.2s,transform 0.1s;font-family:inherit;letter-spacing:0.05em;margin-top:8px;}
+.btn-mystic:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-mystic:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.mystic-result-card{margin-top:12px;background:linear-gradient(135deg,rgba(26,5,51,0.95),rgba(13,31,60,0.95));border:1px solid rgba(212,175,55,0.4);border-radius:8px;padding:18px 20px;color:#e8d5a3;font-size:0.88rem;line-height:1.9;white-space:pre-wrap;max-height:none;overflow:visible;}
+.mystic-result-label{font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;}
+</style>
+  <script src="/tomu-system/common/header.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#6c63ff">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script></head>
+<body>
+
+<header>
+  <a class="logo" href="https://tomu-ai963.github.io/tomu-system/">とむSYSTEM</a>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">STANDARD PLAN</div>
+  <h1>職務経歴書<em>リライター</em></h1>
+  <p>現在の職務経歴書をAIが分析し、採用担当者の目に留まる、説得力ある表現に書き直します。</p>
+</section>
+
+<main>
+  <div id="form-area">
+
+    <div class="hint-box">
+      <strong>💡 より良い結果のために：</strong>
+      職種・業界・応募先の雰囲気などを「補足情報」に書くと、ターゲットに合わせた表現になります。文字数は2000字程度まで対応しています。
+    </div>
+
+    <div class="section">
+      <div class="step-label">
+        <div class="step-num">1</div>
+        <span>現在の職務経歴書（または箇条書きメモ）</span>
+      </div>
+      <textarea id="input-resume" class="tall" placeholder="例）
+・2018年〜2023年 ○○株式会社 営業部
+・担当エリアの新規開拓、既存顧客のフォロー
+・年間売上目標120%達成
+・チームリーダーとして5名をマネジメント
+…
+
+箇条書きでも、既存の文章でもOKです。"></textarea>
+      <div class="char-count" id="resume-count">0 / 2000</div>
+    </div>
+
+    <div class="options-row">
+      <div>
+        <label class="field-label">応募する職種・ポジション</label>
+        <input type="text" id="input-target" placeholder="例）マーケティングマネージャー">
+      </div>
+      <div>
+        <label class="field-label">文章のトーン</label>
+        <select id="input-tone">
+          <option value="professional">プロフェッショナル・格調ある</option>
+          <option value="active">アクティブ・前向きな</option>
+          <option value="concise">簡潔・シャープな</option>
+          <option value="warm">誠実・温かみのある</option>
+          <option value="impact">インパクト重視・数字を強調</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="step-label">
+        <div class="step-num">2</div>
+        <span>補足情報（任意）</span>
+      </div>
+      <textarea id="input-memo" style="min-height:100px" placeholder="例）
+・IT系スタートアップへの転職を希望
+・マネジメント経験をとくに強調したい
+・英語ビジネスレベルもアピールしたい
+…"></textarea>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitResume()">
+      ✦ 職務経歴書を書き直す
+    </button>
+
+    <div id="error-msg" class="error-msg"></div>
+
+  </div>
+
+  <div class="loading-area" id="loading">
+    <div class="spinner"></div>
+    <p>AIが職務経歴書を分析・リライト中です…<br>少々お待ちください（10〜20秒）</p>
+  </div>
+
+  <div id="result-area">
+    <div class="result-header">
+      <div class="result-title">リライト結果</div>
+      <div class="action-btns">
+        <button class="action-btn btn-retry" onclick="resetForm()">← 書き直す</button>
+        <button class="action-btn btn-copy" id="copy-btn" onclick="copyResult()">コピー</button>
+      </div>
+    </div>
+    <div class="result-box" id="result-text"></div>
+    <!-- MYSTIC -->
+    <div class="mystic-section">
+      <button class="btn-mystic" style="margin-bottom:8px;" onclick="callMystic('career_reading',{concern:'キャリアアップを目指している'})">💼 キャリアリーディング</button>
+      <button class="btn-mystic" onclick="callMystic('soul_mission',{description:'職務経歴書をリライトした'})">✨ ソウルミッションを知る</button>
+      <div id="mystic-result"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>© 2025 とむSYSTEM — Powered by Claude AI</footer>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+
+<script>
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+const MAX_CHARS  = 2000;
+
+const resumeTA = document.getElementById('input-resume');
+const countEl  = document.getElementById('resume-count');
+resumeTA.addEventListener('input', () => {
+  const n = resumeTA.value.length;
+  countEl.textContent = `${n} / ${MAX_CHARS}`;
+  countEl.classList.toggle('warn', n > MAX_CHARS);
+});
+
+async function submitResume() {
+  const resumeText = resumeTA.value.trim();
+  const target     = document.getElementById('input-target').value.trim();
+  const tone       = document.getElementById('input-tone').value;
+  const memo       = document.getElementById('input-memo').value.trim();
+  const errEl      = document.getElementById('error-msg');
+
+  errEl.classList.remove('active');
+
+  if (!resumeText) {
+    errEl.textContent = '職務経歴書（またはメモ）を入力してください。';
+    errEl.classList.add('active'); return;
+  }
+  if (resumeText.length > MAX_CHARS) {
+    errEl.textContent = `文字数が上限（${MAX_CHARS}字）を超えています。`;
+    errEl.classList.add('active'); return;
+  }
+
+  const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+  if (!email) {
+    window.TomuAuth && window.TomuAuth.showOverlay();
+    return;
+  }
+
+  const toneMap = {
+    professional: 'プロフェッショナルで格調ある',
+    active:       'アクティブで前向きな',
+    concise:      '簡潔でシャープな',
+    warm:         '誠実で温かみのある',
+    impact:       '数字や成果を強調したインパクト重視の',
+  };
+
+  const systemPrompt = `あなたは採用のプロフェッショナルであり、一流のコピーライターです。
+ユーザーが提供する職務経歴書の原文・メモを、採用担当者に強い印象を与える洗練された職務経歴書にリライトしてください。
+
+【リライト方針】
+- トーン：${toneMap[tone]}文体
+${target ? `- ターゲット職種：${target}` : ''}
+${memo ? `- 補足情報：${memo}` : ''}
+
+【出力ルール】
+1. 各職歴を「会社名・期間 → 役割・職責 → 主な実績・成果」の流れで整理する
+2. 曖昧な表現を、採用担当者が評価しやすい具体的・数値的な表現に変換する
+3. 受け身表現（〜を担当しました）を能動的・成果型表現（〜を推進し、○○を達成）に変える
+4. 原文にない数字・事実は作らない。数値が不明な場合は定性的表現に留める
+5. 全体の構成を整え、読みやすい職務経歴書として出力する
+6. 最後に「【一言アドバイス】」として、この経歴の強みと改善提案を2〜3文で添える
+
+日本語で出力してください。`;
+
+  const userMessage = `【職務経歴書の原文・メモ】\n${resumeText}`;
+
+  document.getElementById('form-area').classList.add('hidden');
+  document.getElementById('result-area').classList.remove('active');
+  document.getElementById('loading').classList.add('active');
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const text = data.content?.[0]?.text || data.text || '';
+
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('result-text').textContent = text;
+    document.getElementById('result-area').classList.add('active');
+
+  } catch (e) {
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('form-area').classList.remove('hidden');
+    errEl.textContent = 'エラーが発生しました。もう一度お試しください。';
+    errEl.classList.add('active');
+  }
+}
+
+function resetForm() {
+  document.getElementById('result-area').classList.remove('active');
+  document.getElementById('form-area').classList.remove('hidden');
+  document.getElementById('error-msg').classList.remove('active');
+}
+
+async function copyResult() {
+  const text = document.getElementById('result-text').textContent;
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'コピー済み';
+  btn.classList.add('copied');
+  setTimeout(() => {
+    btn.textContent = 'コピー';
+    btn.classList.remove('copied');
+  }, 2000);
+}
+
+async function callMystic(tool, args) {
+  const MYSTIC_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic-bridge';
+  const btn = document.querySelector('.btn-mystic');
+  const wrap = document.getElementById('mystic-result');
+  btn.disabled = true;
+  btn.textContent = '✨ 星々に問いかけています…';
+  wrap.innerHTML = '<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC</div>星々があなたのために語ります...</div>';
+  try {
+    const res = await fetch(MYSTIC_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ tool: tool, arguments: args })
+    });
+    const data = await res.json();
+    const msg = (data.content && data.content[0] && data.content[0].text) || '占い結果を取得できませんでした。';
+    const safe = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    wrap.innerHTML = `<div class="mystic-result-card"><div class="mystic-result-label">✦ MYSTIC より</div>${safe}</div>`;
+  } catch(e) {
+    wrap.innerHTML = '<div class="mystic-result-card">⚠ 星々との通信が途絶えました。しばらくしてからお試しください。</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ MYSTICで占う';
+  }
+}
+</script>
+</body>
+</html>
