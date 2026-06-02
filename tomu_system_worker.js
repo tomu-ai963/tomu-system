@@ -1239,6 +1239,67 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
+  // POST /flyer-scan — チラシスキャナー（Standardプラン）
+  // =========================================================
+  if (url.pathname === "/flyer-scan") {
+    var fsEmail = request.headers.get("X-Customer-Email") || "";
+    var fsCheck = await checkPlanAndCount(fsEmail, "standard", env);
+    if (!fsCheck.ok) {
+      return jsonRes({ error: fsCheck.error, required: fsCheck.required, current: fsCheck.current, limit: fsCheck.limit }, fsCheck.status, corsH);
+    }
+
+    var fsImage = body.image;
+    var fsMediaType = body.media_type || "image/jpeg";
+    var fsMode = body.mode || "full";
+
+    if (!fsImage) return jsonRes({ error: "image は必須です" }, 400, corsH);
+
+    var FLYER_PROMPTS = {
+      full: "このチラシ画像から以下の情報を抽出して日本語で答えてください：\n\n1. 📅 日付・期間\n2. 🏪 店舗名・場所\n3. 🛒 目玉商品・特売内容（上位5点）\n4. 🍽️ このチラシの特売品を使ったおすすめ献立を1つ提案してください（材料と簡単な作り方も）\n\n情報が読み取れない場合はその旨を教えてください。",
+      menu: "このチラシの特売品を使ったおすすめ献立を2〜3つ提案してください。\n材料と簡単な作り方も含めて日本語で答えてください。",
+      items: "このチラシ画像から特売品・目玉商品を抽出してください。\n商品名、価格（分かれば）、セール情報を箇条書きで日本語で答えてください。",
+    };
+
+    var fsPrompt = FLYER_PROMPTS[fsMode] || FLYER_PROMPTS.full;
+
+    try {
+      var fsApiRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1024,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: { type: "base64", media_type: fsMediaType, data: fsImage },
+                },
+                { type: "text", text: fsPrompt },
+              ],
+            },
+          ],
+        }),
+      });
+      if (!fsApiRes.ok) {
+        var fsErr = await fsApiRes.json().catch(function() { return {}; });
+        return jsonRes({ error: (fsErr.error && fsErr.error.message) || ("Anthropic API error: " + fsApiRes.status) }, 502, corsH);
+      }
+      var fsData = await fsApiRes.json();
+      var fsResult = (fsData.content || []).map(function(b) { return b.text || ""; }).join("");
+      return jsonRes({ result: fsResult }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error: " + err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
   // POST /api/chat — Standard/Full アプリ用
   // =========================================================
   if (url.pathname === "/api/chat") {

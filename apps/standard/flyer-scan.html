@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>チラシスキャナー | とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222222;
+    --gold: #c9a84c;
+    --gold-dim: rgba(201,168,76,0.15);
+    --text: #e8e8e8;
+    --text-dim: #666;
+    --green: #4caf7d;
+    --red: #e05555;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px 40px;
+  }
+
+  .top-spacer { height: 20px; }
+
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+    padding-top: 20px;
+  }
+
+  .logo-mark {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+  }
+
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(1.2rem, 5vw, 1.8rem);
+    color: var(--gold);
+    letter-spacing: 0.08em;
+  }
+
+  .subtitle {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .plan-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 3px 10px;
+    border: 1px solid var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 560px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .upload-zone {
+    border: 1px dashed var(--gold);
+    border-radius: 2px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover { background: var(--gold-dim); }
+
+  .upload-zone input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 2.4rem; margin-bottom: 12px; }
+
+  .upload-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .upload-label span { color: var(--gold); }
+
+  #preview-wrap {
+    display: none;
+    margin-top: 20px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #preview-wrap img {
+    width: 100%;
+    display: block;
+    max-height: 320px;
+    object-fit: contain;
+    background: #000;
+  }
+
+  .preview-label {
+    padding: 8px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+
+  .mode-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .mode-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  .scan-btn {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    border-radius: 2px;
+  }
+
+  .scan-btn:hover:not(:disabled) {
+    background: var(--gold);
+    color: #000;
+  }
+
+  .scan-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #loading {
+    display: none;
+    text-align: center;
+    padding: 32px 0;
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  #result-card {
+    display: none;
+    width: 100%;
+    max-width: 560px;
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .result-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .result-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .result-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+  }
+
+  .result-body {
+    padding: 20px 24px;
+    font-size: 0.88rem;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    color: var(--text);
+  }
+
+  .error-msg {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--red);
+    border-radius: 2px;
+    font-size: 0.8rem;
+    color: var(--red);
+  }
+
+  footer {
+    margin-top: 40px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="/tomu-system/tomu-login.js"></script>
+
+<div class="top-spacer"></div>
+
+<header>
+  <svg class="logo-mark" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="20" height="20" stroke="#c9a84c" stroke-width="1.5"/>
+    <rect x="32" y="4" width="20" height="20" stroke="#c9a84c" stroke-width="1.5" opacity="0.5"/>
+    <rect x="4" y="32" width="20" height="20" stroke="#c9a84c" stroke-width="1.5" opacity="0.5"/>
+    <rect x="32" y="32" width="20" height="20" stroke="#c9a84c" stroke-width="1.5" opacity="0.3"/>
+    <line x1="0" y1="28" x2="56" y2="28" stroke="#c9a84c" stroke-width="1" opacity="0.6">
+      <animateTransform attributeName="transform" type="translate" values="0,-24;0,24;0,-24" dur="2.5s" repeatCount="indefinite"/>
+    </line>
+  </svg>
+  <h1>AI FLYER SCANNER</h1>
+  <p class="subtitle">チラシ → 献立提案 / 情報抽出</p>
+  <span class="plan-badge">STANDARD</span>
+</header>
+
+<div class="card">
+  <div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*">
+    <div class="upload-icon">📋</div>
+    <p class="upload-label">
+      チラシ画像を選択<br>
+      <span>タップしてアップロード</span>
+    </p>
+  </div>
+
+  <div id="preview-wrap">
+    <img id="preview-img" src="" alt="プレビュー">
+    <p class="preview-label" id="preview-label">—</p>
+  </div>
+
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="full">📋 全情報＋献立</button>
+    <button class="mode-btn" data-mode="menu">🍽️ 献立のみ</button>
+    <button class="mode-btn" data-mode="items">🛒 特売品のみ</button>
+  </div>
+
+  <button class="scan-btn" id="scan-btn" disabled>SCAN &amp; ANALYZE</button>
+
+  <p class="error-msg" id="error-msg"></p>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p class="loading-text">AI SCANNING...</p>
+  </div>
+</div>
+
+<div id="result-card">
+  <div class="result-header">
+    <div class="result-dot"></div>
+    <span class="result-title">SCAN RESULT</span>
+  </div>
+  <div class="result-body" id="result-body"></div>
+</div>
+
+<footer>とむSYSTEM — AI FLYER SCANNER v2.0</footer>
+
+<script>
+  const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/flyer-scan';
+
+  const fileInput    = document.getElementById('file-input');
+  const previewWrap  = document.getElementById('preview-wrap');
+  const previewImg   = document.getElementById('preview-img');
+  const previewLabel = document.getElementById('preview-label');
+  const scanBtn      = document.getElementById('scan-btn');
+  const loading      = document.getElementById('loading');
+  const resultCard   = document.getElementById('result-card');
+  const resultBody   = document.getElementById('result-body');
+  const errorMsg     = document.getElementById('error-msg');
+  const modeBtns     = document.querySelectorAll('.mode-btn');
+
+  let base64Image = null;
+  let mediaType   = 'image/jpeg';
+  let currentMode = 'full';
+
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMode = btn.dataset.mode;
+    });
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    mediaType = file.type || 'image/jpeg';
+    previewLabel.textContent = file.name + ' — ' + (file.size / 1024).toFixed(1) + ' KB';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      previewImg.src = ev.target.result;
+      previewWrap.style.display = 'block';
+      base64Image = ev.target.result.split(',')[1];
+      scanBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  scanBtn.addEventListener('click', async () => {
+    if (!base64Image) { showError('チラシ画像を選択してください。'); return; }
+
+    const email = window.TomuAuth?.getEmail();
+    if (!email) { window.TomuAuth?.showOverlay(); return; }
+
+    scanBtn.disabled = true;
+    loading.style.display = 'block';
+    resultCard.style.display = 'none';
+    errorMsg.style.display = 'none';
+
+    try {
+      const response = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Customer-Email': email,
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          media_type: mediaType,
+          mode: currentMode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error === 'login_required' || data.error === 'subscription_required' || data.error === 'plan_upgrade_required') {
+        window.TomuAuth?.showOverlay();
+        return;
+      }
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `サーバーエラー: ${response.status}`);
+      }
+
+      resultBody.textContent = data.result || '結果を取得できませんでした。';
+      resultCard.style.display = 'block';
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+      showError('エラー: ' + err.message);
+    } finally {
+      loading.style.display = 'none';
+      scanBtn.disabled = false;
+    }
+  });
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+    loading.style.display = 'none';
+    scanBtn.disabled = false;
+  }
+</script>
+</body>
+</html>
