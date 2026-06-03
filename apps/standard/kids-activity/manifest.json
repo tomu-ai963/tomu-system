@@ -8,9 +8,14 @@
   "description": "とむSYSTEM - Kids Activity",
   "icons": [
     {
-      "src": "/common/icons/icon-standard.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/common/icons/icon-standard-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/common/icons/icon-standard-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
