@@ -3,20 +3,14 @@
   <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
 
   <!-- Gold symbols arranged in a circle (r=52 from center 96,96) -->
-  <!-- + signs at cardinal positions (縦長: radial arm longer than transverse) -->
+  <!-- + signs at top and bottom -->
   <g stroke="#C9973A" stroke-width="3.5" stroke-linecap="round" fill="none">
     <!-- + top (96, 44) -->
     <line x1="96" y1="33" x2="96" y2="55"/>
     <line x1="88" y1="44" x2="104" y2="44"/>
-    <!-- + right (148, 96) -->
-    <line x1="137" y1="96" x2="159" y2="96"/>
-    <line x1="148" y1="88" x2="148" y2="104"/>
     <!-- + bottom (96, 148) -->
     <line x1="96" y1="137" x2="96" y2="159"/>
     <line x1="88" y1="148" x2="104" y2="148"/>
-    <!-- + left (44, 96) -->
-    <line x1="33" y1="96" x2="55" y2="96"/>
-    <line x1="44" y1="88" x2="44" y2="104"/>
   </g>
 
   <!-- × signs at diagonal positions (45° rotated cross) -->
