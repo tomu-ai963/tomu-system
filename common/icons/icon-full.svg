@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
+  <!-- Crown main shape -->
+  <polygon points="26,148 26,68 60,100 96,36 132,100 166,68 166,148" fill="#f0c040"/>
+  <!-- Base band -->
+  <rect x="26" y="136" width="140" height="18" rx="3" fill="#d4a820"/>
+  <!-- Crown top circles -->
+  <circle cx="26" cy="68" r="9" fill="#f0c040"/>
+  <circle cx="166" cy="68" r="9" fill="#f0c040"/>
+  <circle cx="96" cy="36" r="11" fill="#f0c040"/>
+  <!-- Center jewel -->
+  <circle cx="96" cy="110" r="12" fill="#6c63ff"/>
+  <circle cx="96" cy="110" r="6" fill="#9b96ff" opacity="0.7"/>
+  <!-- Side jewels -->
+  <circle cx="58" cy="118" r="8" fill="#6c63ff" opacity="0.8"/>
+  <circle cx="134" cy="118" r="8" fill="#6c63ff" opacity="0.8"/>
+</svg>

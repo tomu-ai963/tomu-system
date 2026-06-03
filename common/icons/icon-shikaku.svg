@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
+  <!-- Left page -->
+  <rect x="22" y="44" width="76" height="104" rx="6" fill="#f0c040" opacity="0.9"/>
+  <!-- Right page -->
+  <rect x="94" y="44" width="76" height="104" rx="6" fill="#f0c040"/>
+  <!-- Spine -->
+  <rect x="86" y="40" width="20" height="112" rx="4" fill="#d4a820"/>
+  <!-- Text lines left page -->
+  <line x1="34" y1="68" x2="86" y2="68" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="34" y1="82" x2="86" y2="82" stroke="#1a1a2e" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <line x1="34" y1="96" x2="86" y2="96" stroke="#1a1a2e" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+  <!-- Text lines right page -->
+  <line x1="106" y1="68" x2="158" y2="68" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="106" y1="82" x2="158" y2="82" stroke="#1a1a2e" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <line x1="106" y1="96" x2="158" y2="96" stroke="#1a1a2e" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+  <!-- Check mark (合格) on right page -->
+  <polyline points="112,122 124,136 152,110" stroke="#1a1a2e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/>
+</svg>

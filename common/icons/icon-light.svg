@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
+  <!-- Bulb body -->
+  <circle cx="96" cy="82" r="50" fill="#f0c040"/>
+  <!-- Base sections -->
+  <rect x="72" y="126" width="48" height="10" rx="2" fill="#f0c040"/>
+  <rect x="76" y="138" width="40" height="10" rx="2" fill="#d4a820"/>
+  <rect x="81" y="150" width="30" height="10" rx="5" fill="#b88c10"/>
+  <!-- Neck connector -->
+  <rect x="72" y="120" width="48" height="8" fill="#1a1a2e" opacity="0.2"/>
+  <!-- Inner shine -->
+  <ellipse cx="82" cy="68" rx="13" ry="18" fill="white" opacity="0.22"/>
+</svg>
