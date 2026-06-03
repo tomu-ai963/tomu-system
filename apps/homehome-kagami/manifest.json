@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Homehome Kagami",
   "short_name": "Homehome Kagami",
   "start_url": ".",
@@ -8,12 +8,12 @@
   "description": "とむSYSTEM - Homehome Kagami",
   "icons": [
     {
-      "src": "/common/icons/icon-light-192.png",
+      "src": "/tomu-system/common/icons/icon-light-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/common/icons/icon-light-512.png",
+      "src": "/tomu-system/common/icons/icon-light-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

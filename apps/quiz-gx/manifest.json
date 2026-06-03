@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Quiz Gx",
   "short_name": "Quiz Gx",
   "start_url": ".",
@@ -8,12 +8,12 @@
   "description": "とむSYSTEM - Quiz Gx",
   "icons": [
     {
-      "src": "/common/icons/icon-shikaku-192.png",
+      "src": "/tomu-system/common/icons/icon-shikaku-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/common/icons/icon-shikaku-512.png",
+      "src": "/tomu-system/common/icons/icon-shikaku-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

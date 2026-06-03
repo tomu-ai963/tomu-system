@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Quiz Sekaiisan",
   "short_name": "Quiz Sekaiisan",
   "start_url": ".",
@@ -8,12 +8,12 @@
   "description": "とむSYSTEM - Quiz Sekaiisan",
   "icons": [
     {
-      "src": "/common/icons/icon-shikaku-192.png",
+      "src": "/tomu-system/common/icons/icon-shikaku-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/common/icons/icon-shikaku-512.png",
+      "src": "/tomu-system/common/icons/icon-shikaku-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
