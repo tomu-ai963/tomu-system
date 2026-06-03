@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Agent | とむSYSTEM</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #08090a;
+            --surface: #0f1012;
+            --border: #1e2025;
+            --gold: #c9a84c;
+            --gold-dim: rgba(201,168,76,0.15);
+            --gold-glow: rgba(201,168,76,0.35);
+            --text: #d8d4cc;
+            --muted: #6b6860;
+            --accent: #e8c97a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 300;
+            min-height: 100vh;
+            padding: 24px 16px 48px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-top: 8px;
+        }
+
+        .logo-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .logo-bar {
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold));
+        }
+        .logo-bar.right {
+            background: linear-gradient(90deg, var(--gold), transparent);
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 14px;
+        }
+
+        .card-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.25em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Field groups */
+        .field { margin-bottom: 14px; }
+
+        .field label {
+            display: block;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: #0a0b0c;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 300;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--gold);
+        }
+        textarea { resize: vertical; min-height: 80px; }
+
+        /* Tag grid */
+        .tag-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .tag {
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.72rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .tag.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: var(--gold-dim);
+        }
+
+        /* Execute button */
+        #exec-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            color: var(--gold);
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        #exec-btn:hover:not(:disabled) {
+            background: var(--gold-dim);
+            box-shadow: 0 0 20px var(--gold-glow);
+        }
+        #exec-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 0;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Results */
+        #result-wrap { display: none; }
+
+        .result-tab-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+        .rtab {
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.68rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .rtab.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: var(--gold-dim);
+        }
+
+        .result-panel { display: none; }
+        .result-panel.active { display: block; }
+
+        .idea-item {
+            border-left: 2px solid var(--gold);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: #0a0b0c;
+            border-radius: 0 6px 6px 0;
+            position: relative;
+        }
+
+        .idea-num {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.55rem;
+            letter-spacing: 0.15em;
+            color: var(--gold);
+            margin-bottom: 4px;
+        }
+
+        .idea-text {
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--text);
+        }
+
+        .idea-copy {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: none;
+            color: var(--muted);
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Syne', sans-serif;
+            letter-spacing: 0.1em;
+        }
+        .idea-copy:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .idea-copy.copied {
+            color: #6bcc8a;
+            border-color: #6bcc8a;
+        }
+
+        .copy-all-btn {
+            width: 100%;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--muted);
+            font-family: 'Syne', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 4px;
+        }
+        .copy-all-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Error */
+        .error-box {
+            border: 1px solid #8b3333;
+            border-radius: 6px;
+            padding: 14px;
+            color: #e07070;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-line">
+        <div class="logo-bar"></div>
+        <h1>Marketing Agent</h1>
+        <div class="logo-bar right"></div>
+    </div>
+    <div class="sub">AI-Powered Strategy Generator</div>
+</header>
+
+<!-- Input card -->
+<div class="card">
+    <div class="card-label">Input</div>
+
+    <div class="field">
+        <label>商品 / サービス / テーマ</label>
+        <textarea id="topic" placeholder="例：フリーランス向けのAI業務効率化アプリ"></textarea>
+    </div>
+
+    <div class="field">
+        <label>ターゲット層</label>
+        <input type="text" id="target" placeholder="例：30代 フリーランス・副業志向">
+    </div>
+
+    <div class="field">
+        <label>発信媒体（複数選択可）</label>
+        <div class="tag-grid" id="media-tags">
+            <div class="tag active" data-val="X（旧Twitter）">X</div>
+            <div class="tag" data-val="Instagram">Instagram</div>
+            <div class="tag" data-val="note">note</div>
+            <div class="tag" data-val="YouTube">YouTube</div>
+            <div class="tag" data-val="LP・Webサイト">LP</div>
+            <div class="tag" data-val="メールマガジン">メルマガ</div>
+            <div class="tag" data-val="TikTok">TikTok</div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label>戦略の方向性</label>
+        <div class="tag-grid" id="strategy-tags">
+            <div class="tag active" data-val="認知拡大">認知拡大</div>
+            <div class="tag" data-val="見込み客獲得">リード獲得</div>
+            <div class="tag" data-val="購買・申し込み促進">コンバージョン</div>
+            <div class="tag" data-val="ファンコミュニティ育成">ファン化</div>
+            <div class="tag" data-val="リピーター獲得">リピート</div>
+        </div>
+    </div>
+</div>
+
+<button id="exec-btn" onclick="execute()">⚡ Analyze &amp; Generate</button>
+
+<!-- Results -->
+<div id="result-wrap">
+    <div class="card" style="margin-top:14px;">
+        <div class="card-label">Output</div>
+        <div class="result-tab-bar" id="tab-bar"></div>
+        <div id="panels"></div>
+    </div>
+</div>
+
+<div id="loading-wrap" style="display:none;">
+    <div class="card" style="margin-top:14px;">
+        <div class="loading-row">
+            <div class="spinner"></div>
+            <span id="loading-msg">AIが分析中です...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== Tag toggle =====
+document.querySelectorAll('.tag-grid').forEach(grid => {
+    grid.querySelectorAll('.tag').forEach(tag => {
+        tag.addEventListener('click', () => tag.classList.toggle('active'));
+    });
+});
+
+function getActiveTags(gridId) {
+    return [...document.querySelectorAll(`#${gridId} .tag.active`)]
+        .map(t => t.dataset.val);
+}
+
+// ===== Worker設定 =====
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+
+// ===== Main =====
+async function execute() {
+    const topic = document.getElementById('topic').value.trim();
+    const target = document.getElementById('target').value.trim();
+    const media = getActiveTags('media-tags');
+    const strategy = getActiveTags('strategy-tags');
+
+    if (!topic) { alert('テーマを入力してください'); return; }
+
+    const btn = document.getElementById('exec-btn');
+    btn.disabled = true;
+    document.getElementById('loading-wrap').style.display = 'block';
+    document.getElementById('result-wrap').style.display = 'none';
+
+    const loadingMsgs = [
+        'ターゲットを分析中...',
+        '戦略フレームを構築中...',
+        'コピー案を生成中...',
+        '仕上げ中...'
+    ];
+    let li = 0;
+    const lTimer = setInterval(() => {
+        document.getElementById('loading-msg').textContent = loadingMsgs[li % loadingMsgs.length];
+        li++;
+    }, 1800);
+
+    const { system, userContent } = buildPayload(topic, target, media, strategy);
+
+    try {
+        const text = await callWorker(system, userContent);
+        clearInterval(lTimer);
+        document.getElementById('loading-wrap').style.display = 'none';
+        renderResults(text, media, strategy);
+    } catch(e) {
+        clearInterval(lTimer);
+        document.getElementById('loading-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display = 'block';
+        document.getElementById('panels').innerHTML = `<div class="error-box">⚠ エラーが発生しました：${escHtml(e.message)}</div>`;
+        document.getElementById('tab-bar').innerHTML = '';
+    }
+    btn.disabled = false;
+}
+
+function buildPayload(topic, target, media, strategy) {
+    const mediaStr = media.length ? media.join('、') : '指定なし';
+    const stratStr = strategy.length ? strategy.join('、') : '指定なし';
+    const targetStr = target || '一般向け';
+
+    const system = 'あなたは優秀なマーケティングストラテジストです。依頼された情報をもとに、実践的なマーケティング戦略を日本語で生成してください。';
+
+    const userContent =
+`以下の情報をもとに、実践的なマーケティング戦略を生成してください。
+
+【商品・サービス・テーマ】
+${topic}
+
+【ターゲット層】
+${targetStr}
+
+【発信媒体】
+${mediaStr}
+
+【戦略方向性】
+${stratStr}
+
+以下の3セクションを、それぞれ「## セクション名」の見出しで出力してください。
+
+## キャッチコピー案
+ターゲットに刺さる、簡潔で印象的なキャッチコピーを5案。
+各案を「- 」で始めてください。
+
+## コンテンツアイデア
+指定媒体に合わせた具体的な投稿・コンテンツアイデアを5案。
+各案を「- 」で始め、媒体名と内容を含めてください。
+
+## 訴求ポイント
+この商品・サービスの強みと、ターゲットへの刺さるメッセージを5点。
+各案を「- 」で始めてください。`;
+
+    return { system, userContent };
+}
+
+async function callWorker(system, userContent) {
+    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+    const res = await fetch(`${WORKER_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            system,
+            messages: [{ role: 'user', content: userContent }],
+            email,
+            max_tokens: 1500
+        })
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data.content?.[0]?.text || data.text || '';
+}
+
+// ===== Render =====
+const SECTION_LABELS = {
+    'キャッチコピー案':  'コピー',
+    'コンテンツアイデア': 'アイデア',
+    '訴求ポイント':       '訴求'
+};
+
+function parseSection(text) {
+    const sections = {};
+    const parts = text.split(/^##\s+/m).filter(Boolean);
+    parts.forEach(part => {
+        const lines = part.trim().split('\n');
+        const heading = lines[0].trim();
+        const items = lines.slice(1)
+            .filter(l => l.trim().startsWith('-'))
+            .map(l => l.replace(/^-\s*/, '').trim())
+            .filter(Boolean);
+        if (items.length) sections[heading] = items;
+    });
+    return sections;
+}
+
+function renderResults(rawText, media, strategy) {
+    const sections = parseSection(rawText);
+    const tabBar = document.getElementById('tab-bar');
+    const panels = document.getElementById('panels');
+    tabBar.innerHTML = '';
+    panels.innerHTML = '';
+
+    const keys = Object.keys(sections);
+    if (!keys.length) {
+        panels.innerHTML = `<div class="error-box">レスポンスの解析に失敗しました。再度お試しください。</div>`;
+        document.getElementById('result-wrap').style.display = 'block';
+        return;
+    }
+
+    keys.forEach((key, i) => {
+        const label = SECTION_LABELS[key] || key;
+        const tab = document.createElement('div');
+        tab.className = 'rtab' + (i === 0 ? ' active' : '');
+        tab.textContent = label;
+        tab.addEventListener('click', () => switchTab(i, keys.length));
+        tabBar.appendChild(tab);
+
+        const panel = document.createElement('div');
+        panel.className = 'result-panel' + (i === 0 ? ' active' : '');
+        panel.id = `panel-${i}`;
+
+        sections[key].forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = 'idea-item';
+            div.innerHTML = `
+                <div class="idea-num">0${idx + 1}</div>
+                <div class="idea-text">${escHtml(item)}</div>
+                <button class="idea-copy" onclick="copyItem(this, ${JSON.stringify(item)})">COPY</button>
+            `;
+            panel.appendChild(div);
+        });
+
+        const allItems = sections[key];
+        const copyAll = document.createElement('button');
+        copyAll.className = 'copy-all-btn';
+        copyAll.textContent = 'すべてコピー';
+        copyAll.addEventListener('click', () => {
+            const txt = allItems.map((t, i) => `${i+1}. ${t}`).join('\n');
+            navigator.clipboard.writeText(txt).then(() => {
+                copyAll.textContent = 'コピーしました ✓';
+                setTimeout(() => { copyAll.textContent = 'すべてコピー'; }, 2000);
+            });
+        });
+        panel.appendChild(copyAll);
+
+        panels.appendChild(panel);
+    });
+
+    document.getElementById('result-wrap').style.display = 'block';
+}
+
+function switchTab(idx, total) {
+    document.querySelectorAll('.rtab').forEach((t, i) => t.classList.toggle('active', i === idx));
+    document.querySelectorAll('.result-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+function copyItem(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+    });
+}
+
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+}
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+</body>
+</html>
