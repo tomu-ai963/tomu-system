@@ -1,5 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- Background: dark navy, rounded square -->
   <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
-  <polygon points="96,22 113,72 165,73 124,104 139,154 96,124 53,154 68,104 27,73 79,72" fill="#f0c040"/>
-  <text x="96" y="110" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="54" font-weight="900" fill="#1a1a2e">T</text>
+
+  <!-- Gold symbols arranged in a circle (r=52 from center 96,96) -->
+  <!-- + signs at cardinal positions (縦長: radial arm longer than transverse) -->
+  <g stroke="#C9973A" stroke-width="3.5" stroke-linecap="round" fill="none">
+    <!-- + top (96, 44) -->
+    <line x1="96" y1="33" x2="96" y2="55"/>
+    <line x1="88" y1="44" x2="104" y2="44"/>
+    <!-- + right (148, 96) -->
+    <line x1="137" y1="96" x2="159" y2="96"/>
+    <line x1="148" y1="88" x2="148" y2="104"/>
+    <!-- + bottom (96, 148) -->
+    <line x1="96" y1="137" x2="96" y2="159"/>
+    <line x1="88" y1="148" x2="104" y2="148"/>
+    <!-- + left (44, 96) -->
+    <line x1="33" y1="96" x2="55" y2="96"/>
+    <line x1="44" y1="88" x2="44" y2="104"/>
+  </g>
+
+  <!-- × signs at diagonal positions (45° rotated cross) -->
+  <g stroke="#C9973A" stroke-width="3.5" stroke-linecap="round" fill="none">
+    <!-- × top-right (133, 59) -->
+    <line x1="125" y1="51" x2="141" y2="67"/>
+    <line x1="141" y1="51" x2="125" y2="67"/>
+    <!-- × bottom-right (133, 133) -->
+    <line x1="125" y1="125" x2="141" y2="141"/>
+    <line x1="141" y1="125" x2="125" y2="141"/>
+    <!-- × bottom-left (59, 133) -->
+    <line x1="51" y1="125" x2="67" y2="141"/>
+    <line x1="67" y1="125" x2="51" y2="141"/>
+    <!-- × top-left (59, 59) -->
+    <line x1="51" y1="51" x2="67" y2="67"/>
+    <line x1="67" y1="51" x2="51" y2="67"/>
+  </g>
+
+  <!-- Center text: とむ (light gold) -->
+  <text
+    x="96" y="96"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="'Noto Sans JP', 'Yu Gothic', 'Hiragino Kaku Gothic Pro', 'Meiryo', 'MS PGothic', sans-serif"
+    font-size="44"
+    font-weight="700"
+    fill="#E8D5A0"
+  >とむ</text>
 </svg>
