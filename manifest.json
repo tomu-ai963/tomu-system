@@ -1,0 +1,13 @@
+{
+  "name": "とむSYSTEM",
+  "short_name": "とむSYSTEM",
+  "start_url": "/tomu-system/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#6c63ff",
+  "description": "毎日をちょっと賢くする、AIアプリ集",
+  "icons": [
+    { "src": "/tomu-system/common/icons/icon-tomu-system-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/tomu-system/common/icons/icon-tomu-system-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
