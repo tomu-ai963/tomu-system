@@ -129,6 +129,283 @@ function jsonRes(data, status, corsH) {
   });
 }
 
+function htmlRes(html) {
+  return new Response(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+var LEGAL_NAV_LOGO = `<nav>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-logo">とむ<span>SYSTEM</span></a>
+</nav>`;
+
+var LEGAL_STYLE = `<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f7f3ee;
+  --warm: #f0e8dc;
+  --accent: #b87333;
+  --accent2: #7a9e7e;
+  --muted: #8a7e72;
+  --border: #ddd5c8;
+  --surface: #ffffff;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  line-height: 1.8;
+  min-height: 100vh;
+}
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(247,243,238,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+@media(max-width:640px){ nav { padding: 16px 20px; } }
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 120px 1.5rem 5rem;
+}
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.06em;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--accent);
+}
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  margin: 2.5rem 0 0.75rem;
+}
+p { margin-bottom: 1rem; font-size: 0.875rem; }
+ul { margin: 0.5rem 0 1rem 1.4rem; font-size: 0.875rem; }
+ul li { padding: 0.15rem 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 3rem;
+  font-size: 0.875rem;
+}
+th, td {
+  padding: 1rem 1.2rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th {
+  width: 34%;
+  background: var(--warm);
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+td { background: var(--surface); }
+.price-list { margin: 0; padding: 0; list-style: none; }
+.price-list li { padding: 0.25rem 0; display: flex; align-items: baseline; gap: 0.6rem; }
+.price-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--paper);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.back-link:hover { border-color: var(--accent); }
+.effective-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+}
+footer {
+  background: var(--ink);
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding: 40px 48px;
+  text-align: center;
+}
+.footer-copy {
+  font-size: 0.65rem;
+  color: rgba(247,243,238,.25);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+@media(max-width:640px){
+  main { padding-top: 90px; }
+  footer { padding: 32px 20px; }
+  th { width: 40%; }
+}
+</style>`;
+
+var LEGAL_HEAD_LINKS = `<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet"/>`;
+
+var TOKUSHOHO_HTML = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>特定商取引法に基づく表記 — とむSYSTEM</title>
+${LEGAL_HEAD_LINKS}
+${LEGAL_STYLE}
+</head>
+<body>
+${LEGAL_NAV_LOGO}
+<main>
+  <h1>特定商取引法に基づく表記</h1>
+  <table>
+    <tr>
+      <th>運営者・運営責任者</th>
+      <td>藤山　博史</td>
+    </tr>
+    <tr>
+      <th>所在地・電話番号</th>
+      <td>請求があった場合には速やかに開示いたします</td>
+    </tr>
+    <tr>
+      <th>メールアドレス</th>
+      <td>Inverted.triangle.leef@gmail.com</td>
+    </tr>
+    <tr>
+      <th>販売価格</th>
+      <td>
+        <ul class="price-list">
+          <li><span class="price-badge">ライト</span>月額 480円（税込）</li>
+          <li><span class="price-badge">スタンダード</span>月額 980円（税込）</li>
+          <li><span class="price-badge">フル</span>月額 1,480円（税込）</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <th>支払方法</th>
+      <td>クレジットカード（Stripe決済）</td>
+    </tr>
+    <tr>
+      <th>サービス提供時期</th>
+      <td>決済完了後即時</td>
+    </tr>
+    <tr>
+      <th>返金・キャンセル</th>
+      <td>月途中のキャンセルによる返金は行いません</td>
+    </tr>
+  </table>
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="back-link">← トップページに戻る</a>
+</main>
+<footer>
+  <div class="footer-copy">© 2026 とむSYSTEM. All rights reserved.</div>
+</footer>
+</body>
+</html>`;
+
+var PRIVACY_HTML = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>プライバシーポリシー — とむSYSTEM</title>
+${LEGAL_HEAD_LINKS}
+${LEGAL_STYLE}
+</head>
+<body>
+${LEGAL_NAV_LOGO}
+<main>
+  <h1>プライバシーポリシー</h1>
+  <p class="effective-date">制定日：2026年1月1日</p>
+
+  <p>とむSYSTEM（以下「本サービス」）は、ユーザーの個人情報の取り扱いについて以下のとおり定めます。</p>
+
+  <h2>1. 収集する個人情報</h2>
+  <p>本サービスは、以下の情報を収集する場合があります。</p>
+  <ul>
+    <li>メールアドレス（ログイン・サブスクリプション管理・お問い合わせ時）</li>
+    <li>決済関連情報（Stripe社を通じた処理。カード番号等はStripe社が管理し、本サービスは保持しません）</li>
+    <li>サービス利用状況（AI機能の利用回数・プラン情報）</li>
+  </ul>
+
+  <h2>2. 利用目的</h2>
+  <p>収集した個人情報は、以下の目的で利用します。</p>
+  <ul>
+    <li>本サービスの提供・運営・改善</li>
+    <li>サブスクリプションプランの管理</li>
+    <li>利用制限・不正利用の検知</li>
+    <li>お問い合わせへの対応</li>
+    <li>重要なお知らせの送信</li>
+  </ul>
+
+  <h2>3. 第三者への提供</h2>
+  <p>本サービスは、以下の場合を除き、個人情報を第三者に提供しません。</p>
+  <ul>
+    <li>法令に基づき開示が必要な場合</li>
+    <li>ユーザーの同意がある場合</li>
+  </ul>
+  <p>なお、本サービスは以下の外部サービスを利用しています。</p>
+  <ul>
+    <li>Stripe, Inc.（決済処理）</li>
+    <li>Anthropic, PBC（AI機能）</li>
+    <li>Cloudflare, Inc.（インフラ・ホスティング）</li>
+    <li>Google LLC（フォント配信）</li>
+  </ul>
+
+  <h2>4. Cookie・アクセス解析</h2>
+  <p>本サービスのページはGoogleフォント等のCDNを利用しており、これらのサービスがCookieを設定する場合があります。本サービス独自のアクセス解析ツールは現時点では導入していません。</p>
+
+  <h2>5. 個人情報の管理</h2>
+  <p>収集した個人情報は、Cloudflare Workers KVにて管理し、適切なアクセス制御を実施しています。サービス退会後、不要となった情報は速やかに削除します。</p>
+
+  <h2>6. ポリシーの変更</h2>
+  <p>本ポリシーの内容は、法令の改正やサービス変更に応じて予告なく変更する場合があります。変更後の内容は、本ページに掲載した時点から効力を生じます。</p>
+
+  <h2>7. お問い合わせ</h2>
+  <p>個人情報の取り扱いに関するお問い合わせは、下記メールアドレスまでご連絡ください。</p>
+  <p>Inverted.triangle.leef@gmail.com</p>
+
+  <a href="https://tomu-ai963.github.io/tomu-system/" class="back-link" style="margin-top:2rem;">← トップページに戻る</a>
+</main>
+<footer>
+  <div class="footer-copy">© 2026 とむSYSTEM. All rights reserved.</div>
+</footer>
+</body>
+</html>`;
+
 // ===== Google Calendar OAuth2 =====
 async function getGoogleAccessToken(env) {
   var refreshToken = await env.SUBSCRIPTIONS.get("GOOGLE_REFRESH_TOKEN");
@@ -552,6 +829,24 @@ async function handleRequest(request, env) {
     }
   }
 
+  // =========================================================
+  // GET /api/vision-board/image — R2から画像を返す（公開URLなしでWorker経由配信）
+  // =========================================================
+  if (url.pathname === "/api/vision-board/image" && request.method === "GET") {
+    if (!env.VISION_R2) return new Response("R2 not configured", { status: 503, headers: corsH });
+    var vbImgKey = url.searchParams.get("key");
+    if (!vbImgKey) return new Response("key required", { status: 400, headers: corsH });
+    var vbImgObj = await env.VISION_R2.get(vbImgKey);
+    if (!vbImgObj) return new Response("Not found", { status: 404, headers: corsH });
+    var vbImgType = (vbImgObj.httpMetadata && vbImgObj.httpMetadata.contentType) || "image/png";
+    return new Response(vbImgObj.body, {
+      headers: Object.assign({}, corsH, {
+        "Content-Type": vbImgType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      }),
+    });
+  }
+
   // DELETE /api/board/:id — スレッド削除（管理者=全件、ユーザー=自分のみ）
   if (request.method === "DELETE" && /^\/api\/board\/[^/]+$/.test(url.pathname)) {
     var bdEmail = (request.headers.get("X-Customer-Email") || "").toLowerCase();
@@ -575,6 +870,20 @@ async function handleRequest(request, env) {
     } catch (err) {
       return jsonRes({ error: "Failed to delete", detail: err.message }, 500, corsH);
     }
+  }
+
+  // =========================================================
+  // GET /legal/tokushoho — 特定商取引法に基づく表記
+  // =========================================================
+  if (url.pathname === "/legal/tokushoho" && request.method === "GET") {
+    return htmlRes(TOKUSHOHO_HTML);
+  }
+
+  // =========================================================
+  // GET /legal/privacy — プライバシーポリシー
+  // =========================================================
+  if (url.pathname === "/legal/privacy" && request.method === "GET") {
+    return htmlRes(PRIVACY_HTML);
   }
 
   if (request.method !== "POST") {
@@ -789,10 +1098,11 @@ async function handleRequest(request, env) {
 
       var vbUpBuf = await vbUpFile.arrayBuffer();
 
-      if (env.VISION_R2 && env.VISION_R2_BASE_URL) {
-        var vbUpKey = encodeURIComponent(vbUpEmail) + "/" + vbUpCardId + ".png";
+      if (env.VISION_R2) {
+        var vbUpKey = encodeURIComponent(vbUpEmail) + "/" + vbUpCardId + "." + vbUpExt;
         await env.VISION_R2.put(vbUpKey, vbUpBuf, { httpMetadata: { contentType: vbUpType } });
-        return jsonRes({ imageUrl: env.VISION_R2_BASE_URL + "/" + vbUpKey }, 200, corsH);
+        var vbUpImgUrl = new URL(request.url).origin + "/api/vision-board/image?key=" + encodeURIComponent(vbUpKey);
+        return jsonRes({ imageUrl: vbUpImgUrl }, 200, corsH);
       } else {
         // R2未設定時: base64 data URLで返す（ローカルテスト用）
         var vbUpBytes = new Uint8Array(vbUpBuf);
@@ -1037,10 +1347,11 @@ async function handleRequest(request, env) {
         return jsonRes({ error: "No image data", detail: JSON.stringify(vbGenImgData) }, 500, corsH);
       }
 
-      if (env.VISION_R2 && env.VISION_R2_BASE_URL) {
+      if (env.VISION_R2) {
         var vbGenKey = encodeURIComponent(vbGenEmail) + "/" + vbGenCardId + ".png";
         await env.VISION_R2.put(vbGenKey, vbGenBytes.buffer, { httpMetadata: { contentType: "image/png" } });
-        return jsonRes({ imageUrl: env.VISION_R2_BASE_URL + "/" + vbGenKey }, 200, corsH);
+        var vbGenImgUrl = new URL(request.url).origin + "/api/vision-board/image?key=" + encodeURIComponent(vbGenKey);
+        return jsonRes({ imageUrl: vbGenImgUrl }, 200, corsH);
       } else {
         // R2未設定時: base64 data URLで返す（ローカルテスト用）
         var vbGenB64out = "";
