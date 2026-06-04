@@ -100,6 +100,20 @@ nav {
 }
 .nav-cta:hover { background: var(--accent) !important; color: var(--paper) !important; }
 
+.nav-logout-btn {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  padding: 0;
+  transition: color .2s;
+}
+.nav-logout-btn:hover { color: #c0392b; }
+
 @media(max-width:640px){
   nav { padding: 16px 20px; }
   .nav-links { display: none; }
@@ -989,6 +1003,7 @@ footer {
     <li><a href="#pricing">プラン</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#pricing" class="nav-cta">はじめる</a></li>
+    <li id="tomu-nav-logout" style="display:none"><button class="nav-logout-btn">ログアウト</button></li>
   </ul>
 </nav>
 

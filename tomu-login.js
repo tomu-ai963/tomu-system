@@ -357,6 +357,24 @@
       const planText = plan ? ` | ${plan.toUpperCase()}プラン` : '';
       if (label) label.textContent = email + planText;
       badge.classList.add('active');
+      const navLogout = document.getElementById('tomu-nav-logout');
+      if (navLogout) navLogout.style.display = '';
+    },
+
+    logout() {
+      this._clear();
+      badge.classList.remove('active');
+      const navLogout = document.getElementById('tomu-nav-logout');
+      if (navLogout) navLogout.style.display = 'none';
+      document.getElementById('tomu-modal-title').textContent = 'メールアドレスで\nログイン';
+      document.getElementById('tomu-modal-sub').textContent =
+        '登録済みのメールアドレスを入力してください。\nサブスクリプションを確認してアプリを開放します。';
+      document.getElementById('tomu-pricing-panel').classList.remove('visible');
+      document.getElementById('tomu-auth-error').classList.remove('visible');
+      document.getElementById('tomu-email-input').value = '';
+      if (!window.TOMU_NO_GATE) {
+        this.showOverlay();
+      }
     },
 
     async init() {
@@ -462,17 +480,18 @@
 
   badge.addEventListener('click', () => {
     if (confirm('ログアウトしますか？')) {
-      TomuAuth._clear();
-      badge.classList.remove('active');
-      document.getElementById('tomu-modal-title').textContent = 'メールアドレスで\nログイン';
-      document.getElementById('tomu-modal-sub').textContent =
-        '登録済みのメールアドレスを入力してください。\nサブスクリプションを確認してアプリを開放します。';
-      document.getElementById('tomu-pricing-panel').classList.remove('visible');
-      document.getElementById('tomu-auth-error').classList.remove('visible');
-      document.getElementById('tomu-email-input').value = '';
-      TomuAuth.showOverlay();
+      TomuAuth.logout();
     }
   });
+
+  const navLogoutEl = document.getElementById('tomu-nav-logout');
+  if (navLogoutEl) {
+    navLogoutEl.addEventListener('click', () => {
+      if (confirm('ログアウトしますか？')) {
+        TomuAuth.logout();
+      }
+    });
+  }
 
   // ============================================================
   // バッジ挙動：フォーカス時非表示・スクロール中透過
