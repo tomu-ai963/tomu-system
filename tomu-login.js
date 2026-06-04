@@ -366,16 +366,21 @@
             this.showBadge(saved, result.plan);
             return;
           } else {
-            // プラン不足 → オーバーレイ表示（キャッシュはクリアしない）
-            this._showPlanUpgradeError(saved, result.plan);
-            this.showOverlay();
+            // プラン不足 → TOMU_NO_GATE 時はオーバーレイを出さない
+            if (!window.TOMU_NO_GATE) {
+              this._showPlanUpgradeError(saved, result.plan);
+              this.showOverlay();
+            }
             return;
           }
         } else {
           this._clear();
         }
       }
-      this.showOverlay();
+      // TOMU_NO_GATE 時は自動オーバーレイをスキップ（掲示板などで手動呼び出し）
+      if (!window.TOMU_NO_GATE) {
+        this.showOverlay();
+      }
     },
 
     _showPlanUpgradeError(email, currentPlan) {

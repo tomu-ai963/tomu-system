@@ -2065,7 +2065,10 @@ footer {
     const d = new Date(iso);
     return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
   }
-  function getEmail() { return window.TomuAuth ? window.TomuAuth.getEmail() : null; }
+  function getEmail() {
+    if (window.TomuAuth) return window.TomuAuth.getEmail();
+    return localStorage.getItem('tomu_email') || null;
+  }
   function checkAdmin(email) { return !!email && email.toLowerCase() === ADMIN_EMAIL.toLowerCase(); }
 
   function renderList() {
@@ -2212,7 +2215,11 @@ footer {
 
   document.getElementById('boardNewBtn').addEventListener('click', () => {
     const email = getEmail();
-    if (!email) { alert('スレッドを投稿するにはログインが必要です。'); return; }
+    if (!email) {
+      if (window.TomuAuth) { window.TomuAuth.showOverlay(); }
+      else { alert('スレッドを投稿するにはログインが必要です。'); }
+      return;
+    }
     const form = document.getElementById('boardNewForm');
     const showing = form.style.display !== 'none';
     form.style.display = showing ? 'none' : 'block';
@@ -2347,5 +2354,7 @@ function goToCheckout() {
   window.location.href = url;
 }
 </script>
+<script>window.TOMU_NO_GATE = true;</script>
+<script src="tomu-login.js"></script>
 </body>
 </html>
