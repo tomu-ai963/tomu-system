@@ -228,10 +228,14 @@
       gap: 8px;
       box-shadow: 0 4px 16px rgba(26,22,18,0.08);
       cursor: pointer;
-      transition: all .2s;
+      opacity: 1;
+      transition: opacity .3s, border-color .2s, transform .3s;
     }
     #tomu-user-badge.active { display: flex; }
-    #tomu-user-badge:hover { border-color: #b87333; }
+    #tomu-user-badge.tomu-badge-dim { opacity: 0.4; }
+    #tomu-user-badge.tomu-badge-hidden { opacity: 0; pointer-events: none; transform: translateY(6px); }
+    #tomu-user-badge:hover,
+    #tomu-user-badge:focus-within { opacity: 1 !important; border-color: #b87333; }
     #tomu-user-badge .tomu-badge-dot {
       width: 6px; height: 6px; border-radius: 50%;
       background: #7a9e7e; flex-shrink: 0;
@@ -469,6 +473,29 @@
       TomuAuth.showOverlay();
     }
   });
+
+  // ============================================================
+  // バッジ挙動：フォーカス時非表示・スクロール中透過
+  // ============================================================
+  document.addEventListener('focusin', (e) => {
+    if (e.target.matches('input, textarea, select')) {
+      badge.classList.add('tomu-badge-hidden');
+    }
+  });
+  document.addEventListener('focusout', (e) => {
+    if (e.target.matches('input, textarea, select')) {
+      badge.classList.remove('tomu-badge-hidden');
+    }
+  });
+
+  let scrollTimer = null;
+  window.addEventListener('scroll', () => {
+    badge.classList.add('tomu-badge-dim');
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => badge.classList.remove('tomu-badge-dim'), 800);
+  }, { passive: true });
+
+  badge.addEventListener('touchstart', () => badge.classList.remove('tomu-badge-dim'), { passive: true });
 
   // ============================================================
   // 初期化 & グローバル公開
