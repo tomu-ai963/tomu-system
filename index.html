@@ -828,6 +828,154 @@ footer {
   font-size: 13px;
 }
 .apps-empty-msg.visible { display: block; }
+
+/* ===== BOARD ===== */
+.board-section { background: var(--paper); padding: 120px 48px 80px; }
+@media(max-width:640px){ .board-section { padding: 100px 20px 60px; } }
+
+.board-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin-bottom: 20px; flex-wrap: wrap;
+  max-width: 860px; margin-left: auto; margin-right: auto;
+}
+.board-cats { display: flex; gap: 7px; flex-wrap: wrap; }
+.board-cat-btn {
+  padding: 5px 13px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--surface); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.7rem; letter-spacing: 0.05em; color: var(--muted);
+  cursor: pointer; transition: all .2s;
+}
+.board-cat-btn:hover { border-color: var(--accent); color: var(--accent); }
+.board-cat-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.board-new-btn {
+  padding: 7px 18px; background: var(--ink); color: var(--paper);
+  border: none; border-radius: 40px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.7rem; letter-spacing: 0.1em; cursor: pointer;
+  transition: background .2s; white-space: nowrap;
+}
+.board-new-btn:hover { background: var(--accent); }
+
+.board-list {
+  display: flex; flex-direction: column; gap: 2px;
+  max-width: 860px; margin: 0 auto;
+}
+.board-loading-msg, .board-empty-msg-bd {
+  text-align: center; padding: 48px 24px; color: var(--muted); font-size: 0.82rem;
+}
+.board-thread {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; transition: border-color .2s;
+}
+.board-thread:hover { border-color: rgba(184,115,51,.4); }
+.board-thread.expanded { border-color: var(--accent); }
+
+.board-thread-head {
+  padding: 16px 20px; cursor: pointer;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.board-cat-tag {
+  padding: 2px 9px; border-radius: 20px; font-size: 0.6rem;
+  letter-spacing: 0.07em; white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+}
+.bcat-notice { background: rgba(184,115,51,.12); color: var(--accent); }
+.bcat-bug    { background: rgba(192,57,43,.1);  color: #c0392b; }
+.bcat-req    { background: rgba(122,158,126,.15); color: var(--accent2); }
+.bcat-other  { background: rgba(138,126,114,.1); color: var(--muted); }
+
+.board-thread-info { flex: 1; min-width: 0; }
+.board-thread-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 1rem;
+  font-weight: 600; color: var(--ink); margin-bottom: 3px; line-height: 1.3;
+}
+.board-thread-meta { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.03em; }
+.board-thread-toggle {
+  font-size: 1.1rem; color: var(--accent); flex-shrink: 0; transition: transform .2s; line-height: 1;
+}
+.board-thread.expanded .board-thread-toggle { transform: rotate(45deg); }
+
+.board-thread-body { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(0.4,0,0.2,1); }
+.board-thread.expanded .board-thread-body { max-height: 3000px; }
+
+.board-thread-content { border-top: 1px solid var(--border); padding: 18px 20px; }
+
+.board-post-body {
+  font-size: 0.84rem; line-height: 1.85; color: var(--ink);
+  white-space: pre-wrap; word-break: break-word; margin-bottom: 14px;
+}
+.board-del-btn {
+  font-size: 0.66rem; color: var(--muted); background: none;
+  border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px;
+  cursor: pointer; margin-bottom: 14px; transition: all .2s;
+}
+.board-del-btn:hover { color: #c0392b; border-color: #c0392b; }
+
+.board-replies { border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.board-reply {
+  padding: 11px 14px; background: var(--warm); border-radius: 8px;
+  font-size: 0.8rem; line-height: 1.75;
+}
+.board-reply-meta { font-size: 0.63rem; color: var(--muted); margin-bottom: 4px; }
+.board-reply-body { white-space: pre-wrap; word-break: break-word; }
+
+.board-reply-form { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.board-reply-form textarea {
+  width: 100%; padding: 10px 13px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.8rem; font-weight: 300; color: var(--ink); resize: vertical;
+  min-height: 72px; outline: none; transition: border-color .2s; box-sizing: border-box;
+}
+.board-reply-form textarea:focus { border-color: var(--accent); }
+.board-reply-submit {
+  align-self: flex-end; padding: 7px 20px; background: var(--ink); color: var(--paper);
+  border: none; border-radius: 40px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.72rem; letter-spacing: 0.1em; cursor: pointer; transition: background .2s;
+}
+.board-reply-submit:hover { background: var(--accent); }
+.board-reply-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+.board-login-notice {
+  font-size: 0.73rem; color: var(--muted); text-align: center;
+  padding: 9px; background: var(--warm); border-radius: 8px; margin-top: 10px;
+}
+
+.board-new-form {
+  max-width: 860px; margin: 18px auto 0; background: var(--surface);
+  border: 1px solid var(--accent); border-radius: 12px; padding: 24px 22px;
+}
+.board-new-form h3 {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;
+  font-weight: 400; margin-bottom: 18px; color: var(--ink);
+}
+.board-form-row { margin-bottom: 12px; }
+.board-form-label {
+  display: block; font-size: 0.65rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+}
+.board-form-input, .board-form-select, .board-form-textarea {
+  width: 100%; padding: 10px 13px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.84rem; font-weight: 300; color: var(--ink);
+  outline: none; transition: border-color .2s; box-sizing: border-box;
+}
+.board-form-textarea { resize: vertical; min-height: 90px; }
+.board-form-input:focus, .board-form-select:focus, .board-form-textarea:focus { border-color: var(--accent); }
+.board-form-actions { display: flex; gap: 9px; justify-content: flex-end; margin-top: 14px; }
+.board-form-cancel {
+  padding: 8px 20px; background: transparent; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 40px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.72rem; cursor: pointer; transition: all .2s;
+}
+.board-form-cancel:hover { border-color: var(--ink); color: var(--ink); }
+.board-form-submit {
+  padding: 8px 26px; background: var(--ink); color: var(--paper); border: none;
+  border-radius: 40px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.72rem; letter-spacing: 0.1em; cursor: pointer; transition: background .2s;
+}
+.board-form-submit:hover { background: var(--accent); }
+.board-form-submit:disabled { opacity: .5; cursor: not-allowed; }
+.board-form-err { font-size: 0.72rem; color: #c0392b; margin-top: 7px; display: none; }
+.board-form-err.show { display: block; }
 </style>
 </head>
 <body>
@@ -836,12 +984,62 @@ footer {
 <nav>
   <a href="#" class="nav-logo">とむ<span>SYSTEM</span></a>
   <ul class="nav-links">
+    <li><a href="#board">掲示板</a></li>
     <li><a href="#apps">アプリ</a></li>
     <li><a href="#pricing">プラン</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#pricing" class="nav-cta">はじめる</a></li>
   </ul>
 </nav>
+
+<!-- BOARD -->
+<section class="board-section" id="board">
+  <div class="section-header">
+    <div class="section-eyebrow">Community Board</div>
+    <h2 class="section-title">掲示<em>板</em></h2>
+  </div>
+
+  <div class="board-header">
+    <div class="board-cats">
+      <button class="board-cat-btn active" data-cat="all">すべて</button>
+      <button class="board-cat-btn" data-cat="お知らせ">お知らせ</button>
+      <button class="board-cat-btn" data-cat="バグ報告">バグ報告</button>
+      <button class="board-cat-btn" data-cat="機能要望">機能要望</button>
+      <button class="board-cat-btn" data-cat="その他">その他</button>
+    </div>
+    <button class="board-new-btn" id="boardNewBtn">＋ 新規スレッド</button>
+  </div>
+
+  <div class="board-new-form" id="boardNewForm" style="display:none">
+    <h3>新規スレッドを立てる</h3>
+    <div class="board-form-row">
+      <label class="board-form-label">カテゴリ</label>
+      <select class="board-form-select" id="boardFormCat">
+        <option value="バグ報告">バグ報告</option>
+        <option value="機能要望">機能要望</option>
+        <option value="その他" selected>その他</option>
+        <option value="お知らせ" id="boardCatNotice" style="display:none">お知らせ（管理者専用）</option>
+      </select>
+    </div>
+    <div class="board-form-row">
+      <label class="board-form-label">タイトル</label>
+      <input type="text" class="board-form-input" id="boardFormTitle" placeholder="スレッドのタイトル" maxlength="100">
+    </div>
+    <div class="board-form-row">
+      <label class="board-form-label">本文</label>
+      <textarea class="board-form-textarea" id="boardFormBody" placeholder="内容を入力してください" maxlength="2000"></textarea>
+    </div>
+    <div class="board-form-err" id="boardFormErr"></div>
+    <div class="board-form-actions">
+      <button class="board-form-cancel" id="boardFormCancel">キャンセル</button>
+      <button class="board-form-submit" id="boardFormSubmit">投稿する</button>
+    </div>
+  </div>
+
+  <div class="board-list" id="boardList">
+    <div class="board-loading-msg">読み込み中...</div>
+  </div>
+</section>
 
 <!-- HERO -->
 <section class="hero">
@@ -1195,7 +1393,7 @@ footer {
 
   <!-- Standard Plan -->
   <div class="apps-section-label" style="margin-top:20px;">Standard Plan <span class="apps-plan-tag">¥980/月</span></div>
-  <div class="apps-count-label" id="std-count">17本</div>
+  <div class="apps-count-label" id="std-count">18本</div>
   <div class="apps-grid-v2" id="std-grid">
 
     <div class="apps-card" data-cat="ビジネス">
@@ -1846,6 +2044,229 @@ footer {
 </div>
 
 <script>
+// ===== 掲示板 =====
+(function () {
+  const WORKER = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+  const ADMIN_EMAIL = 'inverted.triangle.leef@gmail.com';
+  const CAT_CLS = { 'お知らせ': 'bcat-notice', 'バグ報告': 'bcat-bug', '機能要望': 'bcat-req', 'その他': 'bcat-other' };
+
+  let threads = [];
+  let currentCat = 'all';
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function mask(email) {
+    if (!email) return '匿名';
+    const at = email.indexOf('@');
+    return (at > 1 ? email.slice(0, 2) : email[0]) + '***' + email.slice(at);
+  }
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
+  }
+  function getEmail() { return window.TomuAuth ? window.TomuAuth.getEmail() : null; }
+  function checkAdmin(email) { return !!email && email.toLowerCase() === ADMIN_EMAIL.toLowerCase(); }
+
+  function renderList() {
+    const list = document.getElementById('boardList');
+    const filtered = currentCat === 'all' ? threads : threads.filter(t => t.category === currentCat);
+    if (!filtered.length) {
+      list.innerHTML = '<div class="board-empty-msg-bd">まだスレッドはありません</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(t => `
+      <div class="board-thread" data-id="${esc(t.id)}">
+        <div class="board-thread-head">
+          <span class="board-cat-tag ${CAT_CLS[t.category]||'bcat-other'}">${esc(t.category)}</span>
+          <div class="board-thread-info">
+            <div class="board-thread-title">${esc(t.title)}</div>
+            <div class="board-thread-meta">${mask(t.authorEmail)} · ${fmtDate(t.createdAt)} · 返信 ${t.replyCount||0}件</div>
+          </div>
+          <span class="board-thread-toggle">+</span>
+        </div>
+        <div class="board-thread-body">
+          <div class="board-thread-content" id="btc-${esc(t.id)}">
+            <div class="board-loading-msg" style="padding:14px 0">読み込み中...</div>
+          </div>
+        </div>
+      </div>`).join('');
+
+    list.querySelectorAll('.board-thread-head').forEach(head => {
+      head.addEventListener('click', () => {
+        const el = head.closest('.board-thread');
+        const id = el.dataset.id;
+        const was = el.classList.contains('expanded');
+        list.querySelectorAll('.board-thread.expanded').forEach(x => x.classList.remove('expanded'));
+        if (!was) { el.classList.add('expanded'); loadDetail(id); }
+      });
+    });
+  }
+
+  async function loadDetail(id) {
+    const cont = document.getElementById('btc-' + id);
+    if (!cont || cont.dataset.loaded === '1') return;
+    try {
+      const res = await fetch(WORKER + '/api/board/' + id);
+      const data = await res.json();
+      if (!data.thread) { cont.innerHTML = '<div class="board-empty-msg-bd">取得できませんでした</div>'; return; }
+      renderDetail(cont, data.thread);
+    } catch(e) {
+      cont.innerHTML = '<div class="board-empty-msg-bd">エラーが発生しました</div>';
+    }
+  }
+
+  function renderDetail(cont, thread) {
+    const email = getEmail();
+    const admin = checkAdmin(email);
+    const canDel = admin || thread.authorEmail === email;
+
+    let html = `<div class="board-post-body">${esc(thread.body)}</div>`;
+    if (canDel) html += `<button class="board-del-btn" data-del="${esc(thread.id)}">このスレッドを削除</button>`;
+
+    if (thread.replies && thread.replies.length) {
+      html += '<div class="board-replies">' + thread.replies.map(r =>
+        `<div class="board-reply">
+          <div class="board-reply-meta">${mask(r.authorEmail)} · ${fmtDate(r.createdAt)}</div>
+          <div class="board-reply-body">${esc(r.body)}</div>
+        </div>`
+      ).join('') + '</div>';
+    }
+
+    if (email) {
+      html += `<div class="board-reply-form">
+        <textarea id="bri-${esc(thread.id)}" placeholder="返信を入力..." rows="3"></textarea>
+        <button class="board-reply-submit" data-rep="${esc(thread.id)}">返信する</button>
+      </div>`;
+    } else {
+      html += '<div class="board-login-notice">返信するにはログインが必要です</div>';
+    }
+
+    cont.innerHTML = html;
+    cont.dataset.loaded = '1';
+
+    const delBtn = cont.querySelector('[data-del]');
+    if (delBtn) delBtn.addEventListener('click', async () => {
+      if (!confirm('このスレッドを削除しますか？')) return;
+      delBtn.disabled = true;
+      try {
+        const r = await fetch(WORKER + '/api/board/' + thread.id, {
+          method: 'DELETE', headers: { 'X-Customer-Email': email }
+        });
+        if (r.ok) {
+          threads = threads.filter(t => t.id !== thread.id);
+          renderList();
+        } else {
+          const d = await r.json().catch(()=>({}));
+          alert('削除に失敗しました: ' + (d.error || ''));
+          delBtn.disabled = false;
+        }
+      } catch(e) { alert('エラーが発生しました'); delBtn.disabled = false; }
+    });
+
+    const repBtn = cont.querySelector('[data-rep]');
+    if (repBtn) repBtn.addEventListener('click', async () => {
+      const ta = document.getElementById('bri-' + thread.id);
+      const body = ta ? ta.value.trim() : '';
+      if (!body) return;
+      repBtn.disabled = true;
+      try {
+        const r = await fetch(WORKER + '/api/board/' + thread.id + '/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Customer-Email': email },
+          body: JSON.stringify({ body })
+        });
+        const d = await r.json();
+        if (d.success) {
+          threads = threads.map(t => { if (t.id === thread.id) t.replyCount = (t.replyCount||0)+1; return t; });
+          cont.dataset.loaded = '0';
+          cont.innerHTML = '<div class="board-loading-msg" style="padding:14px 0">読み込み中...</div>';
+          await loadDetail(thread.id);
+        } else {
+          alert(d.message || d.error || '返信に失敗しました');
+        }
+      } catch(e) { alert('エラーが発生しました'); }
+      repBtn.disabled = false;
+    });
+  }
+
+  async function loadBoard() {
+    try {
+      const res = await fetch(WORKER + '/api/board');
+      const data = await res.json();
+      threads = data.threads || [];
+      renderList();
+    } catch(e) {
+      document.getElementById('boardList').innerHTML = '<div class="board-empty-msg-bd">掲示板を読み込めませんでした</div>';
+    }
+  }
+
+  document.querySelectorAll('.board-cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.board-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat = btn.dataset.cat;
+      renderList();
+    });
+  });
+
+  document.getElementById('boardNewBtn').addEventListener('click', () => {
+    const email = getEmail();
+    if (!email) { alert('スレッドを投稿するにはログインが必要です。'); return; }
+    const form = document.getElementById('boardNewForm');
+    const showing = form.style.display !== 'none';
+    form.style.display = showing ? 'none' : 'block';
+    if (!showing) {
+      document.getElementById('boardCatNotice').style.display = checkAdmin(email) ? '' : 'none';
+      document.getElementById('boardFormErr').classList.remove('show');
+    }
+  });
+
+  document.getElementById('boardFormCancel').addEventListener('click', () => {
+    document.getElementById('boardNewForm').style.display = 'none';
+  });
+
+  document.getElementById('boardFormSubmit').addEventListener('click', async () => {
+    const email = getEmail();
+    if (!email) return;
+    const title = document.getElementById('boardFormTitle').value.trim();
+    const body  = document.getElementById('boardFormBody').value.trim();
+    const category = document.getElementById('boardFormCat').value;
+    const errEl = document.getElementById('boardFormErr');
+
+    if (!title) { errEl.textContent = 'タイトルを入力してください'; errEl.classList.add('show'); return; }
+    if (!body)  { errEl.textContent = '本文を入力してください';  errEl.classList.add('show'); return; }
+    errEl.classList.remove('show');
+
+    const btn = document.getElementById('boardFormSubmit');
+    btn.disabled = true;
+    try {
+      const res = await fetch(WORKER + '/api/board', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Customer-Email': email },
+        body: JSON.stringify({ title, body, category })
+      });
+      const data = await res.json();
+      if (data.success) {
+        threads.unshift({ id: data.thread.id, title: data.thread.title, category: data.thread.category, authorEmail: data.thread.authorEmail, createdAt: data.thread.createdAt, replyCount: 0 });
+        document.getElementById('boardNewForm').style.display = 'none';
+        document.getElementById('boardFormTitle').value = '';
+        document.getElementById('boardFormBody').value = '';
+        renderList();
+      } else {
+        errEl.textContent = data.message || data.error || '投稿に失敗しました';
+        errEl.classList.add('show');
+      }
+    } catch(e) {
+      errEl.textContent = 'エラーが発生しました';
+      errEl.classList.add('show');
+    }
+    btn.disabled = false;
+  });
+
+  loadBoard();
+})();
+
 // フェードイン
 const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });

@@ -20,10 +20,15 @@ function getCorsHeaders(origin) {
   var allow = ALLOWED_ORIGINS.indexOf(origin) !== -1 ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
     "Vary": "Origin",
   };
+}
+
+var ADMIN_EMAILS = ["inverted.triangle.leef@gmail.com"];
+function isAdmin(email) {
+  return !!email && ADMIN_EMAILS.indexOf(email.toLowerCase()) !== -1;
 }
 
 var DAILY_LIMITS = { light: 50, standard: 200, full: 500 };
@@ -520,6 +525,58 @@ async function handleRequest(request, env) {
     }
   }
 
+  // =========================================================
+  // GET /api/board — スレッド一覧取得（認証不要）
+  // =========================================================
+  if (url.pathname === "/api/board" && request.method === "GET") {
+    var bCat = url.searchParams.get("category") || "all";
+    try {
+      var bIdxStr = await env.SUBSCRIPTIONS.get("board:index");
+      var bList = bIdxStr ? JSON.parse(bIdxStr) : [];
+      if (bCat !== "all") bList = bList.filter(function(t) { return t.category === bCat; });
+      return jsonRes({ threads: bList }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to load board", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // GET /api/board/:id — スレッド詳細取得（認証不要）
+  if (request.method === "GET" && /^\/api\/board\/[^/]+$/.test(url.pathname)) {
+    var bgId = url.pathname.split("/")[3];
+    try {
+      var bgStr = await env.SUBSCRIPTIONS.get("board:thread:" + bgId);
+      if (!bgStr) return jsonRes({ error: "not_found" }, 404, corsH);
+      return jsonRes({ thread: JSON.parse(bgStr) }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to load thread", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // DELETE /api/board/:id — スレッド削除（管理者=全件、ユーザー=自分のみ）
+  if (request.method === "DELETE" && /^\/api\/board\/[^/]+$/.test(url.pathname)) {
+    var bdEmail = (request.headers.get("X-Customer-Email") || "").toLowerCase();
+    var bdId = url.pathname.split("/")[3];
+    if (!bdEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var bdPlan = await env.SUBSCRIPTIONS.get(bdEmail);
+    if (!bdPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    try {
+      var bdThreadStr = await env.SUBSCRIPTIONS.get("board:thread:" + bdId);
+      if (!bdThreadStr) return jsonRes({ error: "not_found" }, 404, corsH);
+      var bdThread = JSON.parse(bdThreadStr);
+      if (!isAdmin(bdEmail) && bdThread.authorEmail !== bdEmail) {
+        return jsonRes({ error: "forbidden" }, 403, corsH);
+      }
+      await env.SUBSCRIPTIONS.delete("board:thread:" + bdId);
+      var bdIdxStr = await env.SUBSCRIPTIONS.get("board:index");
+      var bdIdx = bdIdxStr ? JSON.parse(bdIdxStr) : [];
+      bdIdx = bdIdx.filter(function(t) { return t.id !== bdId; });
+      await env.SUBSCRIPTIONS.put("board:index", JSON.stringify(bdIdx));
+      return jsonRes({ success: true }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to delete", detail: err.message }, 500, corsH);
+    }
+  }
+
   if (request.method !== "POST") {
     return jsonRes({ error: "Method not allowed" }, 405, corsH);
   }
@@ -760,6 +817,76 @@ async function handleRequest(request, env) {
     body = await request.json();
   } catch (e) {
     return jsonRes({ error: "Invalid JSON" }, 400, corsH);
+  }
+
+  // =========================================================
+  // POST /api/board — スレッド作成（認証必須、お知らせ=管理者のみ）
+  // =========================================================
+  if (url.pathname === "/api/board") {
+    var nbEmail = (request.headers.get("X-Customer-Email") || body.email || "").toLowerCase();
+    if (!nbEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var nbPlan = await env.SUBSCRIPTIONS.get(nbEmail);
+    if (!nbPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+
+    var nbTitle = (body.title || "").trim();
+    var nbBody = (body.body || "").trim();
+    var nbCat = body.category || "その他";
+    var VALID_CATS = ["お知らせ", "バグ報告", "機能要望", "その他"];
+
+    if (!nbTitle || !nbBody) return jsonRes({ error: "title and body are required" }, 400, corsH);
+    if (VALID_CATS.indexOf(nbCat) === -1) return jsonRes({ error: "invalid category" }, 400, corsH);
+    if (nbCat === "お知らせ" && !isAdmin(nbEmail)) {
+      return jsonRes({ error: "admin_required", message: "お知らせカテゴリは管理者のみ投稿できます" }, 403, corsH);
+    }
+
+    var nbId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var nbNow = new Date().toISOString();
+    var nbThread = { id: nbId, title: nbTitle, body: nbBody, category: nbCat, authorEmail: nbEmail, createdAt: nbNow, replies: [] };
+
+    await env.SUBSCRIPTIONS.put("board:thread:" + nbId, JSON.stringify(nbThread));
+
+    var nbIdxStr = await env.SUBSCRIPTIONS.get("board:index");
+    var nbIdx = nbIdxStr ? JSON.parse(nbIdxStr) : [];
+    nbIdx.unshift({ id: nbId, title: nbTitle, category: nbCat, authorEmail: nbEmail, createdAt: nbNow, replyCount: 0 });
+    if (nbIdx.length > 200) nbIdx = nbIdx.slice(0, 200);
+    await env.SUBSCRIPTIONS.put("board:index", JSON.stringify(nbIdx));
+
+    return jsonRes({ success: true, thread: nbThread }, 200, corsH);
+  }
+
+  // =========================================================
+  // POST /api/board/:id/reply — 返信投稿（認証必須）
+  // =========================================================
+  if (/^\/api\/board\/[^/]+\/reply$/.test(url.pathname)) {
+    var rpEmail = (request.headers.get("X-Customer-Email") || body.email || "").toLowerCase();
+    if (!rpEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var rpPlan = await env.SUBSCRIPTIONS.get(rpEmail);
+    if (!rpPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+
+    var rpBody = (body.body || "").trim();
+    if (!rpBody) return jsonRes({ error: "body is required" }, 400, corsH);
+
+    var rpThreadId = url.pathname.split("/")[3];
+    var rpThreadStr = await env.SUBSCRIPTIONS.get("board:thread:" + rpThreadId);
+    if (!rpThreadStr) return jsonRes({ error: "not_found" }, 404, corsH);
+
+    var rpThread = JSON.parse(rpThreadStr);
+    var rpReplyId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var rpNow = new Date().toISOString();
+    var rpReply = { id: rpReplyId, body: rpBody, authorEmail: rpEmail, createdAt: rpNow };
+    rpThread.replies.push(rpReply);
+
+    await env.SUBSCRIPTIONS.put("board:thread:" + rpThreadId, JSON.stringify(rpThread));
+
+    var rpIdxStr = await env.SUBSCRIPTIONS.get("board:index");
+    var rpIdx = rpIdxStr ? JSON.parse(rpIdxStr) : [];
+    rpIdx = rpIdx.map(function(t) {
+      if (t.id === rpThreadId) t.replyCount = rpThread.replies.length;
+      return t;
+    });
+    await env.SUBSCRIPTIONS.put("board:index", JSON.stringify(rpIdx));
+
+    return jsonRes({ success: true, reply: rpReply }, 200, corsH);
   }
 
   // =========================================================
