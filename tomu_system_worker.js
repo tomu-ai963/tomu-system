@@ -79,6 +79,47 @@ function getMaxTokens(appType) {
   return map[appType] || 300;
 }
 
+// ===== Supabase ヘルパー =====
+async function supabaseRequest(method, path, body, env) {
+  var url = env.SUPABASE_URL + "/rest/v1" + path;
+  var headers = {
+    "Content-Type": "application/json",
+    "apikey": env.SUPABASE_SERVICE_KEY,
+    "Authorization": "Bearer " + env.SUPABASE_SERVICE_KEY,
+    "Accept": "application/json",
+  };
+  if (method === "POST") headers["Prefer"] = "return=minimal";
+  var opts = { method: method, headers: headers };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(url, opts);
+}
+
+async function getHistory(userId, appId, limit, env) {
+  try {
+    var path = "/app_sessions?user_id=eq." + encodeURIComponent(userId) +
+               "&app_id=eq." + encodeURIComponent(appId) +
+               "&order=created_at.desc&limit=" + (limit || 5);
+    var res = await supabaseRequest("GET", path, null, env);
+    var rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    console.error("getHistory error:", e.message);
+    return [];
+  }
+}
+
+async function saveSession(userId, appId, sessionData, env) {
+  try {
+    await supabaseRequest("POST", "/app_sessions", {
+      user_id: userId,
+      app_id: appId,
+      session_data: sessionData,
+    }, env);
+  } catch (e) {
+    console.error("saveSession error:", e.message);
+  }
+}
+
 async function verifyStripeSignature(body, signature, secret) {
   var parts = signature.split(",");
   var tPart = parts.find(function(p) { return p.indexOf("t=") === 0; });
@@ -847,6 +888,27 @@ async function handleRequest(request, env) {
     });
   }
 
+  // =========================================================
+  // GET /api/history — セッション履歴取得（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/history" && request.method === "GET") {
+    var histEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("email") || "";
+    var histAppId = url.searchParams.get("app_id") || "plant-doctor";
+    var histLimit = parseInt(url.searchParams.get("limit") || "5");
+    if (!histEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var histPlan = await env.SUBSCRIPTIONS.get(histEmail);
+    if (!histPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(histPlan, "full")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "full", current: histPlan }, 403, corsH);
+    }
+    try {
+      var sessions = await getHistory(histEmail, histAppId, histLimit, env);
+      return jsonRes({ sessions: sessions }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to load history", detail: err.message }, 500, corsH);
+    }
+  }
+
   // DELETE /api/board/:id — スレッド削除（管理者=全件、ユーザー=自分のみ）
   if (request.method === "DELETE" && /^\/api\/board\/[^/]+$/.test(url.pathname)) {
     var bdEmail = (request.headers.get("X-Customer-Email") || "").toLowerCase();
@@ -1367,10 +1429,31 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /api/plant-diagnose — 植物診断アプリ用（認証スキップ）
+  // POST /api/plant-diagnose — 植物診断アプリ用（Fullプラン専用・履歴機能付き）
   // =========================================================
   if (url.pathname === "/api/plant-diagnose") {
+    var plantEmail = request.headers.get("X-Customer-Email") || body.email || "";
+    var plantCheck = await checkPlanAndCount(plantEmail, "full", env);
+    if (!plantCheck.ok) {
+      return jsonRes({ error: plantCheck.error, required: plantCheck.required, current: plantCheck.current, limit: plantCheck.limit }, plantCheck.status, corsH);
+    }
+
     try {
+      // 過去3件の診断履歴を取得してシステムプロンプトに注入
+      var plantHistory = await getHistory(plantEmail, "plant-doctor", 3, env);
+      var plantBody = Object.assign({}, body);
+      if (plantHistory.length > 0) {
+        var historyLines = plantHistory.map(function(h, i) {
+          var sd = h.session_data || {};
+          return "診断" + (i + 1) + "（" + new Date(h.created_at).toLocaleDateString("ja-JP") + "）: " +
+            (sd.plantName || "不明") + " / 状態: " + (sd.overallLabel || sd.overallStatus || "不明") +
+            (sd.overallAdvice ? " / " + sd.overallAdvice.slice(0, 60) + "…" : "");
+        }).join("\n");
+        plantBody.system = (plantBody.system || "") +
+          "\n\n【このユーザーの過去の診断履歴】\n" + historyLines +
+          "\n継続的なケアの観点から、前回の状態と比較しながらアドバイスしてください。";
+      }
+
       var plantRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -1378,12 +1461,37 @@ async function handleRequest(request, env) {
           "x-api-key": env.ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(plantBody),
       });
       if (!plantRes.ok) {
         return jsonRes({ error: "Anthropic API error", detail: await plantRes.text() }, plantRes.status, corsH);
       }
-      return new Response(await plantRes.text(), {
+
+      var plantText = await plantRes.text();
+
+      // 診断結果をパースしてSupabaseに保存
+      try {
+        var plantData = JSON.parse(plantText);
+        var rawResult = (plantData.content || []).map(function(b) { return b.text || ""; }).join("");
+        var stripped = rawResult.replace(/```json|```/g, "").trim();
+        var jStart = stripped.indexOf("{");
+        var jEnd = stripped.lastIndexOf("}");
+        if (jStart !== -1 && jEnd !== -1) {
+          var parsedDiag = JSON.parse(stripped.slice(jStart, jEnd + 1));
+          await saveSession(plantEmail, "plant-doctor", {
+            plantName: parsedDiag.plantName,
+            overallStatus: parsedDiag.overallStatus,
+            overallLabel: parsedDiag.overallLabel,
+            overallAdvice: parsedDiag.overallAdvice,
+            items: parsedDiag.items,
+            diagnosedAt: new Date().toISOString(),
+          }, env);
+        }
+      } catch (saveErr) {
+        console.error("Session save error:", saveErr.message);
+      }
+
+      return new Response(plantText, {
         status: 200,
         headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
       });

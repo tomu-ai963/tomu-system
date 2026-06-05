@@ -344,6 +344,23 @@
 .btn-mystic:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
 .mystic-result-card{margin-top:12px;background:linear-gradient(135deg,rgba(26,5,51,0.95),rgba(13,31,60,0.95));border:1px solid rgba(212,175,55,0.4);border-radius:8px;padding:18px 20px;color:#e8d5a3;font-size:0.88rem;line-height:1.9;white-space:pre-wrap;max-height:none;overflow:visible;}
 .mystic-result-label{font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;}
+
+/* ===== 履歴セクション ===== */
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(138,173,138,0.25);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.history-item:hover { background: rgba(212,232,212,0.4); }
+.history-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.history-date { font-size: 0.68rem; font-family: 'DM Mono', monospace; color: var(--sage); letter-spacing: 0.06em; }
+.history-plant { font-size: 0.92rem; font-weight: 600; color: var(--moss); margin-bottom: 4px; }
+.history-advice { font-size: 0.78rem; color: #4a5a4a; line-height: 1.6; }
+.history-empty { font-size: 0.78rem; color: var(--sage); font-family: 'DM Mono', monospace; text-align: center; padding: 12px 0; }
 </style>
   <script src="/tomu-system/common/header.js"></script>
   <link rel="manifest" href="manifest.json">
@@ -355,7 +372,9 @@
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js");
     }
-  </script></head>
+  </script>
+  <script>window.TOMU_REQUIRED_PLAN = 'full';</script>
+  <script src="/tomu-system/tomu-login.js"></script></head>
 <body>
 <div class="wrapper">
 
@@ -364,6 +383,12 @@
     <h1>Midori</h1>
     <p class="tagline">Plant Diagnostic AI — 植物診断</p>
   </header>
+
+  <!-- 診断履歴 -->
+  <div id="history-section" class="card fade-up" style="display:none;">
+    <p class="section-label">Past Diagnoses — 診断履歴</p>
+    <div id="history-list" class="history-list"></div>
+  </div>
 
   <!-- 撮影・アップロード -->
   <div class="card fade-up">
@@ -447,6 +472,8 @@
 </div>
 
 <script>
+const WORKER_BASE = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+
 let selectedFile = null;
 let imageBase64 = null;
 
@@ -567,10 +594,13 @@ async function diagnose() {
   const userPrompt = `植物名: ${nameLabel}\n置き場所: ${location || '未指定'}\n\nこの植物の状態を診断してください。`;
 
   try {
-    const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/plant-diagnose';
-    const response = await fetch(WORKER_URL, {
+    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+    const response = await fetch(WORKER_BASE + '/api/plant-diagnose', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(email ? { 'X-Customer-Email': email } : {}),
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2048,
@@ -632,6 +662,8 @@ async function diagnose() {
     }
 
     renderResult(result, nameLabel);
+    // 診断完了後に履歴を更新
+    setTimeout(loadHistory, 1500);
 
   } catch (err) {
     console.error(err);
@@ -643,8 +675,51 @@ async function diagnose() {
   }
 }
 
+// ======= 診断履歴 =======
+async function loadHistory() {
+  const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+  if (!email) return;
+  try {
+    const res = await fetch(WORKER_BASE + '/api/history?app_id=plant-doctor&limit=5', {
+      headers: { 'X-Customer-Email': email }
+    });
+    const data = await res.json();
+    renderHistory(data.sessions || []);
+  } catch (e) {}
+}
+
+function renderHistory(sessions) {
+  const section = document.getElementById('history-section');
+  const list = document.getElementById('history-list');
+  if (sessions.length === 0) {
+    list.innerHTML = '<p class="history-empty">まだ診断履歴がありません</p>';
+    section.style.display = 'block';
+    return;
+  }
+  list.innerHTML = sessions.map(s => {
+    const sd = s.session_data || {};
+    const date = new Date(s.created_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+    const statusClass = sd.overallStatus === 'good' ? 'status-good' : sd.overallStatus === 'caution' ? 'status-caution' : 'status-bad';
+    const advice = (sd.overallAdvice || '').slice(0, 70) + (sd.overallAdvice && sd.overallAdvice.length > 70 ? '…' : '');
+    return `<div class="history-item">
+      <div class="history-meta">
+        <span class="history-date">${date}</span>
+        <span class="status-badge ${statusClass}">${sd.overallLabel || sd.overallStatus || '—'}</span>
+      </div>
+      <div class="history-plant">${sd.plantName || '不明な植物'}</div>
+      ${advice ? `<div class="history-advice">${advice}</div>` : ''}
+    </div>`;
+  }).join('');
+  section.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // TomuAuthの初期化後に履歴を読み込む
+  setTimeout(loadHistory, 800);
+});
+
 async function callMystic(tool, args) {
-  const MYSTIC_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/mystic-bridge';
+  const MYSTIC_URL = WORKER_BASE + '/mystic-bridge';
   const btn = document.querySelector('.btn-mystic');
   const wrap = document.getElementById('mystic-result');
   btn.disabled = true;
