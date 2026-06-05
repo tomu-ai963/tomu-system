@@ -354,13 +354,60 @@
   border: 1px solid rgba(138,173,138,0.25);
   cursor: pointer;
   transition: background 0.2s;
+  position: relative;
 }
 .history-item:hover { background: rgba(212,232,212,0.4); }
 .history-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .history-date { font-size: 0.68rem; font-family: 'DM Mono', monospace; color: var(--sage); letter-spacing: 0.06em; }
 .history-plant { font-size: 0.92rem; font-weight: 600; color: var(--moss); margin-bottom: 4px; }
 .history-advice { font-size: 0.78rem; color: #4a5a4a; line-height: 1.6; }
-.history-empty { font-size: 0.78rem; color: var(--sage); font-family: 'DM Mono', monospace; text-align: center; padding: 12px 0; }
+.history-empty { font-size: 0.78rem; color: var(--sage); font-family: 'DM Mono', monospace; text-align: center; padding: 16px 0; }
+.history-delete-btn {
+  margin-left: auto;
+  background: none; border: none;
+  font-size: 1rem; cursor: pointer;
+  opacity: 0.35; transition: opacity 0.2s;
+  padding: 2px 6px; border-radius: 6px;
+  flex-shrink: 0; line-height: 1;
+}
+.history-delete-btn:hover { opacity: 1; background: rgba(168,68,68,0.1); }
+
+/* ===== 履歴モーダル ===== */
+.history-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,42,26,0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.history-modal {
+  background: var(--cream);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%; max-width: 640px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 48px rgba(26,42,26,0.28);
+  animation: fadeUp 0.3s ease both;
+}
+.history-modal-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid rgba(138,173,138,0.25);
+}
+.history-modal-meta { flex: 1; }
+.history-modal-date { font-size: 0.68rem; font-family: 'DM Mono', monospace; color: var(--sage); margin-bottom: 4px; letter-spacing: 0.06em; }
+.history-modal-plant { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--moss); }
+.history-modal-close {
+  background: none; border: 1px solid rgba(138,173,138,0.35);
+  border-radius: 50%; width: 32px; height: 32px;
+  font-size: 0.9rem; color: var(--sage); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.history-modal-close:hover { background: rgba(138,173,138,0.2); color: var(--moss); }
 </style>
   <script src="/tomu-system/common/header.js"></script>
   <link rel="manifest" href="manifest.json">
@@ -468,6 +515,25 @@
     重篤な病気・害虫が疑われる場合は専門家にご相談ください。
   </p>
 
+</div>
+
+<!-- 履歴詳細モーダル -->
+<div id="history-modal" class="history-modal-overlay" style="display:none;" onclick="closeHistoryModal(event)">
+  <div class="history-modal" onclick="event.stopPropagation()">
+    <div class="history-modal-header">
+      <div class="history-modal-meta">
+        <div class="history-modal-date" id="modal-date"></div>
+        <div class="history-modal-plant" id="modal-plant"></div>
+      </div>
+      <span class="status-badge" id="modal-badge"></span>
+      <button class="history-modal-close" onclick="closeHistoryModal()">✕</button>
+    </div>
+    <div class="diag-grid" id="modal-diag-grid"></div>
+    <div class="advice-box" style="margin-top:16px;">
+      <div class="advice-label">📋 総合アドバイス</div>
+      <div class="advice-text" id="modal-advice"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -675,6 +741,8 @@ async function diagnose() {
 }
 
 // ======= 診断履歴 =======
+let _historySessions = [];
+
 async function loadHistory() {
   const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
   if (!email) return;
@@ -683,8 +751,17 @@ async function loadHistory() {
       headers: { 'X-Customer-Email': email }
     });
     const data = await res.json();
-    renderHistory(data.sessions || []);
+    _historySessions = data.sessions || [];
+    renderHistory(_historySessions);
   } catch (e) {}
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function statusClass(s) {
+  return s === 'good' ? 'status-good' : s === 'caution' ? 'status-caution' : 'status-bad';
 }
 
 function renderHistory(sessions) {
@@ -695,25 +772,78 @@ function renderHistory(sessions) {
     section.style.display = 'block';
     return;
   }
-  list.innerHTML = sessions.map(s => {
+  list.innerHTML = sessions.map((s, i) => {
     const sd = s.session_data || {};
-    const date = new Date(s.created_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
-    const statusClass = sd.overallStatus === 'good' ? 'status-good' : sd.overallStatus === 'caution' ? 'status-caution' : 'status-bad';
-    const advice = (sd.overallAdvice || '').slice(0, 70) + (sd.overallAdvice && sd.overallAdvice.length > 70 ? '…' : '');
-    return `<div class="history-item">
+    const date = new Date(s.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' });
+    const advice = (sd.overallAdvice || '').slice(0, 72) + (sd.overallAdvice && sd.overallAdvice.length > 72 ? '…' : '');
+    return `<div class="history-item" onclick="openHistoryModal(${i})">
       <div class="history-meta">
-        <span class="history-date">${date}</span>
-        <span class="status-badge ${statusClass}">${sd.overallLabel || sd.overallStatus || '—'}</span>
+        <span class="history-date">${esc(date)}</span>
+        <span class="status-badge ${statusClass(sd.overallStatus)}">${esc(sd.overallLabel || sd.overallStatus || '—')}</span>
+        <button class="history-delete-btn" title="削除" onclick="event.stopPropagation(); deleteHistory('${esc(s.id)}')">🗑</button>
       </div>
-      <div class="history-plant">${sd.plantName || '不明な植物'}</div>
-      ${advice ? `<div class="history-advice">${advice}</div>` : ''}
+      <div class="history-plant">${esc(sd.plantName || '不明な植物')}</div>
+      ${advice ? `<div class="history-advice">${esc(advice)}</div>` : ''}
     </div>`;
   }).join('');
   section.style.display = 'block';
 }
 
+function openHistoryModal(index) {
+  const s = _historySessions[index];
+  if (!s) return;
+  const sd = s.session_data || {};
+  const date = new Date(s.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' });
+
+  document.getElementById('modal-date').textContent = date;
+  document.getElementById('modal-plant').textContent = sd.plantName || '不明な植物';
+
+  const badge = document.getElementById('modal-badge');
+  badge.textContent = sd.overallLabel || sd.overallStatus || '—';
+  badge.className = 'status-badge ' + statusClass(sd.overallStatus);
+
+  const grid = document.getElementById('modal-diag-grid');
+  grid.innerHTML = (sd.items || []).map(item => `
+    <div class="diag-item ${item.status || 'good'}">
+      <div class="diag-icon">${esc(item.icon || '🌿')}</div>
+      <div class="diag-body">
+        <div class="diag-label">${esc(item.category)}</div>
+        <div class="diag-title">${esc(item.title)}</div>
+        <div class="diag-desc">${esc(item.description)}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('modal-advice').textContent = sd.overallAdvice || '';
+  document.getElementById('history-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryModal(e) {
+  if (e && e.target !== document.getElementById('history-modal')) return;
+  document.getElementById('history-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function deleteHistory(id) {
+  if (!id || !confirm('この診断履歴を削除しますか？')) return;
+  const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
+  if (!email) return;
+  try {
+    const res = await fetch(WORKER_BASE + '/api/history?id=' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: { 'X-Customer-Email': email }
+    });
+    if (res.ok) {
+      await loadHistory();
+    } else {
+      alert('削除に失敗しました。もう一度お試しください。');
+    }
+  } catch (e) {
+    alert('通信エラーが発生しました。');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  // TomuAuthの初期化後に履歴を読み込む
   setTimeout(loadHistory, 800);
 });
 

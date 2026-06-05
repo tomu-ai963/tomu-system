@@ -909,6 +909,32 @@ async function handleRequest(request, env) {
     }
   }
 
+  // =========================================================
+  // DELETE /api/history — セッション履歴削除（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/history" && request.method === "DELETE") {
+    var delEmail = request.headers.get("X-Customer-Email") || "";
+    var delId = url.searchParams.get("id") || "";
+    if (!delEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    if (!delId) return jsonRes({ error: "id is required" }, 400, corsH);
+    var delPlan = await env.SUBSCRIPTIONS.get(delEmail);
+    if (!delPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(delPlan, "full")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "full", current: delPlan }, 403, corsH);
+    }
+    try {
+      var delPath = "/app_sessions?id=eq." + encodeURIComponent(delId) +
+                   "&user_id=eq." + encodeURIComponent(delEmail);
+      var delRes = await supabaseRequest("DELETE", delPath, null, env);
+      if (!delRes.ok) {
+        return jsonRes({ error: "Failed to delete", detail: await delRes.text() }, delRes.status, corsH);
+      }
+      return jsonRes({ success: true }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
   // DELETE /api/board/:id — スレッド削除（管理者=全件、ユーザー=自分のみ）
   if (request.method === "DELETE" && /^\/api\/board\/[^/]+$/.test(url.pathname)) {
     var bdEmail = (request.headers.get("X-Customer-Email") || "").toLowerCase();
