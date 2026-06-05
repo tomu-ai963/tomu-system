@@ -394,6 +394,9 @@ footer {
 .btn-mystic:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
 .mystic-result-card{margin-top:12px;background:linear-gradient(135deg,rgba(26,5,51,0.95),rgba(13,31,60,0.95));border:1px solid rgba(212,175,55,0.4);border-radius:8px;padding:18px 20px;color:#e8d5a3;font-size:0.88rem;line-height:1.9;white-space:pre-wrap;max-height:none;overflow:visible;}
 .mystic-result-label{font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;}
+
+/* ===== Supabase 履歴 ===== */
+.hist-section{margin:12px 0;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.4);border:1px solid rgba(0,0,0,0.06);}.hist-list{display:flex;flex-direction:column;gap:7px;margin-top:7px;}.hist-card{padding:10px 12px;border-radius:9px;background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.06);cursor:pointer;transition:background 0.2s;}.hist-card:hover{background:rgba(255,255,255,0.9);}.hist-card-meta{display:flex;align-items:center;gap:8px;margin-bottom:3px;}.hist-card-date{font-size:0.66rem;font-family:monospace;opacity:0.5;}.hist-card-title{font-size:0.87rem;font-weight:600;margin-bottom:2px;}.hist-card-summary{font-size:0.75rem;opacity:0.6;line-height:1.45;}.hist-del{margin-left:auto;background:none;border:none;font-size:0.9rem;cursor:pointer;opacity:0.28;transition:opacity 0.2s;padding:1px 4px;border-radius:4px;}.hist-del:hover{opacity:1;}.hist-empty{font-size:0.75rem;opacity:0.45;font-family:monospace;text-align:center;padding:12px 0;}.hist-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;}.hist-modal{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,0.2);}.hist-modal-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,0.08);}.hist-modal-date{font-size:0.66rem;font-family:monospace;opacity:0.52;margin-bottom:3px;}.hist-modal-title{font-size:1.13rem;font-weight:700;}.hist-modal-meta{font-size:0.7rem;opacity:0.48;margin-top:3px;}.hist-modal-close{margin-left:auto;background:none;border:1px solid rgba(0,0,0,0.12);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.84rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s;}.hist-modal-close:hover{background:rgba(0,0,0,0.08);}.hist-modal-body{font-size:0.87rem;line-height:1.85;white-space:pre-wrap;}
 </style>
   <script src="/tomu-system/common/header.js"></script>
   <link rel="manifest" href="manifest.json">
@@ -473,6 +476,11 @@ footer {
     </div>
   </div>
 
+  <div id="hist-section" class="hist-section" style="display:none;">
+    <p style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.5;margin-bottom:8px;font-family:monospace;">Past Sessions — 履歴</p>
+    <div id="hist-list" class="hist-list"></div>
+  </div>
+
   <footer>
     <a href="https://tomu-ai963.github.io/tomu-system/" class="footer-link">とむSYSTEM</a>
     <span class="footer-divider">|</span>
@@ -531,6 +539,8 @@ async function generateReply() {
     const data = await res.json();
     if (data.result) {
       showResult(data.result);
+      histSave({title:selectedDirection+'の返信',summary:data.result.slice(0,80)+(data.result.length>80?'…':''),content:data.result});
+      setTimeout(histLoad,1000);
     } else {
       throw new Error("返信文が生成されませんでした。");
     }
@@ -633,6 +643,30 @@ async function callMystic(tool, args) {
 }
 </script>
 
+<div id="hist-modal" class="hist-modal-overlay" style="display:none;" onclick="histClose(event)">
+  <div class="hist-modal" onclick="event.stopPropagation()">
+    <div class="hist-modal-hdr">
+      <div style="flex:1"><div class="hist-modal-date" id="hist-modal-date"></div><div class="hist-modal-title" id="hist-modal-title"></div><div class="hist-modal-meta" id="hist-modal-meta"></div></div>
+      <button class="hist-modal-close" onclick="histClose()">✕</button>
+    </div>
+    <div class="hist-modal-body" id="hist-modal-body"></div>
+  </div>
+</div>
+<script>
+(function(){
+const A='mail-reply',W='https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+let _s=[];
+function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+window.histLoad=async function(){const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?app_id='+A+'&limit=5',{headers:{'X-Customer-Email':em}});const d=await r.json();_s=d.sessions||[];histRender(_s);}catch(x){}};
+window.histRender=function(ss){const sec=document.getElementById('hist-section');const li=document.getElementById('hist-list');if(!sec||!li)return;if(!ss.length){li.innerHTML='<p class="hist-empty">まだ履歴がありません</p>';sec.style.display='';return;}li.innerHTML=ss.map((s,i)=>{const sd=s.session_data||{},dt=new Date(s.created_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});return'<div class="hist-card" onclick="histOpen('+i+')"><div class="hist-card-meta"><span class="hist-card-date">'+dt+'</span><button class="hist-del" onclick="event.stopPropagation();histDel(\''+_e(s.id)+'\')">🗑</button></div><div class="hist-card-title">'+_e(sd.title||'—')+'</div>'+(sd.summary?'<div class="hist-card-summary">'+_e(sd.summary)+'</div>':'')+'</div>';}).join('');sec.style.display='';};
+window.histOpen=function(i){const s=_s[i];if(!s)return;const sd=s.session_data||{};document.getElementById('hist-modal-date').textContent=new Date(s.created_at).toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});document.getElementById('hist-modal-title').textContent=sd.title||'—';document.getElementById('hist-modal-meta').textContent=sd.meta||'';document.getElementById('hist-modal-body').textContent=sd.content||'';document.getElementById('hist-modal').style.display='flex';document.body.style.overflow='hidden';};
+window.histClose=function(e){if(e&&e.target!==document.getElementById('hist-modal'))return;document.getElementById('hist-modal').style.display='none';document.body.style.overflow='';};
+window.histDel=async function(id){if(!id||!confirm('この履歴を削除しますか？'))return;const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?id='+encodeURIComponent(id),{method:'DELETE',headers:{'X-Customer-Email':em}});if(r.ok)await histLoad();else alert('削除に失敗しました。');}catch(x){alert('通信エラー');}};
+window.histSave=async function(d){const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{await fetch(W+'/api/history',{method:'POST',headers:{'Content-Type':'application/json','X-Customer-Email':em},body:JSON.stringify({app_id:A,session_data:d})});}catch(x){}};
+document.addEventListener('DOMContentLoaded',function(){setTimeout(histLoad,800);});
+})();
+</script>
+<script>window.TOMU_REQUIRED_PLAN = 'full';</script>
 <!-- とむSYSTEM 共通認証モジュール -->
 <script src="../../tomu-login.js"></script>
 

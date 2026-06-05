@@ -1218,6 +1218,28 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
+  // POST /api/history — セッション保存（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/history" && request.method === "POST") {
+    var histSaveEmail = request.headers.get("X-Customer-Email") || body.email || "";
+    var histSaveAppId = body.app_id || "";
+    var histSaveData = body.session_data;
+    if (!histSaveEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    if (!histSaveAppId || !histSaveData) return jsonRes({ error: "app_id and session_data are required" }, 400, corsH);
+    var histSavePlan = await env.SUBSCRIPTIONS.get(histSaveEmail);
+    if (!histSavePlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(histSavePlan, "full")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "full", current: histSavePlan }, 403, corsH);
+    }
+    try {
+      await saveSession(histSaveEmail, histSaveAppId, histSaveData, env);
+      return jsonRes({ success: true }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
   // POST /api/board — スレッド作成（認証必須、お知らせ=管理者のみ）
   // =========================================================
   if (url.pathname === "/api/board") {
