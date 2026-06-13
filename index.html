@@ -114,9 +114,44 @@ nav {
 }
 .nav-logout-btn:hover { color: #c0392b; }
 
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
 @media(max-width:640px){
   nav { padding: 16px 20px; }
-  .nav-links { display: none; }
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 16px;
+    left: 16px;
+    flex-direction: column;
+    gap: 0;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 0;
+    box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links li { width: 100%; }
+  .nav-links a,
+  .nav-links .nav-logout-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 22px;
+    box-sizing: border-box;
+  }
+  .nav-cta { border-radius: 0; background: transparent; color: var(--accent) !important; }
 }
 
 /* ===== HERO ===== */
@@ -832,6 +867,7 @@ footer {
 .cat-learn  { background: #ede8f8; color: #5030a0; }
 .cat-shikaku { background: rgba(200,160,70,0.15); color: #C9A84C; }
 .cat-comm   { background: #edf8f0; color: #2d6040; }
+.cat-shigyo { background: rgba(120,80,160,0.12); color: #6a4a8a; }
 .apps-card.hidden { display: none; }
 .apps-empty-msg {
   display: none;
@@ -1005,6 +1041,7 @@ footer {
     <li><a href="#pricing" class="nav-cta">はじめる</a></li>
     <li id="tomu-nav-logout" style="display:none"><button class="nav-logout-btn">ログアウト</button></li>
   </ul>
+  <button class="nav-toggle" id="navToggle" aria-label="メニューを開く" aria-expanded="false">☰</button>
 </nav>
 
 <!-- BOARD -->
@@ -1116,6 +1153,7 @@ footer {
     <button class="apps-filter-btn" data-filter="学習">学習</button>
     <button class="apps-filter-btn" data-filter="資格">資格</button>
     <button class="apps-filter-btn" data-filter="遊び">遊び</button>
+    <button class="apps-filter-btn" data-filter="士業">士業</button>
   </div>
 
   <!-- Light Plan -->
@@ -1665,6 +1703,84 @@ footer {
 
     <div class="apps-empty-msg" id="std-empty">該当するアプリがありません</div>
   </div>
+
+  <!-- Full Plan -->
+  <div class="apps-section-label" style="margin-top:20px;">Full Plan <span class="apps-plan-tag">¥1,480/月</span></div>
+  <div class="apps-count-label" id="full-count">5本</div>
+  <div class="apps-grid-v2" id="full-grid">
+
+    <div class="apps-card" data-cat="士業">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💡</div>
+        <div class="apps-card-name">弁理士アドバイザー</div>
+        <div class="apps-card-cat cat-shigyo">士業</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">特許・商標・著作権・意匠から知財トラブルまで。知的財産の疑問に、AIがその場で答える専門アドバイザー。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/full/benrishi-advisor/" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="士業">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">📋</div>
+        <div class="apps-card-name">行政書士アドバイザー</div>
+        <div class="apps-card-cat cat-shigyo">士業</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">許認可・ビザ・在留資格・各種行政手続き。複雑な書類と手順を、AIが分かりやすく案内する専門アドバイザー。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/full/gyosei-advisor/" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="士業">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">⚖️</div>
+        <div class="apps-card-name">法律アドバイザー</div>
+        <div class="apps-card-cat cat-shigyo">士業</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">損害賠償・内容証明・契約トラブルなど身近な法律問題。一般と専門家モードで、AIが法的な考え方を整理する。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/full/legal-advisor/" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="士業">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">👔</div>
+        <div class="apps-card-name">社労士アドバイザー</div>
+        <div class="apps-card-cat cat-shigyo">士業</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">残業代・未払い・社会保険・労務トラブル。働くうえでの労働・社保の疑問に、AIが実務目線で答える。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/full/sharoshi-advisor/" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-card" data-cat="士業">
+      <div class="apps-card-face">
+        <div class="apps-card-emoji">💴</div>
+        <div class="apps-card-name">税務アドバイザー</div>
+        <div class="apps-card-cat cat-shigyo">士業</div>
+      </div>
+      <div class="apps-card-panel">
+        <div class="apps-card-panel-inner">
+          <div class="apps-card-desc">確定申告・節税・各種税金の仕組み。難しい税務の疑問を、AIが身近な言葉で整理してくれる専門アドバイザー。</div>
+          <a class="apps-card-open-btn" href="https://tomu-ai963.github.io/tomu-system/apps/full/tax-advisor/" target="_blank">アプリを開く <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="apps-empty-msg" id="full-empty">該当するアプリがありません</div>
+  </div>
 </section>
 <!-- 資格問題集セクション -->
 <section class="apps" id="shikaku-apps">
@@ -1939,17 +2055,18 @@ footer {
       <button class="plan-btn" onclick="startCheckout('standard')">はじめる</button>
     </div>
 
-    <div class="plan-card fade-up" style="opacity:.5;pointer-events:none;">
+    <div class="plan-card fade-up">
+      <div class="plan-badge" style="background:var(--accent2);color:#fff;">Now Available</div>
       <div class="plan-name">Full</div>
       <div class="plan-price"><sup>¥</sup>1,480<sub>/月</sub></div>
-      <div class="plan-desc">全アプリ無制限。士業・専門職向けアプリも含む、最上位プラン。近日公開予定。</div>
+      <div class="plan-desc">全アプリ無制限。士業・専門職向けアプリも含む、最上位プラン。</div>
       <ul class="plan-features">
         <li class="plan-feature">全アプリ完全使い放題</li>
         <li class="plan-feature">利用回数無制限</li>
         <li class="plan-feature">専門職向けアプリ含む</li>
         <li class="plan-feature">今後追加のアプリも含む</li>
       </ul>
-      <button class="plan-btn" style="background:#ccc;cursor:not-allowed;" disabled>近日公開</button>
+      <button class="plan-btn" onclick="startCheckout('full')">はじめる</button>
     </div>
 
   </div>
@@ -1979,8 +2096,8 @@ footer {
     </div>
     <div class="flow-step fade-up">
       <div class="flow-num">4</div>
-      <h4>プランが増える</h4>
-      <p>StandardやFullプランも近日公開予定。新アプリが追加されるたびに、できることが広がります。</p>
+      <h4>プランを広げる</h4>
+      <p>Standard・Fullプランにアップグレードすれば、使えるアプリが一気に増加。新アプリが追加されるたびに、できることが広がります。</p>
     </div>
   </div>
 </section>
@@ -1997,8 +2114,8 @@ footer {
       <div class="faq-a">はい、いつでも解約可能です。解約後も契約期間の終了まではご利用いただけます。</div>
     </details>
     <details class="faq-item">
-      <summary class="faq-q">選んだアプリはあとから変えられますか？</summary>
-      <div class="faq-a">はい、マイページからいつでも変更できます。月の途中でも切り替えOKです。</div>
+      <summary class="faq-q">プランはあとから変更できますか？</summary>
+      <div class="faq-a">はい、いつでもアップグレード・ダウングレードできます。上位プランに切り替えると、対応するアプリがすぐにご利用いただけます。</div>
     </details>
     <details class="faq-item">
       <summary class="faq-q">「Coming Soon」のアプリはいつ使えますか？</summary>
@@ -2019,7 +2136,7 @@ footer {
 <section class="cta-section">
   <div class="section-eyebrow">Get Started</div>
   <h2>今日から、<br><em>賢い習慣</em>をはじめよう。</h2>
-  <p>Lightプランですべてのアプリを試せます。気に入ったら、新プランが増えるのをお楽しみに。</p>
+  <p>まずはLightプランで気軽に体験。もっと使いたくなったら、Standard・Fullプランへいつでもアップグレードできます。</p>
   <a href="#pricing" class="btn-primary" style="font-size:.85rem;padding:16px 48px;">プランを選ぶ</a>
 </section>
 
@@ -2316,7 +2433,7 @@ document.querySelectorAll('.apps-filter-btn').forEach(btn => {
     btn.classList.add('active');
     const filter = btn.dataset.filter;
     if (openCard) { openCard.classList.remove('open'); openCard = null; }
-    let lv = 0, sv = 0, qv = 0;
+    let lv = 0, sv = 0, fv = 0, qv = 0;
     document.querySelectorAll('#light-grid .apps-card').forEach(c => {
       const show = filter === 'all' || c.dataset.cat === filter;
       c.classList.toggle('hidden', !show);
@@ -2327,6 +2444,11 @@ document.querySelectorAll('.apps-filter-btn').forEach(btn => {
       c.classList.toggle('hidden', !show);
       if (show) sv++;
     });
+    document.querySelectorAll('#full-grid .apps-card').forEach(c => {
+      const show = filter === 'all' || c.dataset.cat === filter;
+      c.classList.toggle('hidden', !show);
+      if (show) fv++;
+    });
     document.querySelectorAll('#shikaku-grid .apps-card').forEach(c => {
       const show = filter === 'all' || c.dataset.cat === filter;
       c.classList.toggle('hidden', !show);
@@ -2334,12 +2456,35 @@ document.querySelectorAll('.apps-filter-btn').forEach(btn => {
     });
     document.getElementById('light-count').textContent = lv + '本';
     document.getElementById('std-count').textContent = sv + '本';
+    document.getElementById('full-count').textContent = fv + '本';
     document.getElementById('shikaku-count').textContent = qv + '本';
     document.getElementById('light-empty').classList.toggle('visible', lv === 0);
     document.getElementById('std-empty').classList.toggle('visible', sv === 0);
+    document.getElementById('full-empty').classList.toggle('visible', fv === 0);
     document.getElementById('shikaku-empty').classList.toggle('visible', qv === 0);
   });
 });
+
+// モバイルナビ（ハンバーガー）
+(function () {
+  const toggle = document.getElementById('navToggle');
+  const links = document.querySelector('.nav-links');
+  if (!toggle || !links) return;
+  const setOpen = (open) => {
+    links.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(!links.classList.contains('open'));
+  });
+  links.addEventListener('click', (e) => {
+    if (e.target.closest('a, .nav-logout-btn')) setOpen(false);
+  });
+  document.addEventListener('click', (e) => {
+    if (links.classList.contains('open') && !e.target.closest('nav')) setOpen(false);
+  });
+})();
 
 // Stripe Checkout
 const STRIPE_LINKS = {
@@ -2351,7 +2496,6 @@ const STRIPE_LINKS = {
 let selectedPlan = null;
 
 function startCheckout(plan) {
-  if (plan === 'full') return; // Fullは現在準備中
   selectedPlan = plan;
   document.getElementById('checkout-email').value = '';
   document.getElementById('checkout-error').style.display = 'none';
