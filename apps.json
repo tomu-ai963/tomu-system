@@ -1,0 +1,535 @@
+{
+  "apps": [
+    {
+      "id": "homehome-kagami",
+      "title": "褒め褒め鏡",
+      "description": "今日の小さな成果を入力すると、AIが最大限に称えてくれる。就寝前の自己肯定感を底上げする1分習慣。",
+      "plan": "light",
+      "category": "メンタルケア",
+      "emoji": "🪞",
+      "path": "/tomu-system/apps/homehome-kagami/"
+    },
+    {
+      "id": "lunch-roulette-v2",
+      "title": "昼飯ルーレット",
+      "description": "気分を入力するだけで、AIが今日のランチを1つ決める。毎日の微細な意思決定コストをゼロにする。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "🍱",
+      "path": "/tomu-system/apps/lunch-roulette-v2/"
+    },
+    {
+      "id": "future-letter",
+      "title": "未来の自分からの手紙",
+      "description": "今日の頑張りを記録すると、1年後の自分から感謝のメッセージが届く。長期的な視点と癒やしを同時に。",
+      "plan": "light",
+      "category": "メンタルケア",
+      "emoji": "✉️",
+      "path": "/tomu-system/apps/future-letter/"
+    },
+    {
+      "id": "three-tasks",
+      "title": "三行タスク整理",
+      "description": "乱雑な思考を入力すると、今日やるべき3つのアクションに整理してくれる。朝の始業をスムーズにする習慣。",
+      "plan": "light",
+      "category": "ビジネス",
+      "emoji": "📋",
+      "path": "/tomu-system/apps/three-tasks/"
+    },
+    {
+      "id": "lucky-action",
+      "title": "今日のラッキーアクション",
+      "description": "気分に合わせた「1分以内にできる開運行動」を毎朝提案。占いを超えた、具体的で意外な行動指針。",
+      "plan": "light",
+      "category": "遊び",
+      "emoji": "🎴",
+      "path": "/tomu-system/apps/lucky-action/"
+    },
+    {
+      "id": "kokoro-detox",
+      "title": "心のデトックス",
+      "description": "ネガティブな気持ちを吐き出すと、AIが「新しい視点」として1行で再定義。認知をリセットする即席ケア。",
+      "plan": "light",
+      "category": "メンタルケア",
+      "emoji": "🌿",
+      "path": "/tomu-system/apps/kokoro-detox/"
+    },
+    {
+      "id": "rapid-reply",
+      "title": "爆速メール返信",
+      "description": "受信メールの要点と返信の方向性を入力すると、2文の返信案を生成。移動中の隙間時間で業務を完結させる。",
+      "plan": "light",
+      "category": "ビジネス",
+      "emoji": "⚡",
+      "path": "/tomu-system/apps/rapid-reply/"
+    },
+    {
+      "id": "book-log",
+      "title": "一言読書録",
+      "description": "本のタイトルと感想を入力すると、その本の本質を突いた「自分だけの座右の銘」を生成。知恵が積み重なる喜び。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "📖",
+      "path": "/tomu-system/apps/book-log/"
+    },
+    {
+      "id": "english-chat",
+      "title": "10秒英会話",
+      "description": "シチュエーションを選ぶと、今すぐ使える1フレーズとカタカナ発音ガイドを提示。学習ではなく、武器を手に入れる感覚。",
+      "plan": "light",
+      "category": "学習",
+      "emoji": "🗣️",
+      "path": "/tomu-system/apps/english-chat/"
+    },
+    {
+      "id": "dinner-savior",
+      "title": "晩御飯の救世主",
+      "description": "冷蔵庫の食材を2つ入力すると、最適な料理名と調理のコツを1つ提示。「今あるもので何とかする」を数秒で解決。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "🍳",
+      "path": "/tomu-system/apps/dinner-savior/"
+    },
+    {
+      "id": "polite-decline",
+      "title": "やんわり断り文句メーカー",
+      "description": "断りたい内容と相手の関係性を入力するだけ。角の立たない丁寧な断り文句を生成。人間関係を傷つけずに「ノー」と言える。",
+      "plan": "light",
+      "category": "コミュニケーション",
+      "emoji": "🙏",
+      "path": "/tomu-system/apps/polite-decline/"
+    },
+    {
+      "id": "etiquette-guide",
+      "title": "冠婚葬祭マナーガイド",
+      "description": "シーンと自分の立場を選ぶだけ。結婚式・葬儀・お見舞いなど、適切なマナーとアドバイスをすぐに確認できる。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "💐",
+      "path": "/tomu-system/apps/etiquette-guide/"
+    },
+    {
+      "id": "small-talk-generator",
+      "title": "雑談ネタジェネレーター",
+      "description": "相手の特徴と状況を入力するだけ。その場で使える雑談ネタをすぐに提案。会話の沈黙を埋める即席ネタ帳。",
+      "plan": "light",
+      "category": "コミュニケーション",
+      "emoji": "💬",
+      "path": "/tomu-system/apps/small-talk-generator/"
+    },
+    {
+      "id": "drink-excuse",
+      "title": "飲み過ぎ言い訳アシスト",
+      "description": "飲み過ぎた状況と翌日の予定を入力するだけ。ユーモアある言い訳と乗り切り方を提案。翌朝の地獄を笑いに変える。",
+      "plan": "light",
+      "category": "遊び",
+      "emoji": "🍺",
+      "path": "/tomu-system/apps/drink-excuse/"
+    },
+    {
+      "id": "outing-idea",
+      "title": "お出かけアイデアメーカー",
+      "description": "子供の年齢・天気・予算を入力するだけ。日帰りや近場のお出かけ先をすぐに提案。「どこ行く？」問題を即解決。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "🗺️",
+      "path": "/tomu-system/apps/outing-idea/"
+    },
+    {
+      "id": "oshi-presentation",
+      "title": "推し活プレゼン文メーカー",
+      "description": "推しの名前と魅力を入力するだけ。友達を沼らせる最強の布教文を生成。あなたの熱量をAIが言語化する。",
+      "plan": "light",
+      "category": "遊び",
+      "emoji": "✨",
+      "path": "/tomu-system/apps/oshi-presentation/"
+    },
+    {
+      "id": "hangover-recovery",
+      "title": "二日酔い回復プランナー",
+      "description": "今の症状と手元にある食材を入力するだけ。回復メニューと今日の過ごし方を提案。つらい朝を最短で乗り越える。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "🤒",
+      "path": "/tomu-system/apps/hangover-recovery/"
+    },
+    {
+      "id": "parent-message",
+      "title": "親への連絡文メーカー",
+      "description": "伝えたい内容と親との関係感を入力するだけ。角が立たない丁寧な報告・お願い文を生成。",
+      "plan": "light",
+      "category": "コミュニケーション",
+      "emoji": "📱",
+      "path": "/tomu-system/apps/parent-message/"
+    },
+    {
+      "id": "neighbor-trouble",
+      "title": "ご近所トラブル相談室",
+      "description": "トラブルの内容と相手との関係を入力するだけ。穏便な対処法と伝え方を一緒に考える。関係を壊さず解決する言葉を見つける。",
+      "plan": "light",
+      "category": "コミュニケーション",
+      "emoji": "🏠",
+      "path": "/tomu-system/apps/neighbor-trouble/"
+    },
+    {
+      "id": "subscript-checker",
+      "title": "サブスク断捨離チェッカー",
+      "description": "加入中のサブスクを入力するだけ。AIが「解約すべき」を正直に教える。毎月の無駄な出費を一気に見直す断捨離ツール。",
+      "plan": "light",
+      "category": "ライフハック",
+      "emoji": "✂️",
+      "path": "/tomu-system/apps/subscript-checker/"
+    },
+    {
+      "id": "summarize-reply",
+      "title": "長文メール要約＋返信セット",
+      "description": "長いメールや資料を貼り付けるだけで、要点と返信案をセットで生成。情報過多な日常をスリム化。",
+      "plan": "standard",
+      "category": "ビジネス",
+      "emoji": "📧",
+      "path": "/tomu-system/apps/standard/summarize-reply/"
+    },
+    {
+      "id": "index-1",
+      "title": "読書・動画武器化ノート",
+      "description": "本や動画の内容を入力すると、明日から使える「行動に変わる知識」に再構成。インプットを武器に。",
+      "plan": "standard",
+      "category": "学習",
+      "emoji": "📚",
+      "path": "/tomu-system/apps/standard/index-1/"
+    },
+    {
+      "id": "gijiroku-action",
+      "title": "議事録→アクションプラン変換",
+      "description": "会議メモを貼るだけで、誰が何をいつまでにやるかを整理したアクションプランに変換。会議後の迷いをゼロに。",
+      "plan": "standard",
+      "category": "ビジネス",
+      "emoji": "📋",
+      "path": "/tomu-system/apps/standard/gijiroku-action/"
+    },
+    {
+      "id": "subsidy-guide",
+      "title": "補助金・ふるさと納税ガイド",
+      "description": "状況を入力すると、使える補助金やふるさと納税の活用法を提案。複雑な制度をわかりやすくナビゲート。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "💴",
+      "path": "/tomu-system/apps/standard/subsidy-guide/"
+    },
+    {
+      "id": "kids-activity",
+      "title": "子供の習い事条件整理",
+      "description": "子供の特性・予算・送迎条件を入力すると、最適な習い事の選び方を整理。迷いがちな選択をすっきり解決。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🧒",
+      "path": "/tomu-system/apps/standard/kids-activity/"
+    },
+    {
+      "id": "family-trip-planner",
+      "title": "家族旅行プランナー",
+      "description": "人数・予算・日程・好みを入力すると、行程から宿泊スタイルまで構造化されたプランを提案。計画の手間を一気に削減。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "✈️",
+      "path": "/tomu-system/apps/standard/family-trip-planner/"
+    },
+    {
+      "id": "kenshin-parser",
+      "title": "健診結果パーサー",
+      "description": "健診の数値を入力すると、気になる項目をわかりやすく解説。受診すべきかの判断基準も提示。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🩺",
+      "path": "/tomu-system/apps/standard/kenshin-parser/"
+    },
+    {
+      "id": "resume-rewriter",
+      "title": "職務経歴書リライター",
+      "description": "経歴や実績を入力すると、採用担当者の目に留まる表現にリライト。転職活動の第一関門を突破する言葉に磨き上げる。",
+      "plan": "standard",
+      "category": "ビジネス",
+      "emoji": "📝",
+      "path": "/tomu-system/apps/standard/resume-rewriter/"
+    },
+    {
+      "id": "nameless-chores",
+      "title": "名もなき家事分担リスト",
+      "description": "見えない家事を洗い出し、家族で分担できるリストに整理。「なんで気づかないの」をなくす、家庭の平和ツール。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🏠",
+      "path": "/tomu-system/apps/standard/nameless-chores/"
+    },
+    {
+      "id": "app10-weekly-coach",
+      "title": "週次内省コーチ",
+      "description": "週に一度、3つの問いに答えるだけ。AIコーチが静かに伴走し、気づきと次の一歩を届ける。自己成長が習慣になる。",
+      "plan": "standard",
+      "category": "メンタルケア",
+      "emoji": "🌙",
+      "path": "/tomu-system/apps/standard/app10-weekly-coach/"
+    },
+    {
+      "id": "plant-doctor",
+      "title": "植物ドクター",
+      "description": "植物の写真を送るだけで、AIが葉・茎・土の状態を診断。水やりや日当たりの改善点をわかりやすくアドバイス。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🌿",
+      "path": "/tomu-system/apps/standard/plant-doctor/"
+    },
+    {
+      "id": "sticker-studio",
+      "title": "Sticker Studio",
+      "description": "形・色・テキストを自由に組み合わせてオリジナルステッカーを作成。AIカラーコーチ・テキスト提案・コンセプト生成で完成度を底上げ。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "✧",
+      "path": "/tomu-system/apps/standard/sticker-studio/"
+    },
+    {
+      "id": "coord-ai",
+      "title": "Coord AI",
+      "description": "手持ちの服からコーデを提案",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "👗",
+      "path": "./coord-ai/"
+    },
+    {
+      "id": "hair-simulator",
+      "title": "ヘアーシミュレーター",
+      "description": "写真をアップロードするだけで、AIが髪型・髪色をシミュレーション。カットやカラーを試してから美容院へ。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "💇‍♀️",
+      "path": "/tomu-system/apps/standard/hair-simulator/"
+    },
+    {
+      "id": "yama-no-koyomi",
+      "title": "山の暦",
+      "description": "月齢・吉日を活かした農作業カレンダー。記録・予定・メモを一元管理し、AIが月の満ち欠けを踏まえた農作業アドバイスを提供。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🌙",
+      "path": "/tomu-system/apps/yama-no-koyomi/"
+    },
+    {
+      "id": "vision-board",
+      "title": "ビジョンボード",
+      "description": "AIと対話して夢の画像を生成し、理想の未来を可視化。画像・テキストカードを自由に配置してあなただけのビジョンボードを作成。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🌟",
+      "path": "/tomu-system/apps/standard/vision-board/"
+    },
+    {
+      "id": "flyer-scan",
+      "title": "AIチラシスキャナー",
+      "description": "チラシ画像をアップロードするだけで、特売品・日付・店舗情報を抽出。特売品を活かしたおすすめ献立もAIが提案。",
+      "plan": "standard",
+      "category": "ライフハック",
+      "emoji": "🛒",
+      "path": "/tomu-system/apps/standard/flyer-scan/"
+    },
+    {
+      "id": "marketing-agent",
+      "title": "Marketing Agent",
+      "description": "商品・ターゲット・媒体を入力するだけ。AIがキャッチコピー・コンテンツアイデア・訴求ポイントを一括生成。マーケティング戦略を即座に立案。",
+      "plan": "standard",
+      "category": "ビジネス",
+      "emoji": "📣",
+      "path": "/tomu-system/apps/standard/marketing-agent/"
+    },
+    {
+      "id": "benrishi-advisor",
+      "title": "弁理士アドバイザー",
+      "description": "特許・商標・著作権・意匠から知財トラブルまで。知的財産の疑問に、AIがその場で答える専門アドバイザー。",
+      "plan": "full",
+      "category": "士業",
+      "emoji": "💡",
+      "path": "/tomu-system/apps/full/benrishi-advisor/"
+    },
+    {
+      "id": "gyosei-advisor",
+      "title": "行政書士アドバイザー",
+      "description": "許認可・ビザ・在留資格・各種行政手続き。複雑な書類と手順を、AIが分かりやすく案内する専門アドバイザー。",
+      "plan": "full",
+      "category": "士業",
+      "emoji": "📋",
+      "path": "/tomu-system/apps/full/gyosei-advisor/"
+    },
+    {
+      "id": "legal-advisor",
+      "title": "法律アドバイザー",
+      "description": "損害賠償・内容証明・契約トラブルなど身近な法律問題。一般と専門家モードで、AIが法的な考え方を整理する。",
+      "plan": "full",
+      "category": "士業",
+      "emoji": "⚖️",
+      "path": "/tomu-system/apps/full/legal-advisor/"
+    },
+    {
+      "id": "sharoshi-advisor",
+      "title": "社労士アドバイザー",
+      "description": "残業代・未払い・社会保険・労務トラブル。働くうえでの労働・社保の疑問に、AIが実務目線で答える。",
+      "plan": "full",
+      "category": "士業",
+      "emoji": "👔",
+      "path": "/tomu-system/apps/full/sharoshi-advisor/"
+    },
+    {
+      "id": "tax-advisor",
+      "title": "税務アドバイザー",
+      "description": "確定申告・節税・各種税金の仕組み。難しい税務の疑問を、AIが身近な言葉で整理してくれる専門アドバイザー。",
+      "plan": "full",
+      "category": "士業",
+      "emoji": "💴",
+      "path": "/tomu-system/apps/full/tax-advisor/"
+    },
+    {
+      "id": "quiz-itpassport",
+      "title": "ITパスポート 問題集",
+      "description": "テクノロジ・マネジメント・ストラテジ全分野。AIが毎回新しい問題を生成するITパスポート対策アプリ。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "💻",
+      "path": "/tomu-system/apps/quiz-itpassport/"
+    },
+    {
+      "id": "quiz-boki",
+      "title": "日商簿記3級 問題集",
+      "description": "仕訳・財務諸表・決算まで。AIが簿記3級レベルの4択問題を無限生成。分野別学習にも対応。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "📒",
+      "path": "/tomu-system/apps/quiz-boki/"
+    },
+    {
+      "id": "quiz-takken",
+      "title": "宅建士 問題集",
+      "description": "宅建業法・民法・法令上の制限をAIが出題。中級者向け4択で本番さながらの実力チェック。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🏠",
+      "path": "/tomu-system/apps/quiz-takken/"
+    },
+    {
+      "id": "quiz-gyosei",
+      "title": "行政書士 問題集",
+      "description": "行政法・民法・憲法をAIが徹底出題。中〜上級者向けリアルな行政書士試験対策問題集。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "📜",
+      "path": "/tomu-system/apps/quiz-gyosei/"
+    },
+    {
+      "id": "quiz-sharoshi",
+      "title": "社会保険労務士 問題集",
+      "description": "労働法・社会保険・雇用保険をAIが出題。社労士試験の重要論点を4択で効率的にマスター。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "👔",
+      "path": "/tomu-system/apps/quiz-sharoshi/"
+    },
+    {
+      "id": "quiz-kihonjo",
+      "title": "基本情報技術者 問題集",
+      "description": "アルゴリズム・ネットワーク・マネジメントをAIが出題。エンジニア必須の基本情報技術者試験対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🖥️",
+      "path": "/tomu-system/apps/quiz-kihonjo/"
+    },
+    {
+      "id": "quiz-gkentei",
+      "title": "G検定 問題集",
+      "description": "深層学習・機械学習・AI倫理をAIが出題。JDLA G検定対策に最適な4択問題集。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🧠",
+      "path": "/tomu-system/apps/quiz-gkentei/"
+    },
+    {
+      "id": "quiz-seisaipass",
+      "title": "生成AIパスポート 問題集",
+      "description": "生成AI基礎・ビジネス活用・倫理・セキュリティをAIが出題。GUGA認定の新資格を効率対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🤖",
+      "path": "/tomu-system/apps/quiz-seisaipass/"
+    },
+    {
+      "id": "quiz-fp",
+      "title": "FP3級 問題集",
+      "description": "税金・保険・投資・年金・相続をAIが出題。生活に直結するお金の知識を4択で効率的に学習。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "💴",
+      "path": "/tomu-system/apps/quiz-fp/"
+    },
+    {
+      "id": "quiz-sekaiisan",
+      "title": "世界遺産検定 問題集",
+      "description": "日本・アジア・欧米の世界遺産をAIが出題。旅行好きも楽しめる人気検定の4択問題集。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🌍",
+      "path": "/tomu-system/apps/quiz-sekaiisan/"
+    },
+    {
+      "id": "quiz-mental",
+      "title": "メンタルヘルス検定 問題集",
+      "description": "セルフケア・ラインケア・職場環境改善をAIが出題。大阪商工会議所主催の実務直結検定対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🧘",
+      "path": "/tomu-system/apps/quiz-mental/"
+    },
+    {
+      "id": "quiz-hisho",
+      "title": "秘書検定 問題集",
+      "description": "マナー・敬語・来客応対・ビジネス文書をAIが出題。社会人の基礎力を磨く秘書検定2・3級対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🤝",
+      "path": "/tomu-system/apps/quiz-hisho/"
+    },
+    {
+      "id": "quiz-gx",
+      "title": "脱炭素アドバイザー 問題集",
+      "description": "カーボンニュートラル・再エネ・GX制度をAIが出題。2026年注目の脱炭素アドバイザー検定対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🌿",
+      "path": "/tomu-system/apps/quiz-gx/"
+    },
+    {
+      "id": "quiz-esg",
+      "title": "サステナビリティ検定 問題集",
+      "description": "ESG投資・SDGs・TCFD情報開示をAIが出題。サステナビリティ経営に必要な知識を4択で学習。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "💹",
+      "path": "/tomu-system/apps/quiz-esg/"
+    },
+    {
+      "id": "quiz-reskilling",
+      "title": "リスキリング検定 問題集",
+      "description": "人材育成・DXスキル・雇用政策をAIが出題。2026年注目のリスキリング検定を4択で効率対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "📚",
+      "path": "/tomu-system/apps/quiz-reskilling/"
+    },
+    {
+      "id": "quiz-ai-katsuyo",
+      "title": "AI利活用推進士 問題集",
+      "description": "AI導入推進・リスク管理・業界別活用事例をAIが出題。企業AI推進担当者向け2026年注目資格対策。",
+      "plan": "light",
+      "category": "資格",
+      "emoji": "🚀",
+      "path": "/tomu-system/apps/quiz-ai-katsuyo/"
+    }
+  ]
+}
