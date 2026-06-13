@@ -262,6 +262,100 @@ nav {
 }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ===== SOCIAL PROOF ===== */
+.proof {
+  padding: 60px 48px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.proof-grid {
+  max-width: 880px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.proof-item { text-align: center; padding: 12px; }
+.proof-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--accent);
+}
+.proof-num sup {
+  font-size: 0.34em;
+  font-family: 'Noto Sans JP', sans-serif;
+  margin-left: 2px;
+  vertical-align: super;
+  color: var(--ink);
+}
+.proof-label {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+@media(max-width:640px){
+  .proof { padding: 40px 20px; }
+  .proof-grid { grid-template-columns: 1fr; gap: 20px; }
+  .proof-item { padding: 8px; }
+}
+
+/* ===== PWA インストールバナー ===== */
+.pwa-banner {
+  display: none;
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9998;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.16);
+}
+.pwa-banner.visible { display: flex; }
+.pwa-banner-text { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pwa-banner-icon { font-size: 1.5rem; flex-shrink: 0; }
+.pwa-banner-title { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+.pwa-banner-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.pwa-banner-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.pwa-install-btn {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 9px 16px;
+  border-radius: 40px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s;
+}
+.pwa-install-btn:hover { background: var(--accent); }
+.pwa-close-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+@media(max-width:640px){
+  .pwa-banner { left: 10px; right: 10px; bottom: 10px; padding: 12px 14px; }
+  .pwa-install-btn { padding: 8px 12px; }
+}
+
 
 /* ===== SECTION COMMONS ===== */
 section { padding: 100px 48px; }
@@ -1104,18 +1198,36 @@ footer {
 <section class="hero">
   <div class="hero-left">
     <div class="hero-label">AI App Subscription</div>
-    <h1>毎日をちょっと<br><em>賢くする</em>、<br>AIアプリ集。</h1>
+    <h1><em>59本</em>のAIアプリで、<br>毎日がちょっと<br><em>賢くなる</em>。</h1>
     <p class="hero-sub">
-      「1機能・1解決」にこだわった軽量AIアプリを、<br>
-      好きなだけ選んで使えるサブスクリプション。<br>
+      「1機能・1解決」の軽量AIアプリを、月額¥480〜の定額で使い放題。<br>
+      Light・Standard・Fullの3プランから、今の自分に合う1つを。<br>
       朝のルーティンから、夜の振り返りまで。
     </p>
     <div class="hero-btns">
-      <a href="#pricing" class="btn-primary">プランを選ぶ</a>
-      <a href="#apps" class="btn-secondary">アプリを見る</a>
+      <a href="#pricing" class="btn-primary">¥480ではじめる</a>
+      <a href="#apps" class="btn-secondary">59本のアプリを見る</a>
     </div>
   </div>
 
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="proof">
+  <div class="proof-grid">
+    <div class="proof-item fade-up">
+      <div class="proof-num">59<sup>本</sup></div>
+      <div class="proof-label">AIアプリ収録</div>
+    </div>
+    <div class="proof-item fade-up">
+      <div class="proof-num">3<sup>つ</sup></div>
+      <div class="proof-label">料金プラン</div>
+    </div>
+    <div class="proof-item fade-up">
+      <div class="proof-num">随時</div>
+      <div class="proof-label">新アプリを追加中</div>
+    </div>
+  </div>
 </section>
 
 <!-- CONCEPT -->
@@ -1358,6 +1470,21 @@ footer {
       決済に進む
     </button>
     <p id="checkout-error" style="color:#c0392b;font-size:0.75rem;margin-top:8px;display:none;">メールアドレスを入力してください</p>
+  </div>
+</div>
+
+<!-- PWA インストールバナー -->
+<div id="pwa-banner" class="pwa-banner" role="dialog" aria-label="アプリのインストール">
+  <div class="pwa-banner-text">
+    <span class="pwa-banner-icon">📲</span>
+    <div>
+      <div class="pwa-banner-title">とむSYSTEMをホーム画面に追加</div>
+      <div class="pwa-banner-sub" id="pwa-banner-sub">ワンタップでいつでもすぐ起動できます。</div>
+    </div>
+  </div>
+  <div class="pwa-banner-actions">
+    <button id="pwa-install-btn" class="pwa-install-btn">ホーム画面に追加</button>
+    <button id="pwa-close-btn" class="pwa-close-btn" aria-label="閉じる">×</button>
   </div>
 </div>
 
@@ -1733,6 +1860,55 @@ fetch('apps.json')
   document.addEventListener('click', (e) => {
     if (links.classList.contains('open') && !e.target.closest('nav')) setOpen(false);
   });
+})();
+
+// ===== PWA インストール促進バナー =====
+(function () {
+  const banner = document.getElementById('pwa-banner');
+  const installBtn = document.getElementById('pwa-install-btn');
+  const closeBtn = document.getElementById('pwa-close-btn');
+  const subEl = document.getElementById('pwa-banner-sub');
+  if (!banner || !installBtn || !closeBtn) return;
+
+  const DISMISS_KEY = 'tomu_pwa_dismissed';
+  let deferredPrompt = null;
+
+  const dismissed = () => { try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch (e) { return false; } };
+  const setDismissed = () => { try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {} };
+  const hide = () => banner.classList.remove('visible');
+  const show = () => { if (!dismissed()) banner.classList.add('visible'); };
+
+  // インストール済み（standalone）なら表示しない
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) return;
+
+  // iOS Safari は beforeinstallprompt 非対応 → 共有メニュー手順を案内
+  const ua = window.navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isSafari = /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
+  if (isIOS && isSafari) {
+    installBtn.style.display = 'none';
+    subEl.textContent = 'Safariの共有ボタン（⬆）から「ホーム画面に追加」を選んでください。';
+    show();
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    show();
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch (e) {}
+    deferredPrompt = null;
+    setDismissed();
+    hide();
+  });
+
+  closeBtn.addEventListener('click', () => { setDismissed(); hide(); });
+  window.addEventListener('appinstalled', () => { setDismissed(); hide(); });
 })();
 
 // Stripe Checkout
