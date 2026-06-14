@@ -160,19 +160,20 @@ function retryQuiz(){startQuiz();}async function moreQuiz(){await startQuiz();}
 </div>
 <script>
 (function(){
-const A='study-quiz',W='https://orange-sound-354b.inverted-triangle-leef.workers.dev';
+const A='quiz-ai-katsuyo',W='https://orange-sound-354b.inverted-triangle-leef.workers.dev';
 let _s=[];
+function _isFull(){return !!(window.TomuAuth&&TomuAuth.getPlan&&TomuAuth.getPlan()==='full');}
 function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-window.histLoad=async function(){const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?app_id='+A+'&limit=5',{headers:{'X-Customer-Email':em}});const d=await r.json();_s=d.sessions||[];histRender(_s);}catch(x){}};
-window.histRender=function(ss){const sec=document.getElementById('hist-section');const li=document.getElementById('hist-list');if(!sec||!li)return;if(!ss.length){li.innerHTML='<p class="hist-empty">まだ履歴がありません</p>';sec.style.display='';return;}li.innerHTML=ss.map((s,i)=>{const sd=s.session_data||{},dt=new Date(s.created_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});return'<div class="hist-card" onclick="histOpen('+i+')"><div class="hist-card-meta"><span class="hist-card-date">'+dt+'</span><button class="hist-del" onclick="event.stopPropagation();histDel(\''+_e(s.id)+'\')">🗑</button></div><div class="hist-card-title">'+_e(sd.title||'—')+'</div>'+(sd.summary?'<div class="hist-card-summary">'+_e(sd.summary)+'</div>':'')+'</div>';}).join('');sec.style.display='';};
+window.histLoad=async function(){if(!_isFull()){const sec=document.getElementById('hist-section');if(sec)sec.style.display='none';return;}const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?app_id='+A+'&limit=5',{headers:{'X-Customer-Email':em}});const d=await r.json();_s=d.sessions||[];histRender(_s);}catch(x){}};
+window.histRender=function(ss){const sec=document.getElementById('hist-section');const li=document.getElementById('hist-list');if(!sec||!li)return;if(!_isFull()){sec.style.display='none';return;}if(!ss.length){li.innerHTML='<p class="hist-empty">まだ履歴がありません</p>';sec.style.display='';return;}li.innerHTML=ss.map((s,i)=>{const sd=s.session_data||{},dt=new Date(s.created_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});return'<div class="hist-card" onclick="histOpen('+i+')"><div class="hist-card-meta"><span class="hist-card-date">'+dt+'</span><button class="hist-del" onclick="event.stopPropagation();histDel(\''+_e(s.id)+'\')">🗑</button></div><div class="hist-card-title">'+_e(sd.title||'—')+'</div>'+(sd.summary?'<div class="hist-card-summary">'+_e(sd.summary)+'</div>':'')+'</div>';}).join('');sec.style.display='';};
 window.histOpen=function(i){const s=_s[i];if(!s)return;const sd=s.session_data||{};document.getElementById('hist-modal-date').textContent=new Date(s.created_at).toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});document.getElementById('hist-modal-title').textContent=sd.title||'—';document.getElementById('hist-modal-meta').textContent=sd.meta||'';document.getElementById('hist-modal-body').textContent=sd.content||'';document.getElementById('hist-modal').style.display='flex';document.body.style.overflow='hidden';};
 window.histClose=function(e){if(e&&e.target!==document.getElementById('hist-modal'))return;document.getElementById('hist-modal').style.display='none';document.body.style.overflow='';};
 window.histDel=async function(id){if(!id||!confirm('この履歴を削除しますか？'))return;const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?id='+encodeURIComponent(id),{method:'DELETE',headers:{'X-Customer-Email':em}});if(r.ok)await histLoad();else alert('削除に失敗しました。');}catch(x){alert('通信エラー');}};
-window.histSave=async function(d){const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{await fetch(W+'/api/history',{method:'POST',headers:{'Content-Type':'application/json','X-Customer-Email':em},body:JSON.stringify({app_id:A,session_data:d})});}catch(x){}};
+window.histSave=async function(d){if(!_isFull())return;const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{await fetch(W+'/api/history',{method:'POST',headers:{'Content-Type':'application/json','X-Customer-Email':em},body:JSON.stringify({app_id:A,session_data:d})});}catch(x){}};
 document.addEventListener('DOMContentLoaded',function(){setTimeout(histLoad,800);});
+document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);});
 })();
 </script>
-<script>window.TOMU_REQUIRED_PLAN='full';</script>
 <script src="../../tomu-login.js"></script>
 </body>
 </html>
