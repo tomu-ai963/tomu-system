@@ -418,6 +418,23 @@ section { padding: 100px 48px; }
 }
 .concept-item p { font-size: 0.8rem; color: rgba(247,243,238,.5); line-height: 1.8; }
 
+.concept-memory {
+  margin-top: 2px;
+  padding: 48px 36px;
+  text-align: center;
+  border: 1px solid rgba(184,115,51,.35);
+  background: rgba(184,115,51,.06);
+}
+.concept-memory-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--paper);
+  margin-bottom: 14px;
+}
+.concept-memory-mark { color: var(--accent); }
+.concept-memory-text { font-size: 0.85rem; color: rgba(247,243,238,.65); line-height: 2; }
+
 /* ===== APPS ===== */
 .apps { background: var(--warm); }
 
@@ -570,6 +587,9 @@ section { padding: 100px 48px; }
   gap: 8px;
 }
 .plan-feature::before { content: '✦'; color: var(--accent); flex-shrink: 0; font-size: 0.6rem; margin-top: 3px; }
+
+.plan-feature-memory { color: var(--accent); font-weight: 600; }
+.plan-card.featured .plan-feature-memory { color: var(--accent); }
 
 .plan-btn {
   width: 100%;
@@ -1253,6 +1273,11 @@ footer {
       <p>豊富なアプリから、今の自分に必要なものだけを選べる。プランに応じて、好きな組み合わせで使い放題。</p>
     </div>
   </div>
+
+  <div class="concept-memory fade-up">
+    <h3 class="concept-memory-title"><span class="concept-memory-mark">✦</span> Fullプランでは、AIがあなたを覚えています</h3>
+    <p class="concept-memory-text">59本のアプリすべてで会話履歴が積み重なり、<br>使うたびに、あなたに寄り添った答えへ近づいていく。</p>
+  </div>
 </section>
 
 <!-- APPS -->
@@ -1357,8 +1382,10 @@ footer {
       <div class="plan-badge" style="background:var(--accent2);color:#fff;">Now Available</div>
       <div class="plan-name">Full</div>
       <div class="plan-price"><sup>¥</sup>1,480<sub>/月</sub></div>
-      <div class="plan-desc">全アプリ無制限。士業・専門職向けアプリも含む、最上位プラン。</div>
+      <div class="plan-desc">59本すべてでAIがあなたを覚えている。全アプリ無制限、士業・専門職向けも含む最上位プラン。</div>
       <ul class="plan-features">
+        <li class="plan-feature plan-feature-memory">59本すべてで履歴が残る</li>
+        <li class="plan-feature plan-feature-memory">AIがあなたの過去の相談を覚えている</li>
         <li class="plan-feature">全アプリ完全使い放題</li>
         <li class="plan-feature">利用回数無制限</li>
         <li class="plan-feature">専門職向けアプリ含む</li>
