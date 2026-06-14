@@ -1136,6 +1136,7 @@ async function loadCalendarAdvice() {
         ${data.keyDays.map(d => `<p>${d.day}日: ${d.phase}</p>`).join('')}
       </details>
     `;
+    if(data.advice&&window.histSave){histSave({title:(data.month||'')+' 農作業タイミング',summary:String(data.advice).replace(/\n/g,' ').slice(0,80),content:data.advice,meta:''});setTimeout(histLoad,1000);}
   } catch (err) {
     resultDiv.innerHTML = `⚠️ ${err.message}`;
   }

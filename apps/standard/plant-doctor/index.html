@@ -743,7 +743,9 @@ async function diagnose() {
 // ======= 診断履歴 =======
 let _historySessions = [];
 
+function _isFull(){return !!(window.TomuAuth&&TomuAuth.getPlan&&TomuAuth.getPlan()==='full');}
 async function loadHistory() {
+  if(!_isFull()){const _hs=document.getElementById('history-section');if(_hs)_hs.style.display='none';return;}
   const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
   if (!email) return;
   try {
@@ -846,6 +848,7 @@ async function deleteHistory(id) {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(loadHistory, 800);
 });
+document.addEventListener('tomu:unlocked', () => { setTimeout(loadHistory, 300); });
 
 async function callMystic(tool, args) {
   const MYSTIC_URL = WORKER_BASE + '/mystic-bridge';
@@ -907,7 +910,7 @@ function renderResult(r, fallbackName) {
 }
 </script>
 
-<script>window.TOMU_REQUIRED_PLAN = 'full';</script>
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
 <script src="/tomu-system/tomu-login.js"></script>
 </body>
 </html>

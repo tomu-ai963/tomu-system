@@ -928,6 +928,7 @@ function submitCoord() {
     }
 
     var html = marked.parse(result.data.advice || '');
+    if(result.data.advice&&window.histSave){histSave({title:'コーデ提案',summary:String(result.data.advice).replace(/[#*>-]+/g,' ').slice(0,80),content:result.data.advice,meta:''});setTimeout(histLoad,1000);}
     document.getElementById('resultContent').innerHTML = html;
     document.getElementById('resultBox').classList.add('visible');
   })
