@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>夢日記 — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #0f1120;
+  --mist: #6b6f8f;
+  --moon: #e8d9a8;
+  --moon-soft: #f3ecd4;
+  --aurora: #8b7fc7;
+  --aurora-soft: #b8aee0;
+  --line: rgba(139,127,199,0.18);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139,127,199,0.25), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(232,217,168,0.12), transparent 50%),
+    linear-gradient(180deg, #0f1120 0%, #16182b 40%, #1a1d2e 100%);
+  background-attachment: fixed;
+  color: var(--moon-soft);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 18px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15,17,32,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--moon-soft);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--aurora-soft); }
+.nav-badge {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mist);
+  border: 1px solid rgba(139,127,199,0.35);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+.hero {
+  text-align: center;
+  padding: 110px 0 40px;
+  animation: fadeUp 0.9s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.hero-icon {
+  font-size: 2.6rem;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 24px rgba(232,217,168,0.4));
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.hero-title {
+  font-family: 'Zen Old Mincho', serif;
+  font-weight: 500;
+  font-size: 38px;
+  letter-spacing: 0.18em;
+  margin: 0 0 10px;
+  color: var(--moon-soft);
+}
+.hero-sub { font-size: 13px; letter-spacing: 0.1em; color: var(--mist); }
+
+.composer {
+  background: rgba(247,245,240,0.04);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 24px;
+  backdrop-filter: blur(8px);
+  margin-bottom: 48px;
+  animation: fadeUp 0.9s ease 0.15s both;
+}
+.composer label {
+  display: block;
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--aurora-soft);
+  margin-bottom: 14px;
+}
+.dj-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px;
+  background: rgba(15,17,32,0.5);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--moon-soft);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 15px;
+  line-height: 1.9;
+  padding: 16px;
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+.dj-textarea:focus { outline: none; border-color: var(--aurora); }
+.dj-textarea::placeholder { color: var(--mist); opacity: 0.7; }
+
+.btn {
+  margin-top: 16px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--aurora), var(--aurora-soft));
+  color: var(--night);
+  border: none;
+  border-radius: 3px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.15s;
+}
+.btn:hover:not(:disabled) { opacity: 0.92; }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(15,17,32,0.4);
+  border-top-color: var(--night);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { color: #e0a3a3; font-size: 13px; margin-top: 12px; text-align: center; }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.section-head h2 {
+  font-family: 'Zen Old Mincho', serif;
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: 0.12em;
+  color: var(--moon-soft);
+  margin: 0;
+}
+.count { font-size: 12px; color: var(--mist); letter-spacing: 0.05em; }
+
+.empty { text-align: center; padding: 48px 0; color: var(--mist); font-size: 14px; line-height: 2; }
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  background: rgba(247,245,240,0.03);
+  transition: border-color 0.3s;
+}
+.card:hover { border-color: rgba(139,127,199,0.35); }
+.card-head {
+  padding: 18px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-head-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.card-title { font-family: 'Zen Old Mincho', serif; font-size: 16px; color: var(--moon-soft); letter-spacing: 0.05em; }
+.card-date { font-size: 11px; color: var(--mist); letter-spacing: 0.08em; }
+.chevron { color: var(--aurora-soft); transition: transform 0.3s; flex-shrink: 0; font-size: 12px; }
+.chevron.open { transform: rotate(180deg); }
+
+.card-body { padding: 0 20px 22px; border-top: 1px solid var(--line); }
+.block-label {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--aurora-soft);
+  margin: 20px 0 8px;
+}
+.diary { font-size: 14.5px; line-height: 2.1; color: var(--moon-soft); opacity: 0.92; white-space: pre-wrap; }
+.symbols { display: flex; flex-wrap: wrap; gap: 7px; }
+.symbol {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid rgba(232,217,168,0.3);
+  border-radius: 999px;
+  color: var(--moon);
+  letter-spacing: 0.04em;
+}
+.fortune {
+  font-size: 14px;
+  line-height: 2;
+  color: var(--moon-soft);
+  background: rgba(139,127,199,0.08);
+  border-left: 2px solid var(--aurora);
+  padding: 14px 16px;
+  border-radius: 0 3px 3px 0;
+  white-space: pre-wrap;
+}
+.del {
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: var(--mist);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.del:hover { color: #e0a3a3; }
+
+.limit-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--mist);
+  margin-top: 24px;
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+}
+
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: rgba(107,111,143,0.7);
+}
+footer a { color: var(--aurora-soft); text-decoration: none; }
+
+@media (max-width: 520px) {
+  nav { padding: 16px 20px; }
+  .hero { padding: 96px 0 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+  <script src="/tomu-system/common/header.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f1120">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</head>
+<body>
+
+<nav>
+  <a href="/tomu-system/index.html" class="nav-logo">とむ<span>SYSTEM</span></a>
+  <span class="nav-badge">Standard Plan</span>
+</nav>
+
+<main>
+  <header class="hero">
+    <span class="hero-icon">🌙</span>
+    <p class="hero-sub">Tomu System — Standard</p>
+    <h1 class="hero-title">夢日記</h1>
+    <p class="hero-sub">ゆめのかけらを、ことばにして残す</p>
+  </header>
+
+  <div class="composer">
+    <label>今朝おぼえている夢を、思い出すままに</label>
+    <textarea id="raw-dream" class="dj-textarea"
+      placeholder="例）海の上に古い駅があって、誰かを待っていた。電車は来ないのに不思議と焦りはなくて、空が紫色だった……"></textarea>
+    <button id="btn" class="btn" onclick="interpretDream()">
+      <span class="btn-text">✦ 日記にまとめて占う</span>
+    </button>
+    <p id="error" class="error" style="display:none;"></p>
+  </div>
+
+  <div class="section-head">
+    <h2>📖 これまでの夢</h2>
+    <span class="count" id="count">0 / 30 件</span>
+  </div>
+
+  <div id="entries"></div>
+  <p id="empty" class="empty">
+    まだ夢が記されていません。<br>
+    目が覚めたら、いちばんに書きとめてみましょう。
+  </p>
+
+  <p id="limit-note" class="limit-note" style="display:none;">
+    Standardプランでは直近30件まで保存されます。<br>
+    すべての夢の記録と傾向分析は Full プランで。
+  </p>
+</main>
+
+<footer>
+  <a href="/tomu-system/index.html">← とむSYSTEM</a>
+  &nbsp;·&nbsp;
+  Powered by Claude × Cloudflare Workers
+</footer>
+
+<script>
+const WORKER = "https://orange-sound-354b.inverted-triangle-leef.workers.dev";
+const KV_MAX_ENTRIES = 30;
+
+let entries = [];
+let expandedId = null;
+
+const SYSTEM_PROMPT =
+  'あなたは夢日記アシスタントです。ユーザーが断片的に書いた夢のメモを、読みやすく情緒のある日記文にまとめ、その夢を優しく占ってください。\n' +
+  '以下のJSON形式のみで返答してください。前置きやMarkdownのコードブロックは一切不要です。\n' +
+  '{\n' +
+  '  "title": "夢に短いタイトルを（10文字以内）",\n' +
+  '  "diary": "夢を一人称の日記文に整形（150〜250字、情景が浮かぶように）",\n' +
+  '  "symbols": ["夢に出てきた象徴的なモチーフを2〜4個"],\n' +
+  '  "fortune": "夢占いの結果を温かく前向きに（120〜180字）"\n' +
+  '}';
+
+function _e(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+function render() {
+  const wrap = document.getElementById('entries');
+  const empty = document.getElementById('empty');
+  const note = document.getElementById('limit-note');
+  document.getElementById('count').textContent = entries.length + ' / ' + KV_MAX_ENTRIES + ' 件';
+
+  if (!entries.length) {
+    wrap.innerHTML = '';
+    empty.style.display = '';
+    note.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  note.style.display = entries.length >= KV_MAX_ENTRIES ? '' : 'none';
+
+  wrap.innerHTML = entries.map(function (en) {
+    const open = expandedId === en.id;
+    const syms = (en.symbols || []).map(function (s) {
+      return '<span class="symbol">' + _e(s) + '</span>';
+    }).join('');
+    return '' +
+      '<div class="card">' +
+      '  <div class="card-head" onclick="toggle(' + JSON.stringify(en.id) + ')">' +
+      '    <div class="card-head-left">' +
+      '      <span class="card-title">' + _e(en.title) + '</span>' +
+      '      <span class="card-date">' + _e(en.date) + '</span>' +
+      '    </div>' +
+      '    <span class="chevron ' + (open ? 'open' : '') + '">▼</span>' +
+      '  </div>' +
+      (open ?
+        '  <div class="card-body">' +
+        '    <div class="block-label">— 日記</div>' +
+        '    <p class="diary">' + _e(en.diary) + '</p>' +
+        (syms ? '    <div class="block-label">🌙 象徴</div><div class="symbols">' + syms + '</div>' : '') +
+        '    <div class="block-label">✦ 夢占い</div>' +
+        '    <p class="fortune">' + _e(en.fortune) + '</p>' +
+        '    <button class="del" onclick="deleteEntry(event,' + JSON.stringify(en.id) + ')">🗑 この夢を消す</button>' +
+        '  </div>'
+        : '') +
+      '</div>';
+  }).join('');
+}
+
+function toggle(id) {
+  expandedId = (expandedId === id) ? null : id;
+  render();
+}
+
+async function loadDreams() {
+  const email = window.TomuAuth ? TomuAuth.getEmail() : null;
+  if (!email) return;
+  try {
+    const r = await fetch(WORKER + '/api/dreams?userId=' + encodeURIComponent(email), {
+      headers: { 'X-Customer-Email': email }
+    });
+    if (!r.ok) return; // 未契約/プラン不足はサイレントに（オーバーレイは生成時に出す）
+    const d = await r.json();
+    entries = d.entries || [];
+    render();
+  } catch (x) { /* noop */ }
+}
+
+async function interpretDream() {
+  const raw = document.getElementById('raw-dream').value.trim();
+  if (!raw) return;
+
+  const email = window.TomuAuth ? TomuAuth.getEmail() : null;
+  if (!email) { if (window.TomuAuth) TomuAuth.showOverlay(); return; }
+
+  const btn = document.getElementById('btn');
+  const btnText = btn.querySelector('.btn-text');
+  showError('');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span class="btn-text">夢を読みといています…</span>';
+
+  try {
+    const res = await fetch(WORKER + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Customer-Email': email },
+      body: JSON.stringify({
+        email: email,
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: 'ユーザーの夢メモ:\n"""\n' + raw + '\n"""' }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(function () { return {}; });
+      if (err.error === 'subscription_required' || err.error === 'login_required' || err.error === 'plan_upgrade_required') {
+        if (window.TomuAuth) TomuAuth.showOverlay();
+        return;
+      }
+      throw new Error('HTTP ' + res.status);
+    }
+
+    const data = await res.json();
+    const text = (data.content || [])
+      .filter(function (i) { return i.type === 'text'; })
+      .map(function (i) { return i.text; })
+      .join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    const entry = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }),
+      title: parsed.title || '夢',
+      diary: parsed.diary || '',
+      symbols: Array.isArray(parsed.symbols) ? parsed.symbols : [],
+      fortune: parsed.fortune || ''
+    };
+
+    entries = [entry].concat(entries).slice(0, KV_MAX_ENTRIES);
+    expandedId = entry.id;
+    document.getElementById('raw-dream').value = '';
+    render();
+
+    // KVへ永続化（直近30件はWorker側でもtrim）
+    try {
+      await fetch(WORKER + '/api/dreams', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Customer-Email': email },
+        body: JSON.stringify({ userId: email, entry: entry })
+      });
+    } catch (x) { /* 保存失敗は一覧表示には影響させない */ }
+
+  } catch (err) {
+    showError('夢の解釈に失敗しました。もう一度お試しください。');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="btn-text">✦ 日記にまとめて占う</span>';
+  }
+}
+
+async function deleteEntry(ev, id) {
+  ev.stopPropagation();
+  if (!confirm('この夢を消しますか？')) return;
+  const email = window.TomuAuth ? TomuAuth.getEmail() : null;
+  if (!email) return;
+  // 楽観的に画面から消す
+  entries = entries.filter(function (e) { return e.id !== id; });
+  render();
+  try {
+    await fetch(WORKER + '/api/dreams?id=' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: { 'X-Customer-Email': email }
+    });
+  } catch (x) { /* noop */ }
+}
+
+document.getElementById('raw-dream').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) interpretDream();
+});
+
+document.addEventListener('DOMContentLoaded', function () { setTimeout(loadDreams, 800); });
+document.addEventListener('tomu:unlocked', function () { setTimeout(loadDreams, 300); });
+</script>
+
+<script src="https://tomu-ai963.github.io/tomu-system/tomu-login.js"></script>
+</body>
+</html>

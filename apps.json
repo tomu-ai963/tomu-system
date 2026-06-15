@@ -181,6 +181,15 @@
       "path": "/tomu-system/apps/subscript-checker/"
     },
     {
+      "id": "dream-journal",
+      "title": "夢日記",
+      "description": "今朝おぼえている夢を書きとめるだけ。情緒ある日記文に整え、優しく夢占い。直近30件をクラウド保存。",
+      "plan": "standard",
+      "category": "遊び",
+      "emoji": "🌙",
+      "path": "/tomu-system/apps/standard/dream-journal/"
+    },
+    {
       "id": "summarize-reply",
       "title": "長文メール要約＋返信セット",
       "description": "長いメールや資料を貼り付けるだけで、要点と返信案をセットで生成。情報過多な日常をスリム化。",

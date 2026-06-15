@@ -20,7 +20,7 @@ function getCorsHeaders(origin) {
   var allow = ALLOWED_ORIGINS.indexOf(origin) !== -1 ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
     "Vary": "Origin",
   };
@@ -961,6 +961,53 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
+  // GET /api/dreams — 夢日記の一覧取得（Standardプラン以上）
+  // KVキー: dreams:{email} → JSON配列（新しい順・最大30件）
+  // ※ userId=メール。保存キーは認証済みメールから導出し、他人の夢を読めないようにする
+  // =========================================================
+  if (url.pathname === "/api/dreams" && request.method === "GET") {
+    var dreamGetEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("userId") || "";
+    if (!dreamGetEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var dreamGetPlan = await env.SUBSCRIPTIONS.get(dreamGetEmail);
+    if (!dreamGetPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(dreamGetPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: dreamGetPlan }, 403, corsH);
+    }
+    try {
+      var dreamGetRaw = await env.SUBSCRIPTIONS.get("dreams:" + dreamGetEmail);
+      var dreamGetList = dreamGetRaw ? JSON.parse(dreamGetRaw) : [];
+      return jsonRes({ entries: dreamGetList }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to load dreams", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // DELETE /api/dreams?id=... — 夢日記の1件削除（Standardプラン以上）
+  // ※ 仕様書はGET/PUTのみだが、UIの「この夢を消す」を永続化するため追加
+  // =========================================================
+  if (url.pathname === "/api/dreams" && request.method === "DELETE") {
+    var dreamDelEmail = request.headers.get("X-Customer-Email") || "";
+    var dreamDelId = url.searchParams.get("id") || "";
+    if (!dreamDelEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    if (!dreamDelId) return jsonRes({ error: "id is required" }, 400, corsH);
+    var dreamDelPlan = await env.SUBSCRIPTIONS.get(dreamDelEmail);
+    if (!dreamDelPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(dreamDelPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: dreamDelPlan }, 403, corsH);
+    }
+    try {
+      var dreamDelRaw = await env.SUBSCRIPTIONS.get("dreams:" + dreamDelEmail);
+      var dreamDelList = dreamDelRaw ? JSON.parse(dreamDelRaw) : [];
+      var dreamDelNext = dreamDelList.filter(function (e) { return String(e.id) !== String(dreamDelId); });
+      await env.SUBSCRIPTIONS.put("dreams:" + dreamDelEmail, JSON.stringify(dreamDelNext));
+      return jsonRes({ success: true, entries: dreamDelNext }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to delete dream", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
   // GET /legal/tokushoho — 特定商取引法に基づく表記
   // =========================================================
   if (url.pathname === "/legal/tokushoho" && request.method === "GET") {
@@ -1236,6 +1283,35 @@ async function handleRequest(request, env) {
       return jsonRes({ success: true }, 200, corsH);
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
+  }
+
+  // =========================================================
+  // PUT /api/dreams — 夢日記を1件保存（Standardプラン以上・直近30件でtrim）
+  // body: { userId, entry }  KVキー: dreams:{email}
+  // =========================================================
+  if (url.pathname === "/api/dreams" && request.method === "PUT") {
+    var dreamPutEmail = request.headers.get("X-Customer-Email") || body.userId || "";
+    if (!dreamPutEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var dreamPutPlan = await env.SUBSCRIPTIONS.get(dreamPutEmail);
+    if (!dreamPutPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(dreamPutPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: dreamPutPlan }, 403, corsH);
+    }
+    var dreamEntry = body.entry;
+    if (!dreamEntry || typeof dreamEntry !== "object") return jsonRes({ error: "entry is required" }, 400, corsH);
+    try {
+      if (!dreamEntry.id) dreamEntry.id = Date.now();
+      var dreamPutRaw = await env.SUBSCRIPTIONS.get("dreams:" + dreamPutEmail);
+      var dreamPutList = dreamPutRaw ? JSON.parse(dreamPutRaw) : [];
+      // 同一idは差し替え、新しい順に並べ、直近30件でtrim
+      var dreamPutNext = [dreamEntry].concat(
+        dreamPutList.filter(function (e) { return String(e.id) !== String(dreamEntry.id); })
+      ).slice(0, 30);
+      await env.SUBSCRIPTIONS.put("dreams:" + dreamPutEmail, JSON.stringify(dreamPutNext));
+      return jsonRes({ success: true, entries: dreamPutNext }, 200, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Failed to save dream", detail: err.message }, 500, corsH);
     }
   }
 
