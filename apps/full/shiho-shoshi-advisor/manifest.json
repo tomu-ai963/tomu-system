@@ -1,0 +1,21 @@
+{
+  "name": "Shiho-Shoshi Advisor",
+  "short_name": "Shiho-Shoshi Advisor",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#6c63ff",
+  "description": "とむSYSTEM - Shiho-Shoshi Advisor",
+  "icons": [
+    {
+      "src": "/tomu-system/common/icons/icon-full-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/tomu-system/common/icons/icon-full-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

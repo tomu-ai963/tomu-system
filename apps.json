@@ -388,6 +388,15 @@
       "path": "/tomu-system/apps/full/sharoshi-advisor/"
     },
     {
+      "id": "shiho-shoshi-advisor",
+      "title": "司法書士アドバイザー",
+      "description": "不動産登記・相続登記・会社設立・成年後見・債務整理。登記と手続きの疑問を、AIが一般／専門家モードで分かりやすく案内する。",
+      "plan": "full",
+      "category": "士業",
+      "emoji": "📑",
+      "path": "/tomu-system/apps/full/shiho-shoshi-advisor/"
+    },
+    {
       "id": "tax-advisor",
       "title": "税務アドバイザー",
       "description": "確定申告・節税・各種税金の仕組み。難しい税務の疑問を、AIが身近な言葉で整理してくれる専門アドバイザー。",
