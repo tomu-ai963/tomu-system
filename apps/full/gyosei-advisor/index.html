@@ -325,6 +325,36 @@ const systemPrompts = {
 許認可申請（業法別要件・欠格事由・更新・廃業届）、出入国管理法・在留資格認定・変更・更新の実務、車庫証明・自動車登録、会社設立（定款・登記）の概要、農地法・都市計画法の手続き、遺産分割・相続手続き書類の下書き補助、申請書類の文案生成など`
 };
 
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--accent,#4a4060);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;line-height:1.5;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;transition:opacity 0.3s;max-width:90%;text-align:center;';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.style.opacity = '1'; });
+  setTimeout(function(){ t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 320); }, 2200);
+}
+
+function planErrorMessage(data) {
+  if (data.error === 'daily_limit_exceeded') {
+    return '本日の利用上限（' + (data.limit != null ? data.limit : '—') + ' 回）に達しました。明日またご利用ください。';
+  }
+  return 'エラーが発生しました。しばらく経ってから再度お試しください。';
+}
+
+function histSaveSession() {
+  var firstUser = conversationHistory.find(function(m){ return m.role === 'user'; });
+  var firstQ = firstUser ? firstUser.content : '';
+  var transcript = conversationHistory.map(function(m){
+    return (m.role === 'user' ? '【質問】' : '【回答】') + '\n' + m.content;
+  }).join('\n\n');
+  histSave({
+    title: firstQ.slice(0,30) + (firstQ.length > 30 ? '…' : ''),
+    summary: firstQ.slice(0,80) + (firstQ.length > 80 ? '…' : ''),
+    content: transcript,
+    meta: currentMode === 'pro' ? '専門家モード' : '一般モード'
+  });
+}
+
 function setMode(mode, btn) {
   currentMode = mode;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -334,6 +364,9 @@ function setMode(mode, btn) {
     ? '一般向けモード — わかりやすく解説します'
     : '専門家モード — 実務的な情報を提供します';
   conversationHistory = [];
+  if (window.histResetSession) histResetSession();
+  document.querySelectorAll('#chatArea .message, #chatArea .loading').forEach(function(el){ el.remove(); });
+  showToast('モードを切り替えました。会話をリセットしました。');
 }
 
 function quickAsk(text) {
@@ -377,19 +410,24 @@ async function sendMessage() {
         email: email,
         system: systemPrompts[currentMode],
         messages: conversationHistory,
-        max_tokens: 1000,
+        max_tokens: currentMode === 'pro' ? 2000 : 1500,
       })
     });
 
     const data = await response.json();
     loadingEl.remove();
 
-    const reply = data.content?.[0]?.text || 'エラーが発生しました。';
-    conversationHistory.push({ role: 'assistant', content: reply });
-    appendMessage('ai', reply);
-    const _lu=conversationHistory.filter(m=>m.role==='user').slice(-1)[0]?.content||'';
-    histSave({title:_lu.slice(0,30)+(_lu.length>30?'…':''),summary:reply.slice(0,80)+(reply.length>80?'…':''),content:reply,meta:currentMode==='pro'?'専門家モード':'一般モード'});
-    setTimeout(histLoad,1000);
+    // A-1: プラン上限・権限エラーなら案内を表示（通常のエラーは従来通り）
+    if (data.error) {
+      appendMessage('ai', planErrorMessage(data));
+    } else {
+      const reply = data.content?.[0]?.text || 'エラーが発生しました。';
+      conversationHistory.push({ role: 'assistant', content: reply });
+      appendMessage('ai', reply);
+      // A-2: セッション単位で履歴を上書き保存
+      histSaveSession();
+      setTimeout(histLoad, 1000);
+    }
 
   } catch (e) {
     loadingEl.remove();
@@ -441,12 +479,32 @@ function appendLoading() {
 }
 
 function formatText(text) {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/### (.+)/g, '<h4>$1</h4>')
-    .replace(/## (.+)/g, '<h4>$1</h4>')
-    .replace(/^[-・] (.+)/gm, '<li>$1</li>')
-    .replace(/\n/g, '<br>');
+  function inline(s) { return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+  var lines = String(text).split('\n');
+  var html = '';
+  var listType = null;
+  function closeList() { if (listType) { html += '</' + listType + '>'; listType = null; } }
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var mH = line.match(/^\s*#{2,3}\s+(.*)$/);
+    var mOl = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    var mUl = line.match(/^\s*[-*・]\s+(.*)$/);
+    if (mH) {
+      closeList();
+      html += '<h4>' + inline(mH[1]) + '</h4>';
+    } else if (mOl) {
+      if (listType !== 'ol') { closeList(); html += '<ol style="padding-left:1.5em;margin:6px 0;">'; listType = 'ol'; }
+      html += '<li>' + inline(mOl[1]) + '</li>';
+    } else if (mUl) {
+      if (listType !== 'ul') { closeList(); html += '<ul style="padding-left:1.4em;margin:6px 0;">'; listType = 'ul'; }
+      html += '<li>' + inline(mUl[1]) + '</li>';
+    } else {
+      closeList();
+      html += (line.trim() === '') ? '<br>' : inline(line) + '<br>';
+    }
+  }
+  closeList();
+  return html;
 }
 </script>
 
@@ -469,7 +527,9 @@ window.histRender=function(ss){const sec=document.getElementById('hist-section')
 window.histOpen=function(i){const s=_s[i];if(!s)return;const sd=s.session_data||{};document.getElementById('hist-modal-date').textContent=new Date(s.created_at).toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});document.getElementById('hist-modal-title').textContent=sd.title||'—';document.getElementById('hist-modal-meta').textContent=sd.meta||'';document.getElementById('hist-modal-body').textContent=sd.content||'';document.getElementById('hist-modal').style.display='flex';document.body.style.overflow='hidden';};
 window.histClose=function(e){if(e&&e.target!==document.getElementById('hist-modal'))return;document.getElementById('hist-modal').style.display='none';document.body.style.overflow='';};
 window.histDel=async function(id){if(!id||!confirm('この履歴を削除しますか？'))return;const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?id='+encodeURIComponent(id),{method:'DELETE',headers:{'X-Customer-Email':em}});if(r.ok)await histLoad();else alert('削除に失敗しました。');}catch(x){alert('通信エラー');}};
-window.histSave=async function(d){const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{await fetch(W+'/api/history',{method:'POST',headers:{'Content-Type':'application/json','X-Customer-Email':em},body:JSON.stringify({app_id:A,session_data:d})});}catch(x){}};
+let _curId=null;
+window.histResetSession=function(){_curId=null;};
+window.histSave=async function(d){const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{if(_curId){try{await fetch(W+'/api/history?id='+encodeURIComponent(_curId),{method:'DELETE',headers:{'X-Customer-Email':em}});}catch(e){}}await fetch(W+'/api/history',{method:'POST',headers:{'Content-Type':'application/json','X-Customer-Email':em},body:JSON.stringify({app_id:A,session_data:d})});try{const r=await fetch(W+'/api/history?app_id='+A+'&limit=1',{headers:{'X-Customer-Email':em}});const j=await r.json();if(j.sessions&&j.sessions[0])_curId=j.sessions[0].id;}catch(e){}}catch(x){}};
 document.addEventListener('DOMContentLoaded',function(){setTimeout(histLoad,800);});
 })();
 </script>
