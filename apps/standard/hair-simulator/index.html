@@ -924,11 +924,11 @@ const AR = {
 const ASSETS_BASE = 'https://tomu-ai963.github.io/tomu-system/apps/standard/assets/';
 
 const PRESETS = {
-  short:        { id: 'short',        label: 'ショート',       file: 'hair-short.png',        scale: 1.52, offsetX: 0, offsetY: -0.15, smooth: 0.20 },
-  bob:          { id: 'bob',          label: 'ボブ',           file: 'hair-bob.png',           scale: 1.76, offsetX: 0, offsetY: -0.12, smooth: 0.17 },
-  medium:       { id: 'medium',       label: 'ミディアム',     file: 'hair-medium.png',        scale: 1.90, offsetX: 0, offsetY: -0.10, smooth: 0.15 },
-  longstraight: { id: 'longstraight', label: 'ロングストレート', file: 'hair-long-straight.png', scale: 2.10, offsetX: 0, offsetY: -0.08, smooth: 0.13 },
-  longwave:     { id: 'longwave',     label: 'ロングウェーブ', file: 'hair-long-wave.png',     scale: 2.10, offsetX: 0, offsetY: -0.08, smooth: 0.13 },
+  short:        { id: 'short',        label: 'ショート',       file: 'hair-short.png',        scale: 1.52, offsetX: 0, offsetY: 0, smooth: 0.20 },
+  bob:          { id: 'bob',          label: 'ボブ',           file: 'hair-bob.png',           scale: 1.76, offsetX: 0, offsetY: 0, smooth: 0.17 },
+  medium:       { id: 'medium',       label: 'ミディアム',     file: 'hair-medium.png',        scale: 1.90, offsetX: 0, offsetY: 0, smooth: 0.15 },
+  longstraight: { id: 'longstraight', label: 'ロングストレート', file: 'hair-long-straight.png', scale: 2.10, offsetX: 0, offsetY: 0, smooth: 0.13 },
+  longwave:     { id: 'longwave',     label: 'ロングウェーブ', file: 'hair-long-wave.png',     scale: 2.10, offsetX: 0, offsetY: 0, smooth: 0.13 },
 };
 
 AR.currentPreset = PRESETS.short;
@@ -1228,7 +1228,7 @@ function _drawHair(t, w) {
     // Draw: anchor the 80% vertical mark at the translate origin
     ctx.drawImage(src,
       -t.drawW * 0.5,                   // centred horizontally
-      -t.drawH * 0.80,                   // 80% of canvas H lands at origin (forehead)
+      -t.drawH * 0.50,                   // image centre lands at origin (forehead)
       t.drawW,
       t.drawH
     );
