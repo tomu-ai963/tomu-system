@@ -1153,7 +1153,7 @@ function _calcTransform(lm, w, h) {
   // Center Y: slightly below forehead landmark + offsetY shift
   // anchor_y: where canvas HL (80%) maps on screen = target: forehead landmark
   // offsetY shifts anchor up to compensate for faceH.05 adjustment
-  const cy = fh.y + faceH * 0.05 + drawH * p.offsetY;
+  const cy = fh.y + faceH * 0.35 + drawH * p.offsetY;
 
   return { cx, cy, drawW, drawH, rot, faceW, faceH, p };
 }
