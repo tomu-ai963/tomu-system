@@ -763,8 +763,14 @@ header {
           <button class="preset-btn" data-id="bob" onclick="selectPreset('bob')">
             <span class="pe">💇</span>ボブ
           </button>
-          <button class="preset-btn" data-id="long" onclick="selectPreset('long')">
-            <span class="pe">🌊</span>ロング
+          <button class="preset-btn" data-id="medium" onclick="selectPreset('medium')">
+            <span class="pe">💁</span>ミディアム
+          </button>
+          <button class="preset-btn" data-id="longstraight" onclick="selectPreset('longstraight')">
+            <span class="pe">🧖</span>ロングストレート
+          </button>
+          <button class="preset-btn" data-id="longwave" onclick="selectPreset('longwave')">
+            <span class="pe">🌊</span>ロングウェーブ
           </button>
         </div>
       </div>
@@ -915,10 +921,14 @@ const AR = {
 //
 // offsetY cancels the faceH*0.05 nudge so HL lands at forehead.y:
 //   p.offsetY ≈ -(faceH*0.05) / drawH ≈ -0.04~-0.02 (small negatives)
+const ASSETS_BASE = 'https://tomu-ai963.github.io/tomu-system/apps/standard/assets/';
+
 const PRESETS = {
-  short: { id: 'short', label: 'ショート', scale: 1.52, offsetX: 0, offsetY: -0.04, smooth: 0.20, canvasW: 512, canvasH: 620 },
-  bob:   { id: 'bob',   label: 'ボブ',     scale: 1.76, offsetX: 0, offsetY: -0.03, smooth: 0.17, canvasW: 512, canvasH: 760 },
-  long:  { id: 'long',  label: 'ロング',   scale: 2.10, offsetX: 0, offsetY: -0.02, smooth: 0.13, canvasW: 512, canvasH: 980 },
+  short:        { id: 'short',        label: 'ショート',       file: 'hair-short.png',        scale: 1.52, offsetX: 0, offsetY: -0.04, smooth: 0.20 },
+  bob:          { id: 'bob',          label: 'ボブ',           file: 'hair-bob.png',           scale: 1.76, offsetX: 0, offsetY: -0.03, smooth: 0.17 },
+  medium:       { id: 'medium',       label: 'ミディアム',     file: 'hair-medium.png',        scale: 1.90, offsetX: 0, offsetY: -0.03, smooth: 0.15 },
+  longstraight: { id: 'longstraight', label: 'ロングストレート', file: 'hair-long-straight.png', scale: 2.10, offsetX: 0, offsetY: -0.02, smooth: 0.13 },
+  longwave:     { id: 'longwave',     label: 'ロングウェーブ', file: 'hair-long-wave.png',     scale: 2.10, offsetX: 0, offsetY: -0.02, smooth: 0.13 },
 };
 
 AR.currentPreset = PRESETS.short;
@@ -935,274 +945,9 @@ const camStatus = document.getElementById('camStatus');
 const camDebug  = document.getElementById('camDebug');
 
 // =====================================================
-// HAIR CANVAS DRAWING  (high-quality, no PNG needed)
+// HAIR ASSETS  (PNG overlays, loaded from GitHub Pages)
+// Drawing functions removed; hair is now real transparent PNGs.
 // =====================================================
-
-function buildHairCanvas(preset) {
-  const W = preset.canvasW;
-  const H = preset.canvasH;
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const c = cv.getContext('2d');
-
-  // The "attachment line" (hairline) is at Y = H * 0.80
-  // Hair body lives above it; transparent below (centre) for face.
-  const HL = H * 0.80;   // hairline Y
-  const TOP = H * 0.06;  // crown of head
-
-  if (preset.id === 'short') {
-    _drawShort(c, W, H, HL, TOP);
-  } else if (preset.id === 'bob') {
-    _drawBob(c, W, H, HL, TOP);
-  } else {
-    _drawLong(c, W, H, HL, TOP);
-  }
-
-  return cv;
-}
-
-function _hairGrad(c, W, H, HL, TOP, extraAlpha) {
-  // Vertical gradient: jet-black root → dark cog-brown → transparent at hairline
-  const g = c.createLinearGradient(W/2, TOP, W/2, HL * 1.02);
-  g.addColorStop(0.00, `rgba(15,  8,  4, ${extraAlpha ?? 0.97})`);
-  g.addColorStop(0.30, `rgba(28, 14,  6, ${extraAlpha ?? 0.97})`);
-  g.addColorStop(0.65, `rgba(40, 20,  8, ${extraAlpha ?? 0.96})`);
-  g.addColorStop(0.88, `rgba(20, 10,  4, 0.55)`);
-  g.addColorStop(1.00, `rgba(10,  5,  2, 0.00)`);
-  return g;
-}
-
-function _addHighlight(c, W, TOP, HL) {
-  // Sheen highlight across the crown
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.22;
-  const g = c.createRadialGradient(W*0.48, TOP + (HL-TOP)*0.18, 0, W*0.48, TOP + (HL-TOP)*0.18, W*0.38);
-  g.addColorStop(0.0, 'rgba(255,220,160,1)');
-  g.addColorStop(0.6, 'rgba(200,160,90,0.4)');
-  g.addColorStop(1.0, 'rgba(180,120,60,0)');
-  c.fillStyle = g;
-  c.fillRect(0, 0, W, HL);
-  c.restore();
-}
-
-function _addStrands(c, W, TOP, HL, count) {
-  // Fine strand texture lines
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.12;
-  c.strokeStyle = 'rgba(255,220,140,1)';
-  c.lineWidth = 1.2;
-  for (let i = 0; i < count; i++) {
-    const x = W * (0.15 + 0.7 * i / (count - 1));
-    const bend = (Math.random() - 0.5) * W * 0.06;
-    c.beginPath();
-    c.moveTo(x, TOP * 1.2);
-    c.quadraticCurveTo(x + bend, (TOP + HL) * 0.5, x + bend * 0.3, HL * 0.88);
-    c.stroke();
-  }
-  c.restore();
-}
-
-function _cutFace(c, W, H, HL) {
-  // Punch out the central face window (W*0.25–W*0.75, forehead → HL)
-  // using destination-out + elliptical radial gradient for soft feathered edges.
-  const cx = W * 0.50;
-  const cy = H * 0.49;      // midpoint of forehead(H*0.18) → hairline(H*0.80)
-  const rx = W * 0.25;      // half of [0.25–0.75] = 0.25*W per spec
-  const ry = H * 0.31;      // (0.80-0.18)/2 * H
-  const aspect = ry / rx;   // scale y so arc(rx) becomes ellipse(rx, ry)
-  c.save();
-  c.globalCompositeOperation = 'destination-out';
-  c.save();
-  c.translate(cx, cy);
-  c.scale(1, aspect);
-  // Radial gradient: full cutout at core, feathered at boundary
-  const g = c.createRadialGradient(0, 0, rx * 0.60, 0, 0, rx);
-  g.addColorStop(0.0, 'rgba(0,0,0,1)');
-  g.addColorStop(1.0, 'rgba(0,0,0,0)');
-  c.beginPath();
-  c.arc(0, 0, rx, 0, Math.PI * 2);
-  c.fillStyle = g;
-  c.fill();
-  c.restore();
-  c.restore();
-}
-
-function _drawShort(c, W, H, HL, TOP) {
-  // --- Base cap ---
-  c.beginPath();
-  c.moveTo(W * 0.50, TOP);
-  // Right arc: down to ear level
-  c.bezierCurveTo(W * 0.90, TOP * 0.80, W * 0.98, H * 0.32, W * 0.88, H * 0.58);
-  c.bezierCurveTo(W * 0.83, H * 0.68, W * 0.79, HL * 0.90, W * 0.72, HL * 0.97);
-  // Bottom hairline (centre)
-  c.bezierCurveTo(W * 0.64, HL, W * 0.56, HL * 1.01, W * 0.50, HL * 1.01);
-  c.bezierCurveTo(W * 0.44, HL * 1.01, W * 0.36, HL, W * 0.28, HL * 0.97);
-  // Left arc back up
-  c.bezierCurveTo(W * 0.21, HL * 0.90, W * 0.17, H * 0.68, W * 0.12, H * 0.58);
-  c.bezierCurveTo(W * 0.02, H * 0.32, W * 0.10, TOP * 0.80, W * 0.50, TOP);
-  c.closePath();
-
-  c.fillStyle = _hairGrad(c, W, H, HL, TOP);
-  c.fill();
-
-  // Subtle inner shadow at sides
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  const sg = c.createRadialGradient(W*0.12, H*0.50, 0, W*0.12, H*0.50, W*0.28);
-  sg.addColorStop(0, 'rgba(0,0,0,0.25)');
-  sg.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = sg; c.fillRect(0, 0, W, H);
-  const sg2 = c.createRadialGradient(W*0.88, H*0.50, 0, W*0.88, H*0.50, W*0.28);
-  sg2.addColorStop(0, 'rgba(0,0,0,0.25)');
-  sg2.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = sg2; c.fillRect(0, 0, W, H);
-  c.restore();
-
-  _cutFace(c, W, H, HL);
-  _addHighlight(c, W, TOP, HL);
-  _addStrands(c, W, TOP, HL, 30);
-
-  // Parting line (subtle)
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.06;
-  c.strokeStyle = 'rgba(240,200,120,1)';
-  c.lineWidth = 2.5;
-  c.beginPath();
-  c.moveTo(W * 0.50, TOP * 1.4);
-  c.quadraticCurveTo(W * 0.51, TOP * 2.5, W * 0.52, HL * 0.50);
-  c.stroke();
-  c.restore();
-}
-
-function _drawBob(c, W, H, HL, TOP) {
-  // --- Main cap (same as short but wider) ---
-  c.beginPath();
-  c.moveTo(W * 0.50, TOP);
-  // Right side — bob extends below ear to jaw level
-  c.bezierCurveTo(W * 0.94, TOP * 0.70, W * 1.02, H * 0.28, W * 0.96, H * 0.54);
-  c.bezierCurveTo(W * 0.93, H * 0.66, W * 0.90, H * 0.78, W * 0.88, H * 0.88);
-  // Bob blunt cut line (right to centre)
-  c.bezierCurveTo(W * 0.82, H * 0.94, W * 0.74, HL * 1.04, W * 0.60, HL * 1.02);
-  c.lineTo(W * 0.40, HL * 1.02);
-  // Bob left
-  c.bezierCurveTo(W * 0.26, HL * 1.04, W * 0.18, H * 0.94, W * 0.12, H * 0.88);
-  c.bezierCurveTo(W * 0.10, H * 0.78, W * 0.07, H * 0.66, W * 0.04, H * 0.54);
-  c.bezierCurveTo(W * (-0.02), H * 0.28, W * 0.06, TOP * 0.70, W * 0.50, TOP);
-  c.closePath();
-
-  c.fillStyle = _hairGrad(c, W, H, HL, TOP);
-  c.fill();
-
-  // Side depth gradients
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  const lsg = c.createLinearGradient(0, 0, W * 0.22, 0);
-  lsg.addColorStop(0, 'rgba(0,0,0,0.35)');
-  lsg.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = lsg; c.fillRect(0, 0, W * 0.22, H);
-  const rsg = c.createLinearGradient(W, 0, W * 0.78, 0);
-  rsg.addColorStop(0, 'rgba(0,0,0,0.35)');
-  rsg.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = rsg; c.fillRect(W * 0.78, 0, W * 0.22, H);
-  c.restore();
-
-  // Blunt bottom edge line (characteristic of bob)
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.32;
-  c.strokeStyle = 'rgba(60,30,10,0.9)';
-  c.lineWidth = 5;
-  c.beginPath();
-  c.moveTo(W * 0.12, H * 0.88);
-  c.bezierCurveTo(W * 0.20, H * 0.95, W * 0.36, HL * 1.03, W * 0.50, HL * 1.02);
-  c.bezierCurveTo(W * 0.64, HL * 1.01, W * 0.80, H * 0.95, W * 0.88, H * 0.88);
-  c.stroke();
-  c.restore();
-
-  _cutFace(c, W, H, HL);
-  _addHighlight(c, W, TOP, HL);
-  _addStrands(c, W, TOP, HL, 38);
-}
-
-function _drawLong(c, W, H, HL, TOP) {
-  // --- Cap top ---
-  c.beginPath();
-  c.moveTo(W * 0.50, TOP);
-  // Right: extends all the way down
-  c.bezierCurveTo(W * 0.96, TOP * 0.6, W * 1.04, H * 0.24, W * 0.98, H * 0.46);
-  c.bezierCurveTo(W * 0.95, H * 0.60, W * 0.92, H * 0.72, W * 0.90, H * 0.85);
-  c.bezierCurveTo(W * 0.88, H * 0.93, W * 0.86, H * 0.98, W * 0.82, H * 1.00);
-  // Centre hairline notch
-  c.bezierCurveTo(W * 0.72, HL * 1.03, W * 0.62, HL, W * 0.50, HL);
-  c.bezierCurveTo(W * 0.38, HL, W * 0.28, HL * 1.03, W * 0.18, H * 1.00);
-  // Left long side
-  c.bezierCurveTo(W * 0.14, H * 0.98, W * 0.12, H * 0.93, W * 0.10, H * 0.85);
-  c.bezierCurveTo(W * 0.08, H * 0.72, W * 0.05, H * 0.60, W * 0.02, H * 0.46);
-  c.bezierCurveTo(W * (-0.04), H * 0.24, W * 0.04, TOP * 0.6, W * 0.50, TOP);
-  c.closePath();
-
-  c.fillStyle = _hairGrad(c, W, H, HL, TOP, 0.97);
-  c.fill();
-
-  // Long hair bottom fade
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  const btFade = c.createLinearGradient(0, H * 0.82, 0, H);
-  btFade.addColorStop(0, 'rgba(0,0,0,0)');
-  btFade.addColorStop(1, 'rgba(0,0,0,0.18)');
-  c.fillStyle = btFade;
-  c.fillRect(0, H * 0.82, W, H * 0.18);
-  c.restore();
-
-  // Side shadows
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  const ls = c.createLinearGradient(0, 0, W * 0.20, 0);
-  ls.addColorStop(0, 'rgba(0,0,0,0.40)');
-  ls.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = ls; c.fillRect(0, 0, W * 0.20, H);
-  const rs = c.createLinearGradient(W, 0, W * 0.80, 0);
-  rs.addColorStop(0, 'rgba(0,0,0,0.40)');
-  rs.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = rs; c.fillRect(W * 0.80, 0, W * 0.20, H);
-  c.restore();
-
-  // Fine tips at bottom (wisps)
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.14;
-  c.strokeStyle = 'rgba(50,25,10,1)';
-  c.lineWidth = 2;
-  const tipPairs = [
-    [W*0.18, H*0.94, W*0.16, H],
-    [W*0.22, H*0.96, W*0.21, H],
-    [W*0.78, H*0.94, W*0.80, H],
-    [W*0.82, H*0.96, W*0.83, H],
-  ];
-  for (const [x1,y1,x2,y2] of tipPairs) {
-    c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
-  }
-  c.restore();
-
-  _cutFace(c, W, H, HL);
-  _addHighlight(c, W, TOP, HL);
-  _addStrands(c, W, TOP, HL, 48);
-
-  // Centre parting
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
-  c.globalAlpha = 0.07;
-  c.strokeStyle = 'rgba(220,180,100,1)';
-  c.lineWidth = 3;
-  c.beginPath();
-  c.moveTo(W*0.50, TOP*1.2);
-  c.quadraticCurveTo(W*0.51, TOP*3, W*0.52, HL*0.55);
-  c.stroke();
-  c.restore();
-}
 
 // =====================================================
 // PRESET MANAGEMENT
@@ -1218,12 +963,15 @@ function selectPreset(id) {
 
 function _ensureHairCache(id) {
   if (!AR.hairCache[id]) {
-    AR.hairCache[id] = buildHairCanvas(PRESETS[id]);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = ASSETS_BASE + PRESETS[id].file;
+    AR.hairCache[id] = img;
   }
   return AR.hairCache[id];
 }
 
-// Pre-build all presets
+// Pre-load all preset images
 (function preload() {
   for (const id of Object.keys(PRESETS)) _ensureHairCache(id);
 })();
@@ -1469,7 +1217,7 @@ function _withMirror(drawFn) {
 
 function _drawHair(t, w) {
   const src = AR.hairCache[t.p.id];
-  if (!src) return;
+  if (!src || !src.complete || !src.naturalWidth) return;
 
   _withMirror(() => {
     ctx.save();
