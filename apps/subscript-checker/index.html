@@ -372,17 +372,17 @@
   <div class="sub-list" id="sub-list">
     <div class="sub-item">
       <input aria-label="例）Netflix" class="sub-name" type="text" placeholder="例）Netflix" />
-      <input aria-label="¥/月" class="sub-price" type="text" placeholder="¥/月" />
+      <input aria-label="月額料金（円）" class="sub-price" type="text" placeholder="¥/月" />
       <button class="del-btn" onclick="removeItem(this)">×</button>
     </div>
     <div class="sub-item">
       <input aria-label="例）Spotify" class="sub-name" type="text" placeholder="例）Spotify" />
-      <input aria-label="¥/月" class="sub-price" type="text" placeholder="¥/月" />
+      <input aria-label="月額料金（円）" class="sub-price" type="text" placeholder="¥/月" />
       <button class="del-btn" onclick="removeItem(this)">×</button>
     </div>
     <div class="sub-item">
       <input aria-label="例）Amazon Prime" class="sub-name" type="text" placeholder="例）Amazon Prime" />
-      <input aria-label="¥/月" class="sub-price" type="text" placeholder="¥/月" />
+      <input aria-label="月額料金（円）" class="sub-price" type="text" placeholder="¥/月" />
       <button class="del-btn" onclick="removeItem(this)">×</button>
     </div>
   </div>
@@ -478,7 +478,7 @@ function addItem() {
   item.className = 'sub-item';
   item.innerHTML = `
     <input aria-label="サービス名" class="sub-name" type="text" placeholder="サービス名" />
-    <input aria-label="¥/月" class="sub-price" type="text" placeholder="¥/月" />
+    <input aria-label="月額料金（円）" class="sub-price" type="text" placeholder="¥/月" />
     <button class="del-btn" onclick="removeItem(this)">×</button>
   `;
   list.appendChild(item);
