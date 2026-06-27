@@ -177,6 +177,50 @@ function htmlRes(html) {
   });
 }
 
+// A-6: Anthropic /v1/messages へのプロキシ。opts.stream === true のとき SSE をそのままフォワードする。
+// stream を指定しない既存の呼び出し元は従来通り JSON を受け取る（挙動不変）。
+async function anthropicChat(env, corsH, opts) {
+  var wantStream = opts.stream === true;
+  var aiRes;
+  try {
+    aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: opts.max_tokens,
+        system: opts.system,
+        messages: opts.messages,
+        stream: wantStream,
+      }),
+    });
+  } catch (err) {
+    return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+  }
+  if (!aiRes.ok) {
+    return jsonRes({ error: "Anthropic API error", detail: await aiRes.text() }, aiRes.status, corsH);
+  }
+  if (wantStream) {
+    return new Response(aiRes.body, {
+      status: 200,
+      headers: Object.assign({}, corsH, {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+      }),
+    });
+  }
+  return new Response(await aiRes.text(), {
+    status: 200,
+    headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
+  });
+}
+
 var LEGAL_NAV_LOGO = `<nav>
   <a href="https://tomu-ai963.github.io/tomu-system/" class="nav-logo">とむ<span>SYSTEM</span></a>
 </nav>`;
@@ -1649,31 +1693,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: taxCheck.error, required: taxCheck.required, current: taxCheck.current, limit: taxCheck.limit }, taxCheck.status, corsH);
     }
 
-    try {
-      var taxRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: taxMaxTokens,
-          system: taxSystem,
-          messages: taxMessages,
-        }),
-      });
-      if (!taxRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await taxRes.text() }, taxRes.status, corsH);
-      }
-      return new Response(await taxRes.text(), {
-        status: 200,
-        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
-      });
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
-    }
+    return await anthropicChat(env, corsH, { system: taxSystem, messages: taxMessages, max_tokens: taxMaxTokens, stream: body.stream === true });
   }
 
   // =========================================================
@@ -1694,31 +1714,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: legalCheck.error, required: legalCheck.required, current: legalCheck.current, limit: legalCheck.limit }, legalCheck.status, corsH);
     }
 
-    try {
-      var legalRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: legalMaxTokens,
-          system: legalSystem,
-          messages: legalMessages,
-        }),
-      });
-      if (!legalRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await legalRes.text() }, legalRes.status, corsH);
-      }
-      return new Response(await legalRes.text(), {
-        status: 200,
-        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
-      });
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
-    }
+    return await anthropicChat(env, corsH, { system: legalSystem, messages: legalMessages, max_tokens: legalMaxTokens, stream: body.stream === true });
   }
 
   // =========================================================
@@ -1739,31 +1735,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: gyoseiCheck.error, required: gyoseiCheck.required, current: gyoseiCheck.current, limit: gyoseiCheck.limit }, gyoseiCheck.status, corsH);
     }
 
-    try {
-      var gyoseiRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: gyoseiMaxTokens,
-          system: gyoseiSystem,
-          messages: gyoseiMessages,
-        }),
-      });
-      if (!gyoseiRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await gyoseiRes.text() }, gyoseiRes.status, corsH);
-      }
-      return new Response(await gyoseiRes.text(), {
-        status: 200,
-        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
-      });
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
-    }
+    return await anthropicChat(env, corsH, { system: gyoseiSystem, messages: gyoseiMessages, max_tokens: gyoseiMaxTokens, stream: body.stream === true });
   }
 
   // =========================================================
@@ -1784,31 +1756,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: sharoshiCheck.error, required: sharoshiCheck.required, current: sharoshiCheck.current, limit: sharoshiCheck.limit }, sharoshiCheck.status, corsH);
     }
 
-    try {
-      var sharoshiRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: sharoshiMaxTokens,
-          system: sharoshiSystem,
-          messages: sharoshiMessages,
-        }),
-      });
-      if (!sharoshiRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await sharoshiRes.text() }, sharoshiRes.status, corsH);
-      }
-      return new Response(await sharoshiRes.text(), {
-        status: 200,
-        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
-      });
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
-    }
+    return await anthropicChat(env, corsH, { system: sharoshiSystem, messages: sharoshiMessages, max_tokens: sharoshiMaxTokens, stream: body.stream === true });
   }
 
   // =========================================================
@@ -1829,31 +1777,28 @@ async function handleRequest(request, env) {
       return jsonRes({ error: benrishiCheck.error, required: benrishiCheck.required, current: benrishiCheck.current, limit: benrishiCheck.limit }, benrishiCheck.status, corsH);
     }
 
-    try {
-      var benrishiRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: benrishiMaxTokens,
-          system: benrishiSystem,
-          messages: benrishiMessages,
-        }),
-      });
-      if (!benrishiRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await benrishiRes.text() }, benrishiRes.status, corsH);
-      }
-      return new Response(await benrishiRes.text(), {
-        status: 200,
-        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
-      });
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    return await anthropicChat(env, corsH, { system: benrishiSystem, messages: benrishiMessages, max_tokens: benrishiMaxTokens, stream: body.stream === true });
+  }
+
+  // =========================================================
+  // POST /api/shiho-shoshi-advisor — 司法書士アドバイザー（Fullプラン専用）
+  // =========================================================
+  if (url.pathname === "/api/shiho-shoshi-advisor") {
+    var shihoEmail = body.email;
+    var shihoSystem = body.system;
+    var shihoMessages = body.messages;
+    var shihoMaxTokens = Math.min(body.max_tokens || 1000, 2000);
+
+    if (!shihoSystem || !shihoMessages || !Array.isArray(shihoMessages) || shihoMessages.length === 0) {
+      return jsonRes({ error: "system and messages are required" }, 400, corsH);
     }
+
+    var shihoCheck = await checkPlanAndCount(shihoEmail, "full", env);
+    if (!shihoCheck.ok) {
+      return jsonRes({ error: shihoCheck.error, required: shihoCheck.required, current: shihoCheck.current, limit: shihoCheck.limit }, shihoCheck.status, corsH);
+    }
+
+    return await anthropicChat(env, corsH, { system: shihoSystem, messages: shihoMessages, max_tokens: shihoMaxTokens, stream: body.stream === true });
   }
 
   // =========================================================
@@ -1987,31 +1932,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: chatCheck.error, required: chatCheck.required, current: chatCheck.current, limit: chatCheck.limit }, chatCheck.status, corsH);
     }
 
-    try {
-      var chatRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: maxTokens,
-          system: system,
-          messages: messages,
-        }),
-      });
-      if (!chatRes.ok) {
-        return jsonRes({ error: "Anthropic API error", detail: await chatRes.text() }, chatRes.status, corsH);
-      }
-      return new Response(await chatRes.text(), {
-        status: 200,
-        headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
-      });
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
-    }
+    return await anthropicChat(env, corsH, { system: system, messages: messages, max_tokens: maxTokens, stream: body.stream === true });
   }
 
   // =========================================================
