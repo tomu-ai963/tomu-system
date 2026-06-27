@@ -211,6 +211,14 @@
   }
 /* ===== Supabase 履歴 ===== */
 .hist-section{margin:8px 16px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);}.hist-list{display:flex;flex-direction:column;gap:7px;margin-top:7px;}.hist-card{padding:10px 12px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:background 0.2s;}.hist-card:hover{background:rgba(255,255,255,0.12);}.hist-card-meta{display:flex;align-items:center;gap:8px;margin-bottom:3px;}.hist-card-date{font-size:0.66rem;font-family:monospace;opacity:0.5;color:var(--text-muted);}.hist-card-title{font-size:0.87rem;font-weight:600;margin-bottom:2px;color:var(--text);}.hist-card-summary{font-size:0.75rem;color:var(--text-muted);line-height:1.45;}.hist-del{margin-left:auto;background:none;border:none;font-size:0.9rem;cursor:pointer;opacity:0.28;transition:opacity 0.2s;padding:1px 4px;border-radius:4px;}.hist-del:hover{opacity:1;}.hist-empty{font-size:0.75rem;color:var(--text-muted);font-family:monospace;text-align:center;padding:12px 0;opacity:0.6;}.hist-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;}.hist-modal{background:var(--surface,#fff);border-radius:16px;padding:22px;width:100%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,0.4);border:1px solid var(--border,rgba(0,0,0,0.1));}.hist-modal-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));}.hist-modal-date{font-size:0.66rem;font-family:monospace;opacity:0.52;margin-bottom:3px;color:var(--text-muted);}.hist-modal-title{font-size:1.13rem;font-weight:700;color:var(--text);}.hist-modal-meta{font-size:0.7rem;color:var(--text-muted);margin-top:3px;}.hist-modal-close{margin-left:auto;background:none;border:1px solid var(--border,rgba(0,0,0,0.12));border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.84rem;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s;}.hist-modal-close:hover{background:rgba(255,255,255,0.1);}.hist-modal-body{font-size:0.87rem;line-height:1.85;white-space:pre-wrap;color:var(--text);}
+
+/* A-9/A-10/A-11: 新しい相談・再試行ボタン */
+.newchat-btn{border-color:var(--accent-light)!important;color:var(--accent)!important;font-weight:600;}
+.retry-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#fff5f5;border:1px solid #fccaca;border-radius:12px;font-size:13px;color:#c0392b;animation:fadeUp 0.3s ease;}
+.retry-msg{flex:1;min-width:0;}
+.retry-btn{flex-shrink:0;padding:6px 16px;background:var(--accent);color:#f8f7fa;border:none;border-radius:16px;font-family:inherit;font-size:12px;cursor:pointer;transition:background 0.2s;}
+.retry-btn:hover{background:var(--text);}
+.mode-btn:focus-visible,.quick-btn:focus-visible,.send-btn:focus-visible,.retry-btn:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 </style>
   <link rel="manifest" href="manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
@@ -233,12 +241,13 @@
     </div>
   </div>
   <div class="mode-toggle">
-    <button class="mode-btn active" onclick="setMode('general', this)">一般</button>
-    <button class="mode-btn" onclick="setMode('pro', this)">専門家</button>
+    <button class="mode-btn active" onclick="setMode('general', this)" aria-label="一般向けモードに切り替え">一般</button>
+    <button class="mode-btn" onclick="setMode('pro', this)" aria-label="専門家モードに切り替え">専門家</button>
   </div>
 </div>
 
 <div class="quick-actions">
+  <button class="quick-btn newchat-btn" type="button" onclick="newConsult()" aria-label="新しい相談を始める（会話をリセットします）">🆕 新しい相談</button>
   <button class="quick-btn" onclick="quickAsk('経費になるか確認したい')">💼 経費チェック</button>
   <button class="quick-btn" onclick="quickAsk('確定申告について教えてほしい')">📋 確定申告</button>
   <button class="quick-btn" onclick="quickAsk('青色申告と白色申告の違いは？')">📊 青色 vs 白色</button>
@@ -277,8 +286,9 @@
       rows="1"
       oninput="autoResize(this)"
       onkeydown="handleKey(event)"
+      aria-label="メッセージを入力"
     ></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="送信">↑</button>
   </div>
 </div>
 
@@ -363,7 +373,7 @@ function setMode(mode, btn) {
     : '専門家モード — 実務的な情報を提供します';
   conversationHistory = [];
   if (window.histResetSession) histResetSession();
-  document.querySelectorAll('#chatArea .message, #chatArea .loading').forEach(function(el){ el.remove(); });
+  document.querySelectorAll('#chatArea .message, #chatArea .loading, #chatArea .retry-row').forEach(function(el){ el.remove(); });
   showToast('モードを切り替えました。会話をリセットしました。');
 }
 
@@ -384,20 +394,85 @@ function handleKey(e) {
   }
 }
 
-async function sendMessage() {
+// A-8: 会話履歴トリミング設定（古いメッセージから削除しトークン超過を防ぐ）
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_CHARS = 40000;
+
+function trimHistory() {
+  while (conversationHistory.length > MAX_HISTORY_MESSAGES) {
+    conversationHistory.shift();
+  }
+  let total = conversationHistory.reduce((n, m) => n + (m.content ? m.content.length : 0), 0);
+  while (conversationHistory.length > 2 && total > MAX_HISTORY_CHARS) {
+    const removed = conversationHistory.shift();
+    total -= removed.content ? removed.content.length : 0;
+  }
+}
+
+function removeRetry() {
+  document.querySelectorAll('#chatArea .retry-row').forEach(el => el.remove());
+}
+
+// A-10: エラー時に「再試行」ボタンを表示し、同じリクエストを再送できるようにする
+function showRetry(msg) {
+  removeRetry();
+  const chatArea = document.getElementById('chatArea');
+  const row = document.createElement('div');
+  row.className = 'retry-row';
+  const span = document.createElement('span');
+  span.className = 'retry-msg';
+  span.textContent = msg;
+  const btn = document.createElement('button');
+  btn.className = 'retry-btn';
+  btn.type = 'button';
+  btn.textContent = '再試行';
+  btn.setAttribute('aria-label', '直前のリクエストを再試行する');
+  btn.addEventListener('click', retryLast);
+  row.appendChild(span);
+  row.appendChild(btn);
+  chatArea.appendChild(row);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function retryLast() {
+  removeRetry();
+  requestCompletion();
+}
+
+// A-9: 新しい相談を始める（会話履歴と表示をリセット）
+function newConsult() {
+  conversationHistory = [];
+  if (window.histResetSession) histResetSession();
+  removeRetry();
+  document.querySelectorAll('#chatArea .message, #chatArea .loading').forEach(el => el.remove());
+  const input = document.getElementById('userInput');
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  showToast('新しい相談を始めます。');
+}
+
+function sendMessage() {
   const input = document.getElementById('userInput');
   const text = input.value.trim();
   if (!text || isLoading) return;
 
   input.value = '';
   input.style.height = 'auto';
-  isLoading = true;
-  document.getElementById('sendBtn').disabled = true;
+  removeRetry();
 
   appendMessage('user', text);
   conversationHistory.push({ role: 'user', content: text });
+  requestCompletion();
+}
+
+// A-6: ストリーミングで応答を逐次表示する。conversationHistory の末尾が user メッセージである前提。
+async function requestCompletion() {
+  if (isLoading) return;
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
 
   const loadingEl = appendLoading();
+  let streamMsgEl = null;
+  let reply = '';
 
   try {
     const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
@@ -409,31 +484,66 @@ async function sendMessage() {
         system: systemPrompts[currentMode],
         messages: conversationHistory,
         max_tokens: currentMode === 'pro' ? 2000 : 1500,
+        stream: true,
       })
     });
 
-    const data = await response.json();
-    loadingEl.remove();
-
-    // A-1: プラン上限・権限エラーなら案内を表示（通常のエラーは従来通り）
-    if (data.error) {
-      appendMessage('ai', planErrorMessage(data));
-    } else {
-      const reply = data.content?.[0]?.text || 'エラーが発生しました。';
-      conversationHistory.push({ role: 'assistant', content: reply });
-      appendMessage('ai', reply);
-      // A-2: セッション単位で履歴を上書き保存
-      histSaveSession();
-      setTimeout(histLoad, 1000);
+    if (!response.ok) {
+      loadingEl.remove();
+      const data = await response.json().catch(() => ({}));
+      showRetry(planErrorMessage(data));
+      return;
     }
 
-  } catch (e) {
     loadingEl.remove();
-    appendMessage('ai', '通信エラーが発生しました。もう一度お試しください。');
-  }
+    streamMsgEl = appendMessage('ai', '');
+    const bubble = streamMsgEl.querySelector('.bubble');
+    const chatArea = document.getElementById('chatArea');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-  isLoading = false;
-  document.getElementById('sendBtn').disabled = false;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t.startsWith('data:')) continue;
+        const payload = t.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        let ev;
+        try { ev = JSON.parse(payload); } catch (e) { continue; }
+        if (ev.type === 'content_block_delta' && ev.delta && typeof ev.delta.text === 'string') {
+          reply += ev.delta.text;
+          bubble.innerHTML = formatText(reply);
+          chatArea.scrollTop = chatArea.scrollHeight;
+        }
+      }
+    }
+
+    if (!reply) {
+      streamMsgEl.remove();
+      showRetry('応答を取得できませんでした。');
+      return;
+    }
+
+    conversationHistory.push({ role: 'assistant', content: reply });
+    trimHistory();
+    // A-2: セッション単位で履歴を上書き保存
+    histSaveSession();
+    setTimeout(histLoad, 1000);
+
+  } catch (e) {
+    if (loadingEl) loadingEl.remove();
+    if (streamMsgEl) streamMsgEl.remove();
+    showRetry('通信エラーが発生しました。');
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
 }
 
 function appendMessage(role, text) {
@@ -477,7 +587,7 @@ function appendLoading() {
 }
 
 function formatText(text) {
-  function inline(s) { return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+  function inline(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
   var lines = String(text).split('\n');
   var html = '';
   var listType = null;
