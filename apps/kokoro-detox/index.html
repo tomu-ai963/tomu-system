@@ -639,7 +639,7 @@ footer a {
         <span class="step-title">言葉にしてみる</span>
       </div>
       <div class="input-wrap">
-        <textarea
+        <textarea aria-label="今日あったこと、ずっと気になっていること、誰かへの言えない気持ち…なんでも。"
           id="userInput"
           placeholder="今日あったこと、ずっと気になっていること、誰かへの言えない気持ち…なんでも。"
           maxlength="600"
@@ -802,6 +802,7 @@ async function runDetox() {
   } catch (err) {
     console.error(err);
     showError(`エラーが発生しました：${err.message}`);
+    tomuShowRetry(runDetox);
   } finally {
     btn.classList.remove('loading');
     btn.disabled = false;
@@ -892,5 +893,27 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
 })();
 </script>
 <script src="../../tomu-login.js"></script>
+<script>
+// A-10 共通: AI生成に失敗したとき「再試行」ボタンを表示する（単発Lightアプリ用）
+function tomuHideRetry(){ var b=document.getElementById('tomu-retry-bar'); if(b) b.remove(); }
+function tomuShowRetry(fn){
+  tomuHideRetry();
+  var bar=document.createElement('div');
+  bar.id='tomu-retry-bar';
+  bar.setAttribute('role','alert');
+  bar.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:92%;background:#fff;border:1px solid #fccaca;color:#c0392b;border-radius:24px;padding:8px 10px 8px 16px;font-size:13px;line-height:1.5;z-index:99999;box-shadow:0 6px 24px rgba(0,0,0,.18);font-family:inherit;';
+  var span=document.createElement('span'); span.textContent='通信に失敗しました';
+  var rbtn=document.createElement('button'); rbtn.type='button'; rbtn.textContent='再試行';
+  rbtn.setAttribute('aria-label','直前のリクエストを再試行する');
+  rbtn.style.cssText='flex-shrink:0;background:#c0392b;color:#fff;border:none;border-radius:16px;padding:6px 16px;font-family:inherit;font-size:12px;cursor:pointer;';
+  rbtn.onclick=function(){ tomuHideRetry(); try{ if(typeof fn==='function') fn(); }catch(e){} };
+  var cbtn=document.createElement('button'); cbtn.type='button'; cbtn.textContent='✕';
+  cbtn.setAttribute('aria-label','閉じる');
+  cbtn.style.cssText='flex-shrink:0;background:none;border:none;color:#c0392b;font-size:15px;line-height:1;cursor:pointer;padding:2px 4px;';
+  cbtn.onclick=tomuHideRetry;
+  bar.appendChild(span); bar.appendChild(rbtn); bar.appendChild(cbtn);
+  document.body.appendChild(bar);
+}
+</script>
 </body>
 </html>

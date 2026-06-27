@@ -584,7 +584,7 @@ footer {
       </div>
 
       <div class="mood-input-row">
-        <input class="mood-input" id="moodInput" placeholder="今日の気分を自由に入力…" maxlength="60">
+        <input aria-label="今日の気分を自由に入力…" class="mood-input" id="moodInput" placeholder="今日の気分を自由に入力…" maxlength="60">
         <button class="suggest-btn" id="suggestBtn" onclick="aiSuggest()">
           ✦ 提案
         </button>
@@ -601,7 +601,7 @@ footer {
       <div class="section-label">メニューを管理</div>
       <div class="menu-list" id="menuList"></div>
       <div class="add-row">
-        <input class="add-input" id="addInput" placeholder="メニューを追加…" maxlength="12">
+        <input aria-label="メニューを追加…" class="add-input" id="addInput" placeholder="メニューを追加…" maxlength="12">
         <button class="add-btn" onclick="addItem()">追加</button>
       </div>
     </div>
@@ -850,6 +850,7 @@ async function aiSuggest() {
     document.getElementById('aiSuggestBox').classList.add('show');
   } catch(e) {
     document.getElementById('aiSuggestName').textContent = '提案を取得できませんでした';
+    tomuShowRetry(aiSuggest);
     document.getElementById('aiSuggestReason').textContent = '';
     document.getElementById('aiSuggestBox').classList.add('show');
   } finally {
@@ -963,5 +964,27 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
 })();
 </script>
 <script src="../../tomu-login.js"></script>
+<script>
+// A-10 共通: AI生成に失敗したとき「再試行」ボタンを表示する（単発Lightアプリ用）
+function tomuHideRetry(){ var b=document.getElementById('tomu-retry-bar'); if(b) b.remove(); }
+function tomuShowRetry(fn){
+  tomuHideRetry();
+  var bar=document.createElement('div');
+  bar.id='tomu-retry-bar';
+  bar.setAttribute('role','alert');
+  bar.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:92%;background:#fff;border:1px solid #fccaca;color:#c0392b;border-radius:24px;padding:8px 10px 8px 16px;font-size:13px;line-height:1.5;z-index:99999;box-shadow:0 6px 24px rgba(0,0,0,.18);font-family:inherit;';
+  var span=document.createElement('span'); span.textContent='通信に失敗しました';
+  var rbtn=document.createElement('button'); rbtn.type='button'; rbtn.textContent='再試行';
+  rbtn.setAttribute('aria-label','直前のリクエストを再試行する');
+  rbtn.style.cssText='flex-shrink:0;background:#c0392b;color:#fff;border:none;border-radius:16px;padding:6px 16px;font-family:inherit;font-size:12px;cursor:pointer;';
+  rbtn.onclick=function(){ tomuHideRetry(); try{ if(typeof fn==='function') fn(); }catch(e){} };
+  var cbtn=document.createElement('button'); cbtn.type='button'; cbtn.textContent='✕';
+  cbtn.setAttribute('aria-label','閉じる');
+  cbtn.style.cssText='flex-shrink:0;background:none;border:none;color:#c0392b;font-size:15px;line-height:1;cursor:pointer;padding:2px 4px;';
+  cbtn.onclick=tomuHideRetry;
+  bar.appendChild(span); bar.appendChild(rbtn); bar.appendChild(cbtn);
+  document.body.appendChild(bar);
+}
+</script>
 </body>
 </html>
