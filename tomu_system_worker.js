@@ -191,7 +191,7 @@ async function anthropicChat(env, corsH, opts) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: opts.model || "claude-sonnet-5",
         max_tokens: opts.max_tokens,
         system: opts.system,
         messages: opts.messages,
@@ -597,7 +597,7 @@ async function handleYamaCalendar(request, corsH, env) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5",
         max_tokens: 1024,
         system: "あなたは山暮らしの農作業アドバイザーです。\n月齢・旧暦の吉日と、ユーザーのGoogleカレンダーの予定を組み合わせて、\n今月の農作業タイミングを具体的に提案してください。\n豪雪地帯・高標高の山林環境を考慮し、キノコの原木栽培・山仕事に特化したアドバイスを含めること。\n出力は日本語で、見やすくまとめてください。",
         messages: [{
@@ -750,7 +750,7 @@ async function callMcpTool(name, args, env) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-5",
         max_tokens: MCP_MAX_TOKENS[name] || 800,
         system: systemPrompt,
         messages: [{ role: "user", content: userContent }],
@@ -933,7 +933,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // GET /api/history — セッション履歴取得（Fullプラン専用）
+  // GET /api/history — セッション履歴取得（Standardプラン以上）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "GET") {
     var histEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("email") || "";
@@ -942,8 +942,8 @@ async function handleRequest(request, env) {
     if (!histEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var histPlan = await env.SUBSCRIPTIONS.get(histEmail);
     if (!histPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
-    if (!planMeetsRequirement(histPlan, "full")) {
-      return jsonRes({ error: "plan_upgrade_required", required: "full", current: histPlan }, 403, corsH);
+    if (!planMeetsRequirement(histPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: histPlan }, 403, corsH);
     }
     try {
       var sessions = await getHistory(histEmail, histAppId, histLimit, env);
@@ -954,7 +954,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // DELETE /api/history — セッション履歴削除（Fullプラン専用）
+  // DELETE /api/history — セッション履歴削除（Standardプラン以上）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "DELETE") {
     var delEmail = request.headers.get("X-Customer-Email") || "";
@@ -963,8 +963,8 @@ async function handleRequest(request, env) {
     if (!delId) return jsonRes({ error: "id is required" }, 400, corsH);
     var delPlan = await env.SUBSCRIPTIONS.get(delEmail);
     if (!delPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
-    if (!planMeetsRequirement(delPlan, "full")) {
-      return jsonRes({ error: "plan_upgrade_required", required: "full", current: delPlan }, 403, corsH);
+    if (!planMeetsRequirement(delPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: delPlan }, 403, corsH);
     }
     try {
       var delPath = "/app_sessions?id=eq." + encodeURIComponent(delId) +
@@ -1309,7 +1309,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /api/history — セッション保存（Fullプラン専用）
+  // POST /api/history — セッション保存（Standardプラン以上）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "POST") {
     var histSaveEmail = request.headers.get("X-Customer-Email") || body.email || "";
@@ -1319,8 +1319,8 @@ async function handleRequest(request, env) {
     if (!histSaveAppId || !histSaveData) return jsonRes({ error: "app_id and session_data are required" }, 400, corsH);
     var histSavePlan = await env.SUBSCRIPTIONS.get(histSaveEmail);
     if (!histSavePlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
-    if (!planMeetsRequirement(histSavePlan, "full")) {
-      return jsonRes({ error: "plan_upgrade_required", required: "full", current: histSavePlan }, 403, corsH);
+    if (!planMeetsRequirement(histSavePlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: histSavePlan }, 403, corsH);
     }
     try {
       await saveSession(histSaveEmail, histSaveAppId, histSaveData, env);
@@ -1491,7 +1491,7 @@ async function handleRequest(request, env) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-5",
           max_tokens: vbChatMaxTokens,
           system: vbChatSystem,
           messages: vbChatMessagesToSend,
@@ -1597,11 +1597,11 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /api/plant-diagnose — 植物診断アプリ用（Fullプラン専用・履歴機能付き）
+  // POST /api/plant-diagnose — 植物診断アプリ用（Standardプラン以上・履歴機能付き）
   // =========================================================
   if (url.pathname === "/api/plant-diagnose") {
     var plantEmail = request.headers.get("X-Customer-Email") || body.email || "";
-    var plantCheck = await checkPlanAndCount(plantEmail, "full", env);
+    var plantCheck = await checkPlanAndCount(plantEmail, "standard", env);
     if (!plantCheck.ok) {
       return jsonRes({ error: plantCheck.error, required: plantCheck.required, current: plantCheck.current, limit: plantCheck.limit }, plantCheck.status, corsH);
     }
@@ -1693,7 +1693,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: taxCheck.error, required: taxCheck.required, current: taxCheck.current, limit: taxCheck.limit }, taxCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: taxSystem, messages: taxMessages, max_tokens: taxMaxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: taxSystem, messages: taxMessages, max_tokens: taxMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
   }
 
   // =========================================================
@@ -1714,7 +1714,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: legalCheck.error, required: legalCheck.required, current: legalCheck.current, limit: legalCheck.limit }, legalCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: legalSystem, messages: legalMessages, max_tokens: legalMaxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: legalSystem, messages: legalMessages, max_tokens: legalMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
   }
 
   // =========================================================
@@ -1735,7 +1735,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: gyoseiCheck.error, required: gyoseiCheck.required, current: gyoseiCheck.current, limit: gyoseiCheck.limit }, gyoseiCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: gyoseiSystem, messages: gyoseiMessages, max_tokens: gyoseiMaxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: gyoseiSystem, messages: gyoseiMessages, max_tokens: gyoseiMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
   }
 
   // =========================================================
@@ -1756,7 +1756,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: sharoshiCheck.error, required: sharoshiCheck.required, current: sharoshiCheck.current, limit: sharoshiCheck.limit }, sharoshiCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: sharoshiSystem, messages: sharoshiMessages, max_tokens: sharoshiMaxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: sharoshiSystem, messages: sharoshiMessages, max_tokens: sharoshiMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
   }
 
   // =========================================================
@@ -1777,7 +1777,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: benrishiCheck.error, required: benrishiCheck.required, current: benrishiCheck.current, limit: benrishiCheck.limit }, benrishiCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: benrishiSystem, messages: benrishiMessages, max_tokens: benrishiMaxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: benrishiSystem, messages: benrishiMessages, max_tokens: benrishiMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
   }
 
   // =========================================================
@@ -1798,7 +1798,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: shihoCheck.error, required: shihoCheck.required, current: shihoCheck.current, limit: shihoCheck.limit }, shihoCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: shihoSystem, messages: shihoMessages, max_tokens: shihoMaxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: shihoSystem, messages: shihoMessages, max_tokens: shihoMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
   }
 
   // =========================================================
@@ -1886,7 +1886,7 @@ async function handleRequest(request, env) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-5",
           max_tokens: 1024,
           messages: [
             {
