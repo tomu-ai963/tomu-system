@@ -1,16 +1,53 @@
 /**
- * tomu-login.js — とむSYSTEM 共通認証モジュール v1.2
+ * tomu-login.js — とむSYSTEM 共通認証モジュール v2.0（マジックリンク方式）
  * 使い方: <script src="../tomu-login.js"></script> を</body>直前に追加
  * Standardアプリは直前に <script>window.TOMU_REQUIRED_PLAN = 'standard';</script> を追加
  * 各アプリのfetch呼び出しでemailを渡すには TomuAuth.getEmail() を使う
  * プラン取得: TomuAuth.getPlan() → "light" | "standard" | "full" | null
+ *
+ * 認証: メールに届くワンタイムリンク → Worker がセッションIDを発行し
+ * #tomu_sid=... で元ページへリダイレクト。セッションIDは localStorage に保持し、
+ * 下の fetch インターセプタが Worker 宛リクエストへ Authorization: Bearer を自動付与する。
+ * （各アプリが送る X-Customer-Email / body.email は Worker 側で無視される）
  */
 
 (function () {
   const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/';
   const STORAGE_KEY = 'tomu_email';
   const PLAN_KEY = 'tomu_plan';
+  const SID_KEY = 'tomu_sid';
   const REQUIRED_PLAN = window.TOMU_REQUIRED_PLAN || 'light';
+
+  // /api/auth/verify からのリダイレクト着地：#tomu_sid=... を取り込んでURLから消す
+  (function captureSession() {
+    const m = location.hash.match(/[#&]tomu_sid=([^&]+)/);
+    if (!m) return;
+    try { localStorage.setItem(SID_KEY, decodeURIComponent(m[1])); } catch (e) { /* ignore */ }
+    const rest = location.hash.replace(/[#&]tomu_sid=[^&]+/, '');
+    history.replaceState(null, '', location.pathname + location.search + (rest === '#' ? '' : rest));
+  })();
+
+  // Worker宛の全fetchに Authorization: Bearer を自動付与。
+  // 既存アプリ（59本）のfetch呼び出しを書き換えずに認証を通すための共通レイヤー。
+  const WORKER_ORIGIN = new URL(WORKER_URL).origin;
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    try {
+      const url = typeof input === 'string' ? input
+        : (input instanceof URL ? input.href : (input && input.url) || '');
+      if (url.indexOf(WORKER_ORIGIN) === 0) {
+        const sid = localStorage.getItem(SID_KEY);
+        if (sid) {
+          const headers = new Headers(
+            (init && init.headers) || (input instanceof Request ? input.headers : undefined)
+          );
+          if (!headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + sid);
+          init = Object.assign({}, init, { headers });
+        }
+      }
+    } catch (e) { /* 付与に失敗した場合は素のfetchで続行 */ }
+    return _origFetch(input, init);
+  };
 
   const PLAN_RANK = { light: 1, standard: 2, full: 3 };
 
@@ -262,11 +299,11 @@
     <div id="tomu-auth-modal">
       <div class="tomu-modal-logo">とむ<span>SYSTEM</span></div>
       <h2 id="tomu-modal-title">メールアドレスで<br>ログイン</h2>
-      <p class="tomu-modal-sub" id="tomu-modal-sub">登録済みのメールアドレスを入力してください。<br>サブスクリプションを確認してアプリを開放します。</p>
+      <p class="tomu-modal-sub" id="tomu-modal-sub">ご登録のメールアドレスを入力してください。<br>ログイン用のリンクをメールでお送りします。</p>
       <label for="tomu-email-input">メールアドレス</label>
       <input type="email" id="tomu-email-input" placeholder="you@example.com" autocomplete="email" />
       <button id="tomu-auth-btn">
-        <span class="tomu-btn-text">確認する</span>
+        <span class="tomu-btn-text">ログインリンクを送信</span>
         <span class="tomu-btn-loading"><span></span><span></span><span></span></span>
       </button>
       <div id="tomu-auth-error"></div>
@@ -320,25 +357,34 @@
     getEmail() { return this._email || localStorage.getItem(STORAGE_KEY) || null; },
     getPlan()  { return this._plan  || localStorage.getItem(PLAN_KEY)    || null; },
 
+    getSessionId() { return localStorage.getItem(SID_KEY) || null; },
+
     _setEmail(email) { this._email = email; localStorage.setItem(STORAGE_KEY, email); },
     _setPlan(plan)   { this._plan  = plan;  localStorage.setItem(PLAN_KEY, plan); },
     _clear() {
       this._email = null; this._plan = null;
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(PLAN_KEY);
+      localStorage.removeItem(SID_KEY);
     },
 
-    async _checkSubscription(email) {
-      const res = await fetch(WORKER_URL, {
+    // マジックリンクの送信をリクエスト（メール内リンク → /api/auth/verify → このページに戻る）
+    async _requestLink(email) {
+      const res = await fetch(WORKER_URL + 'api/auth/request-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appType: 'ping', input: 'ping', email }),
+        body: JSON.stringify({ email, redirect: location.href }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.status === 403 && data.error === 'subscription_required') return { status: 'unsubscribed' };
-      if (res.status === 401) return { status: 'no_email' };
-      if (data.plan) this._setPlan(data.plan);
-      return { status: 'ok', plan: data.plan };
+      return res.status;
+    },
+
+    // Bearerセッションでログイン状態とプランを取得（未ログイン・失効なら null）
+    async _fetchMe() {
+      if (!this.getSessionId()) return null;
+      const res = await fetch(WORKER_URL + 'api/auth/me');
+      if (!res.ok) return null;
+      const data = await res.json().catch(() => null);
+      return data && data.email ? data : null;
     },
 
     showOverlay() {
@@ -362,47 +408,57 @@
     },
 
     logout() {
+      // _clear() の前に送る（fetchインターセプタがセッションIDを参照するため）
+      if (this.getSessionId()) {
+        fetch(WORKER_URL + 'api/auth/logout', { method: 'POST' }).catch(() => {});
+      }
       this._clear();
       badge.classList.remove('active');
       const navLogout = document.getElementById('tomu-nav-logout');
       if (navLogout) navLogout.style.display = 'none';
-      document.getElementById('tomu-modal-title').textContent = 'メールアドレスで\nログイン';
-      document.getElementById('tomu-modal-sub').textContent =
-        '登録済みのメールアドレスを入力してください。\nサブスクリプションを確認してアプリを開放します。';
-      document.getElementById('tomu-pricing-panel').classList.remove('visible');
-      document.getElementById('tomu-auth-error').classList.remove('visible');
-      document.getElementById('tomu-email-input').value = '';
+      resetAuthUi();
       if (!window.TOMU_NO_GATE) {
         this.showOverlay();
       }
     },
 
     async init() {
-      const saved = this.getEmail();
-      if (saved) {
-        const result = await this._checkSubscription(saved);
-        if (result.status === 'ok') {
-          // プランが要件を満たすか確認
-          if (planMeetsRequirement(result.plan, REQUIRED_PLAN)) {
-            this._email = saved;
-            this.showBadge(saved, result.plan);
-            return;
-          } else {
-            // プラン不足 → TOMU_NO_GATE 時はオーバーレイを出さない
-            if (!window.TOMU_NO_GATE) {
-              this._showPlanUpgradeError(saved, result.plan);
-              this.showOverlay();
-            }
+      if (this.getSessionId()) {
+        const me = await this._fetchMe();
+        if (me) {
+          this._setEmail(me.email);
+          if (me.plan) this._setPlan(me.plan);
+          else { this._plan = null; localStorage.removeItem(PLAN_KEY); }
+
+          if (me.plan && planMeetsRequirement(me.plan, REQUIRED_PLAN)) {
+            this.showBadge(me.email, me.plan);
+            document.dispatchEvent(new CustomEvent('tomu:unlocked', { detail: { email: me.email, plan: me.plan } }));
             return;
           }
-        } else {
-          this._clear();
+          // ログイン済みだが未課金 or プラン不足 → TOMU_NO_GATE 時はオーバーレイを出さない
+          if (!window.TOMU_NO_GATE) {
+            if (me.plan) this._showPlanUpgradeError(me.email, me.plan);
+            else this._showSubscribeRequired(me.email);
+            this.showOverlay();
+          }
+          return;
         }
+        // セッション失効・無効
+        this._clear();
       }
       // TOMU_NO_GATE 時は自動オーバーレイをスキップ（掲示板などで手動呼び出し）
       if (!window.TOMU_NO_GATE) {
         this.showOverlay();
       }
+    },
+
+    _showSubscribeRequired(email) {
+      document.getElementById('tomu-modal-title').textContent = 'サブスクリプションが必要です';
+      document.getElementById('tomu-modal-sub').textContent =
+        'ログインは完了しました。アプリを使用するにはプランのご登録が必要です。';
+      document.getElementById('tomu-email-input').value = email;
+      renderPlanButtons(email);
+      document.getElementById('tomu-pricing-panel').classList.add('visible');
     },
 
     _showPlanUpgradeError(email, currentPlan) {
@@ -421,6 +477,44 @@
   // ============================================================
   // イベントハンドラ
   // ============================================================
+  let resendTimer = null;
+
+  function setAuthBtnText(text) {
+    const t = document.querySelector('#tomu-auth-btn .tomu-btn-text');
+    if (t) t.textContent = text;
+  }
+
+  function startResendCooldown(btn, seconds) {
+    let left = seconds;
+    btn.disabled = true;
+    setAuthBtnText('再送信（' + left + '秒後）');
+    clearInterval(resendTimer);
+    resendTimer = setInterval(() => {
+      left--;
+      if (left <= 0) {
+        clearInterval(resendTimer);
+        btn.disabled = false;
+        setAuthBtnText('再送信');
+      } else {
+        setAuthBtnText('再送信（' + left + '秒後）');
+      }
+    }, 1000);
+  }
+
+  function resetAuthUi() {
+    clearInterval(resendTimer);
+    const btn = document.getElementById('tomu-auth-btn');
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    setAuthBtnText('ログインリンクを送信');
+    document.getElementById('tomu-modal-title').textContent = 'メールアドレスでログイン';
+    document.getElementById('tomu-modal-sub').textContent =
+      'ご登録のメールアドレスを入力してください。ログイン用のリンクをメールでお送りします。';
+    document.getElementById('tomu-pricing-panel').classList.remove('visible');
+    document.getElementById('tomu-auth-error').classList.remove('visible');
+    document.getElementById('tomu-email-input').value = '';
+  }
+
   document.getElementById('tomu-auth-btn').addEventListener('click', async () => {
     const emailInput = document.getElementById('tomu-email-input');
     const btn = document.getElementById('tomu-auth-btn');
@@ -440,38 +534,33 @@
     pricingPanel.classList.remove('visible');
 
     try {
-      const result = await TomuAuth._checkSubscription(email);
+      const status = await TomuAuth._requestLink(email);
 
-      if (result.status === 'ok') {
-        // プランが要件を満たすか確認
-        if (planMeetsRequirement(result.plan, REQUIRED_PLAN)) {
-          TomuAuth._setEmail(email);
-          TomuAuth.hideOverlay();
-          TomuAuth.showBadge(email, result.plan);
-          document.dispatchEvent(new CustomEvent('tomu:unlocked', { detail: { email, plan: result.plan } }));
-        } else {
-          // プラン不足
-          TomuAuth._showPlanUpgradeError(email, result.plan);
-        }
-      } else if (result.status === 'unsubscribed') {
-        document.getElementById('tomu-modal-title').textContent = 'サブスクリプションが\n必要です';
+      if (status === 200) {
+        document.getElementById('tomu-modal-title').textContent = 'メールを送信しました';
         document.getElementById('tomu-modal-sub').textContent =
-          'このアプリを使用するにはサブスクリプションが必要です。\nプランを選んでご登録ください。';
-        renderPlanButtons(email);
-        pricingPanel.classList.add('visible');
-        errorEl.textContent = 'このメールアドレスはまだ登録されていません。';
-        errorEl.classList.add('visible');
-      } else {
-        errorEl.textContent = 'エラーが発生しました。もう一度お試しください。';
-        errorEl.classList.add('visible');
+          email + ' 宛にログインリンクを送りました。メール内のリンクを開くと、このページに戻ってログインが完了します。（有効期限15分）';
+        btn.classList.remove('loading');
+        startResendCooldown(btn, 60);
+        return;
       }
+      if (status === 429) {
+        errorEl.textContent = '送信回数の上限に達しました。しばらく時間をおいてお試しください。';
+      } else {
+        errorEl.textContent = 'メールを送信できませんでした。しばらくしてからもう一度お試しください。';
+      }
+      errorEl.classList.add('visible');
     } catch (e) {
       errorEl.textContent = 'ネットワークエラーが発生しました。接続を確認してください。';
       errorEl.classList.add('visible');
-    } finally {
-      btn.classList.remove('loading');
-      btn.disabled = false;
     }
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  });
+
+  // 別タブでマジックリンクを開いた場合、このタブも自動でログイン状態を反映する
+  window.addEventListener('storage', (e) => {
+    if (e.key === SID_KEY && e.newValue) location.reload();
   });
 
   document.getElementById('tomu-email-input').addEventListener('keydown', (e) => {

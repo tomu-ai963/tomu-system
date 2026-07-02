@@ -21,7 +21,7 @@ function getCorsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Customer-Email",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Customer-Email",
     "Vary": "Origin",
   };
 }
@@ -175,6 +175,220 @@ function htmlRes(html) {
     status: 200,
     headers: { "Content-Type": "text/html; charset=utf-8" },
   });
+}
+
+// ===== 認証 — マジックリンク + Bearerセッション（tomu-mystic方式） =====
+// KVキー（SUBSCRIPTIONS を流用）:
+//   auth:link:<uuid> → {"email","redirect"}  TTL 15分・検証時に削除（ワンタイム）
+//   session:<uuid>   → {"email","expiry"}    TTL 30日
+//   rate:<type>:<id>:<YYYY-MM-DD-HH> → 回数  TTL 1時間
+// クロスサイト構成（フロント=github.io / API=workers.dev）のため Cookie ではなく
+// Authorization: Bearer <sessionId> でセッションを伝送する。
+// 保護ルートはクライアント申告の X-Customer-Email / body.email を信頼せず、
+// セッション由来のメールのみを使う。
+
+var MAGIC_LINK_TTL_SECONDS = 15 * 60;
+var SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+var DEFAULT_REDIRECT_URL = "https://tomu-ai963.github.io/tomu-system/";
+
+var AUTH_RATE_LIMITS = { magic: 5, magicip: 20 };
+
+function rateBucket() {
+  // "2026-07-02T07:23:45.000Z" → "2026-07-02-07"（UTC時単位のバケット）
+  return new Date().toISOString().slice(0, 13).replace("T", "-");
+}
+
+async function checkAuthRateLimit(env, type, identifier) {
+  var limit = AUTH_RATE_LIMITS[type];
+  if (!limit || !identifier) return true;
+  var key = "rate:" + type + ":" + identifier + ":" + rateBucket();
+  try {
+    var current = parseInt(await env.SUBSCRIPTIONS.get(key), 10) || 0;
+    if (current >= limit) return false;
+    await env.SUBSCRIPTIONS.put(key, String(current + 1), { expirationTtl: 3600 });
+    return true;
+  } catch (e) {
+    return true; // KV障害時は可用性優先で通過
+  }
+}
+
+// リダイレクト先を許可originに限定（オープンリダイレクト＋セッション漏洩の防止）
+function sanitizeRedirect(raw) {
+  try {
+    if (!raw) return DEFAULT_REDIRECT_URL;
+    var u = new URL(raw);
+    if (ALLOWED_ORIGINS.indexOf(u.origin) !== -1) return u.origin + u.pathname;
+  } catch (e) { /* ignore */ }
+  return DEFAULT_REDIRECT_URL;
+}
+
+function getBearer(request) {
+  var auth = request.headers.get("Authorization") || "";
+  var m = auth.match(/^Bearer\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
+// Bearerセッション → 認証済みメール（小文字）。無効なら null。
+async function getSessionEmail(request, env) {
+  var sessionId = getBearer(request);
+  if (!sessionId) return null;
+  try {
+    var raw = await env.SUBSCRIPTIONS.get("session:" + sessionId);
+    if (!raw) return null;
+    var session = JSON.parse(raw);
+    if (session.expiry && session.expiry < Date.now()) {
+      await env.SUBSCRIPTIONS.delete("session:" + sessionId);
+      return null;
+    }
+    return session.email || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function sendMagicLinkEmail(env, to, link) {
+  var res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + env.RESEND_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "とむSYSTEM <noreply@tomu-ai.dev>",
+      to: [to],
+      subject: "とむSYSTEM ログインリンク",
+      html: magicLinkEmailHtml(link),
+    }),
+  });
+  if (!res.ok) {
+    console.error("マジックリンク送信失敗 (" + to + "): " + (await res.text()));
+    throw new Error("メール送信に失敗しました");
+  }
+}
+
+function magicLinkEmailHtml(link) {
+  return `<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f7f3ee;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f3ee;">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+        <tr><td style="padding:0 28px 24px;text-align:center;">
+          <p style="margin:0;font-size:15px;letter-spacing:.12em;color:#1a1612;">とむ<span style="color:#b87333;">SYSTEM</span></p>
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;">
+          <div style="background:#ffffff;border:1px solid #ddd5c8;border-radius:14px;padding:28px;text-align:center;">
+            <p style="margin:0 0 20px;font-size:14px;line-height:1.9;color:#1a1612;">下のボタンから、とむSYSTEMにログインできます。<br/>このリンクの有効期限は15分・1回限り有効です。</p>
+            <a href="${link}" style="display:inline-block;background:#1a1612;color:#f7f3ee;text-decoration:none;font-size:14px;letter-spacing:.08em;padding:14px 32px;border-radius:40px;">ログインする</a>
+            <p style="margin:20px 0 0;font-size:11px;line-height:1.8;color:#8a7e72;">このメールに心当たりがない場合は、破棄してください。</p>
+          </div>
+        </td></tr>
+        <tr><td style="padding:4px 28px 0;text-align:center;">
+          <p style="margin:0;font-size:10px;letter-spacing:.15em;color:#8a7e72;">© 2026 とむSYSTEM</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function authResultPage(message) {
+  return `<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>とむSYSTEM</title></head>
+<body style="margin:0;background:#f7f3ee;color:#1a1612;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;">
+  <div style="max-width:420px;padding:2rem;text-align:center;">
+    <p style="font-size:14px;letter-spacing:.12em;margin:0 0 1.5rem;">とむ<span style="color:#b87333;">SYSTEM</span></p>
+    <p style="font-size:14px;line-height:1.9;color:#c0392b;">${escapeHtml(message)}</p>
+    <p style="margin-top:2rem;"><a href="${DEFAULT_REDIRECT_URL}" style="color:#b87333;font-size:13px;">トップへ戻る</a></p>
+  </div>
+</body></html>`;
+}
+
+// POST /api/auth/request-link { email, redirect }
+async function handleAuthRequestLink(request, env, corsH) {
+  if (!env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY が未設定のため認証を実行できません");
+    return jsonRes({ error: "auth_not_configured" }, 500, corsH);
+  }
+  var body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return jsonRes({ error: "Invalid JSON" }, 400, corsH);
+  }
+  var email = (typeof body.email === "string" ? body.email : "").trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return jsonRes({ error: "invalid_email" }, 400, corsH);
+  }
+  var ip = request.headers.get("CF-Connecting-IP") || "";
+  if (!(await checkAuthRateLimit(env, "magic", email)) ||
+      !(await checkAuthRateLimit(env, "magicip", ip))) {
+    return jsonRes({ error: "rate_limited" }, 429, corsH);
+  }
+  var token = crypto.randomUUID();
+  await env.SUBSCRIPTIONS.put("auth:link:" + token, JSON.stringify({
+    email: email,
+    redirect: sanitizeRedirect(body.redirect),
+  }), { expirationTtl: MAGIC_LINK_TTL_SECONDS });
+  var link = new URL(request.url).origin + "/api/auth/verify?token=" + encodeURIComponent(token);
+  try {
+    await sendMagicLinkEmail(env, email, link);
+  } catch (e) {
+    return jsonRes({ error: "send_failed" }, 502, corsH);
+  }
+  // 登録有無に関わらず success を返す（メールアドレスの存在を漏らさない）
+  return jsonRes({ success: true }, 200, corsH);
+}
+
+// GET /api/auth/verify?token=xxx → セッション発行 & 元のページへリダイレクト
+async function handleAuthVerify(request, env) {
+  var token = new URL(request.url).searchParams.get("token") || "";
+  if (!/^[0-9a-f-]{36}$/.test(token)) {
+    return htmlRes(authResultPage("リンクが無効です。お手数ですが、もう一度ログインしてください。"));
+  }
+  var key = "auth:link:" + token;
+  var raw = await env.SUBSCRIPTIONS.get(key);
+  if (!raw) {
+    return htmlRes(authResultPage("リンクが無効か、有効期限（15分）が切れています。お手数ですが、もう一度ログインしてください。"));
+  }
+  await env.SUBSCRIPTIONS.delete(key); // ワンタイム使用
+  var data;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    return htmlRes(authResultPage("エラーが発生しました。もう一度ログインしてください。"));
+  }
+  var sessionId = crypto.randomUUID();
+  await env.SUBSCRIPTIONS.put("session:" + sessionId, JSON.stringify({
+    email: data.email,
+    expiry: Date.now() + SESSION_TTL_SECONDS * 1000,
+  }), { expirationTtl: SESSION_TTL_SECONDS });
+  var dest = sanitizeRedirect(data.redirect) + "#tomu_sid=" + encodeURIComponent(sessionId);
+  return new Response(null, { status: 302, headers: { "Location": dest } });
+}
+
+// GET /api/auth/me（Bearer）→ ログイン状態とプラン
+async function handleAuthMe(request, env, corsH) {
+  var meEmail = await getSessionEmail(request, env);
+  if (!meEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+  var mePlan = await env.SUBSCRIPTIONS.get(meEmail);
+  return jsonRes({ email: meEmail, plan: mePlan || null, admin: isAdmin(meEmail) }, 200, corsH);
+}
+
+// POST /api/auth/logout（Bearer）→ セッション削除
+async function handleAuthLogout(request, env, corsH) {
+  var sessionId = getBearer(request);
+  if (sessionId) {
+    try { await env.SUBSCRIPTIONS.delete("session:" + sessionId); } catch (e) { /* ignore */ }
+  }
+  return jsonRes({ success: true }, 200, corsH);
 }
 
 // A-6: Anthropic /v1/messages へのプロキシ。opts.stream === true のとき SSE をそのままフォワードする。
@@ -570,8 +784,8 @@ function getMonthMoonData() {
   return moonData;
 }
 
-async function handleYamaCalendar(request, corsH, env) {
-  var email = request.headers.get("X-Customer-Email") || request.headers.get("X-User-Email") || "";
+async function handleYamaCalendar(request, corsH, env, authEmail) {
+  var email = authEmail || "";
   var planCheck = await checkPlanAndCount(email, "standard", env);
   if (!planCheck.ok) {
     return jsonRes({ error: planCheck.error, required: planCheck.required, current: planCheck.current, limit: planCheck.limit }, planCheck.status, corsH);
@@ -837,6 +1051,24 @@ async function handleRequest(request, env) {
     return new Response(null, { headers: corsH });
   }
 
+  // ===== 認証（マジックリンク + Bearerセッション） =====
+  if (url.pathname === "/api/auth/request-link" && request.method === "POST") {
+    return handleAuthRequestLink(request, env, corsH);
+  }
+  if (url.pathname === "/api/auth/verify" && request.method === "GET") {
+    return handleAuthVerify(request, env);
+  }
+  if (url.pathname === "/api/auth/me" && request.method === "GET") {
+    return handleAuthMe(request, env, corsH);
+  }
+  if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+    return handleAuthLogout(request, env, corsH);
+  }
+
+  // 以降の保護ルートはこの authEmail のみを信頼する
+  // （クライアント申告の X-Customer-Email / body.email は使わない）
+  var authEmail = await getSessionEmail(request, env);
+
   // ===== Stripe Webhook =====
   if (url.pathname === "/stripe-webhook" && request.method === "POST") {
     var rawBody = await request.text();
@@ -872,7 +1104,7 @@ async function handleRequest(request, env) {
   // GET /api/vision-board/board — ボードデータ取得
   // =========================================================
   if (url.pathname === "/api/vision-board/board" && request.method === "GET") {
-    var vbGetEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("email") || "";
+    var vbGetEmail = authEmail || "";
     if (!vbGetEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var vbGetPlan = await env.SUBSCRIPTIONS.get(vbGetEmail);
     if (!vbGetPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
@@ -936,7 +1168,7 @@ async function handleRequest(request, env) {
   // GET /api/history — セッション履歴取得（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "GET") {
-    var histEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("email") || "";
+    var histEmail = authEmail || "";
     var histAppId = url.searchParams.get("app_id") || "plant-doctor";
     var histLimit = parseInt(url.searchParams.get("limit") || "5");
     if (!histEmail) return jsonRes({ error: "login_required" }, 401, corsH);
@@ -957,7 +1189,7 @@ async function handleRequest(request, env) {
   // DELETE /api/history — セッション履歴削除（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "DELETE") {
-    var delEmail = request.headers.get("X-Customer-Email") || "";
+    var delEmail = authEmail || "";
     var delId = url.searchParams.get("id") || "";
     if (!delEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     if (!delId) return jsonRes({ error: "id is required" }, 400, corsH);
@@ -981,7 +1213,7 @@ async function handleRequest(request, env) {
 
   // DELETE /api/board/:id — スレッド削除（管理者=全件、ユーザー=自分のみ）
   if (request.method === "DELETE" && /^\/api\/board\/[^/]+$/.test(url.pathname)) {
-    var bdEmail = (request.headers.get("X-Customer-Email") || "").toLowerCase();
+    var bdEmail = authEmail || "";
     var bdId = url.pathname.split("/")[3];
     if (!bdEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var bdPlan = await env.SUBSCRIPTIONS.get(bdEmail);
@@ -1010,7 +1242,7 @@ async function handleRequest(request, env) {
   // ※ userId=メール。保存キーは認証済みメールから導出し、他人の夢を読めないようにする
   // =========================================================
   if (url.pathname === "/api/dreams" && request.method === "GET") {
-    var dreamGetEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("userId") || "";
+    var dreamGetEmail = authEmail || "";
     if (!dreamGetEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var dreamGetPlan = await env.SUBSCRIPTIONS.get(dreamGetEmail);
     if (!dreamGetPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
@@ -1031,7 +1263,7 @@ async function handleRequest(request, env) {
   // ※ 仕様書はGET/PUTのみだが、UIの「この夢を消す」を永続化するため追加
   // =========================================================
   if (url.pathname === "/api/dreams" && request.method === "DELETE") {
-    var dreamDelEmail = request.headers.get("X-Customer-Email") || "";
+    var dreamDelEmail = authEmail || "";
     var dreamDelId = url.searchParams.get("id") || "";
     if (!dreamDelEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     if (!dreamDelId) return jsonRes({ error: "id is required" }, 400, corsH);
@@ -1073,7 +1305,7 @@ async function handleRequest(request, env) {
   // POST /hair-sim — ヘアーシミュレーター用（dall-e-2 edits）
   // =========================================================
   if (url.pathname === "/hair-sim") {
-    var hairEmail = request.headers.get("X-Customer-Email") || "";
+    var hairEmail = authEmail || "";
     var hairCheck = await checkPlanAndCount(hairEmail, "standard", env);
     if (!hairCheck.ok) {
       return jsonRes({ error: hairCheck.error, required: hairCheck.required, current: hairCheck.current, limit: hairCheck.limit }, hairCheck.status, corsH);
@@ -1246,7 +1478,7 @@ async function handleRequest(request, env) {
   // POST /api/vision-board/upload-image — 画像アップロード (multipart)
   // =========================================================
   if (url.pathname === "/api/vision-board/upload-image") {
-    var vbUpEmail = request.headers.get("X-Customer-Email") || "";
+    var vbUpEmail = authEmail || "";
     console.log("[upload-image] email:", vbUpEmail, "origin:", origin);
     var vbUpCheck = await checkPlanAndCount(vbUpEmail, "standard", env);
     if (!vbUpCheck.ok) {
@@ -1312,7 +1544,7 @@ async function handleRequest(request, env) {
   // POST /api/history — セッション保存（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "POST") {
-    var histSaveEmail = request.headers.get("X-Customer-Email") || body.email || "";
+    var histSaveEmail = authEmail || "";
     var histSaveAppId = body.app_id || "";
     var histSaveData = body.session_data;
     if (!histSaveEmail) return jsonRes({ error: "login_required" }, 401, corsH);
@@ -1335,7 +1567,7 @@ async function handleRequest(request, env) {
   // body: { userId, entry }  KVキー: dreams:{email}
   // =========================================================
   if (url.pathname === "/api/dreams" && request.method === "PUT") {
-    var dreamPutEmail = request.headers.get("X-Customer-Email") || body.userId || "";
+    var dreamPutEmail = authEmail || "";
     if (!dreamPutEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var dreamPutPlan = await env.SUBSCRIPTIONS.get(dreamPutEmail);
     if (!dreamPutPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
@@ -1363,7 +1595,7 @@ async function handleRequest(request, env) {
   // POST /api/board — スレッド作成（認証必須、お知らせ=管理者のみ）
   // =========================================================
   if (url.pathname === "/api/board") {
-    var nbEmail = (request.headers.get("X-Customer-Email") || body.email || "").toLowerCase();
+    var nbEmail = authEmail || "";
     if (!nbEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var nbPlan = await env.SUBSCRIPTIONS.get(nbEmail);
     if (!nbPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
@@ -1398,7 +1630,7 @@ async function handleRequest(request, env) {
   // POST /api/board/:id/reply — 返信投稿（認証必須）
   // =========================================================
   if (/^\/api\/board\/[^/]+\/reply$/.test(url.pathname)) {
-    var rpEmail = (request.headers.get("X-Customer-Email") || body.email || "").toLowerCase();
+    var rpEmail = authEmail || "";
     if (!rpEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var rpPlan = await env.SUBSCRIPTIONS.get(rpEmail);
     if (!rpPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
@@ -1433,7 +1665,7 @@ async function handleRequest(request, env) {
   // POST /api/vision-board/board — ボードデータ保存
   // =========================================================
   if (url.pathname === "/api/vision-board/board") {
-    var vbSaveEmail = body.email;
+    var vbSaveEmail = authEmail || "";
     if (!vbSaveEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var vbSavePlan = await env.SUBSCRIPTIONS.get(vbSaveEmail);
     if (!vbSavePlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
@@ -1454,7 +1686,7 @@ async function handleRequest(request, env) {
   // POST /api/vision-board/chat — AIチャット（プロンプト生成含む）
   // =========================================================
   if (url.pathname === "/api/vision-board/chat") {
-    var vbChatEmail = body.email;
+    var vbChatEmail = authEmail || "";
     var vbChatMessages = body.messages;
     var vbChatMode = body.mode || "chat";
 
@@ -1523,8 +1755,7 @@ async function handleRequest(request, env) {
   // POST /api/vision-board/generate-image — AI画像生成 → R2保存
   // =========================================================
   if (url.pathname === "/api/vision-board/generate-image") {
-    // emailはJSON bodyまたはX-Customer-Emailヘッダーから取得（upload-imageと同じ認証パターンに対応）
-    var vbGenEmail = body.email || request.headers.get("X-Customer-Email") || "";
+    var vbGenEmail = authEmail || "";
     var vbGenPrompt = body.prompt;
     var vbGenCardId = body.cardId || ("card_" + Date.now());
 
@@ -1600,7 +1831,7 @@ async function handleRequest(request, env) {
   // POST /api/plant-diagnose — 植物診断アプリ用（Standardプラン以上・履歴機能はFullプラン専用）
   // =========================================================
   if (url.pathname === "/api/plant-diagnose") {
-    var plantEmail = request.headers.get("X-Customer-Email") || body.email || "";
+    var plantEmail = authEmail || "";
     var plantCheck = await checkPlanAndCount(plantEmail, "standard", env);
     if (!plantCheck.ok) {
       return jsonRes({ error: plantCheck.error, required: plantCheck.required, current: plantCheck.current, limit: plantCheck.limit }, plantCheck.status, corsH);
@@ -1675,14 +1906,14 @@ async function handleRequest(request, env) {
   // POST /api/yama-calendar — 山の暦（月齢×カレンダー農作業提案）
   // =========================================================
   if (url.pathname === "/api/yama-calendar") {
-    return handleYamaCalendar(request, corsH, env);
+    return handleYamaCalendar(request, corsH, env, authEmail);
   }
 
   // =========================================================
   // POST /api/tax-advisor — 税務アドバイザー（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/tax-advisor") {
-    var taxEmail = body.email;
+    var taxEmail = authEmail || "";
     var taxSystem = body.system;
     var taxMessages = body.messages;
     var taxMaxTokens = Math.min(body.max_tokens || 1000, 2000);
@@ -1703,7 +1934,7 @@ async function handleRequest(request, env) {
   // POST /api/legal-advisor — 法律アドバイザー（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/legal-advisor") {
-    var legalEmail = body.email;
+    var legalEmail = authEmail || "";
     var legalSystem = body.system;
     var legalMessages = body.messages;
     var legalMaxTokens = Math.min(body.max_tokens || 1000, 2000);
@@ -1724,7 +1955,7 @@ async function handleRequest(request, env) {
   // POST /api/gyosei-advisor — 行政書士アドバイザー（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/gyosei-advisor") {
-    var gyoseiEmail = body.email;
+    var gyoseiEmail = authEmail || "";
     var gyoseiSystem = body.system;
     var gyoseiMessages = body.messages;
     var gyoseiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
@@ -1745,7 +1976,7 @@ async function handleRequest(request, env) {
   // POST /api/sharoshi-advisor — 社労士アドバイザー（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/sharoshi-advisor") {
-    var sharoshiEmail = body.email;
+    var sharoshiEmail = authEmail || "";
     var sharoshiSystem = body.system;
     var sharoshiMessages = body.messages;
     var sharoshiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
@@ -1766,7 +1997,7 @@ async function handleRequest(request, env) {
   // POST /api/benrishi-advisor — 弁理士アドバイザー（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/benrishi-advisor") {
-    var benrishiEmail = body.email;
+    var benrishiEmail = authEmail || "";
     var benrishiSystem = body.system;
     var benrishiMessages = body.messages;
     var benrishiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
@@ -1787,7 +2018,7 @@ async function handleRequest(request, env) {
   // POST /api/shiho-shoshi-advisor — 司法書士アドバイザー（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/shiho-shoshi-advisor") {
-    var shihoEmail = body.email;
+    var shihoEmail = authEmail || "";
     var shihoSystem = body.system;
     var shihoMessages = body.messages;
     var shihoMaxTokens = Math.min(body.max_tokens || 1000, 2000);
@@ -1860,7 +2091,7 @@ async function handleRequest(request, env) {
   // POST /flyer-scan — チラシスキャナー（Standardプラン）
   // =========================================================
   if (url.pathname === "/flyer-scan") {
-    var fsEmail = request.headers.get("X-Customer-Email") || "";
+    var fsEmail = authEmail || "";
     var fsCheck = await checkPlanAndCount(fsEmail, "standard", env);
     if (!fsCheck.ok) {
       return jsonRes({ error: fsCheck.error, required: fsCheck.required, current: fsCheck.current, limit: fsCheck.limit }, fsCheck.status, corsH);
@@ -1923,7 +2154,7 @@ async function handleRequest(request, env) {
   if (url.pathname === "/api/chat") {
     var system = body.system;
     var messages = body.messages;
-    var chatEmail = body.email;
+    var chatEmail = authEmail || "";
     var maxTokens = Math.min(body.max_tokens || 1000, 2000);
 
     if (!system || !messages || !Array.isArray(messages) || messages.length === 0) {
@@ -1944,7 +2175,7 @@ async function handleRequest(request, env) {
   var appType = body.appType;
   var input = body.input;
   var extra = body.extra || {};
-  var lightEmail = body.email;
+  var lightEmail = authEmail || "";
 
   if (!appType || !input) {
     return jsonRes({ error: "appType and input are required" }, 400, corsH);
