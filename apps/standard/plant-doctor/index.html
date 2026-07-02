@@ -667,7 +667,7 @@ async function diagnose() {
         ...(email ? { 'X-Customer-Email': email } : {}),
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-5',
         max_tokens: 2048,
         system: systemPrompt,
         messages: [{
@@ -743,7 +743,7 @@ async function diagnose() {
 // ======= 診断履歴 =======
 let _historySessions = [];
 
-function _isFull(){return !!(window.TomuAuth&&TomuAuth.getPlan&&TomuAuth.getPlan()==='full');}
+function _isFull(){var p=window.TomuAuth&&TomuAuth.getPlan&&TomuAuth.getPlan();return p==='standard'||p==='full';}
 async function loadHistory() {
   if(!_isFull()){const _hs=document.getElementById('history-section');if(_hs)_hs.style.display='none';return;}
   const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
