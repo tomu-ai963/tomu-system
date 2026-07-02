@@ -933,7 +933,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // GET /api/history — セッション履歴取得（Standardプラン以上）
+  // GET /api/history — セッション履歴取得（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "GET") {
     var histEmail = request.headers.get("X-Customer-Email") || url.searchParams.get("email") || "";
@@ -942,8 +942,8 @@ async function handleRequest(request, env) {
     if (!histEmail) return jsonRes({ error: "login_required" }, 401, corsH);
     var histPlan = await env.SUBSCRIPTIONS.get(histEmail);
     if (!histPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
-    if (!planMeetsRequirement(histPlan, "standard")) {
-      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: histPlan }, 403, corsH);
+    if (!planMeetsRequirement(histPlan, "full")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "full", current: histPlan }, 403, corsH);
     }
     try {
       var sessions = await getHistory(histEmail, histAppId, histLimit, env);
@@ -954,7 +954,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // DELETE /api/history — セッション履歴削除（Standardプラン以上）
+  // DELETE /api/history — セッション履歴削除（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "DELETE") {
     var delEmail = request.headers.get("X-Customer-Email") || "";
@@ -963,8 +963,8 @@ async function handleRequest(request, env) {
     if (!delId) return jsonRes({ error: "id is required" }, 400, corsH);
     var delPlan = await env.SUBSCRIPTIONS.get(delEmail);
     if (!delPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
-    if (!planMeetsRequirement(delPlan, "standard")) {
-      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: delPlan }, 403, corsH);
+    if (!planMeetsRequirement(delPlan, "full")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "full", current: delPlan }, 403, corsH);
     }
     try {
       var delPath = "/app_sessions?id=eq." + encodeURIComponent(delId) +
@@ -1309,7 +1309,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /api/history — セッション保存（Standardプラン以上）
+  // POST /api/history — セッション保存（Fullプラン専用）
   // =========================================================
   if (url.pathname === "/api/history" && request.method === "POST") {
     var histSaveEmail = request.headers.get("X-Customer-Email") || body.email || "";
@@ -1319,8 +1319,8 @@ async function handleRequest(request, env) {
     if (!histSaveAppId || !histSaveData) return jsonRes({ error: "app_id and session_data are required" }, 400, corsH);
     var histSavePlan = await env.SUBSCRIPTIONS.get(histSaveEmail);
     if (!histSavePlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
-    if (!planMeetsRequirement(histSavePlan, "standard")) {
-      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: histSavePlan }, 403, corsH);
+    if (!planMeetsRequirement(histSavePlan, "full")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "full", current: histSavePlan }, 403, corsH);
     }
     try {
       await saveSession(histSaveEmail, histSaveAppId, histSaveData, env);
@@ -1597,7 +1597,7 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /api/plant-diagnose — 植物診断アプリ用（Standardプラン以上・履歴機能付き）
+  // POST /api/plant-diagnose — 植物診断アプリ用（Standardプラン以上・履歴機能はFullプラン専用）
   // =========================================================
   if (url.pathname === "/api/plant-diagnose") {
     var plantEmail = request.headers.get("X-Customer-Email") || body.email || "";
@@ -1605,10 +1605,11 @@ async function handleRequest(request, env) {
     if (!plantCheck.ok) {
       return jsonRes({ error: plantCheck.error, required: plantCheck.required, current: plantCheck.current, limit: plantCheck.limit }, plantCheck.status, corsH);
     }
+    var plantIsFull = planMeetsRequirement(plantCheck.plan, "full");
 
     try {
-      // 過去3件の診断履歴を取得してシステムプロンプトに注入
-      var plantHistory = await getHistory(plantEmail, "plant-doctor", 3, env);
+      // 過去3件の診断履歴を取得してシステムプロンプトに注入（Fullプランのみ）
+      var plantHistory = plantIsFull ? await getHistory(plantEmail, "plant-doctor", 3, env) : [];
       var plantBody = Object.assign({}, body);
       if (plantHistory.length > 0) {
         var historyLines = plantHistory.map(function(h, i) {
@@ -1637,7 +1638,8 @@ async function handleRequest(request, env) {
 
       var plantText = await plantRes.text();
 
-      // 診断結果をパースしてSupabaseに保存
+      // 診断結果をパースしてSupabaseに保存（Fullプランのみ）
+      if (plantIsFull) {
       try {
         var plantData = JSON.parse(plantText);
         var rawResult = (plantData.content || []).map(function(b) { return b.text || ""; }).join("");
@@ -1657,6 +1659,7 @@ async function handleRequest(request, env) {
         }
       } catch (saveErr) {
         console.error("Session save error:", saveErr.message);
+      }
       }
 
       return new Response(plantText, {
