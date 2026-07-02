@@ -1432,49 +1432,6 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /send-email — Resend メール送信
-  // =========================================================
-  if (url.pathname === "/send-email") {
-    var emailBody;
-    try {
-      emailBody = await request.json();
-    } catch (e) {
-      return jsonRes({ error: "Invalid JSON" }, 400, corsH);
-    }
-    var sendTo = emailBody.to;
-    var sendSubject = emailBody.subject;
-    var sendHtml = emailBody.html;
-    if (!sendTo || !sendSubject || !sendHtml) {
-      return jsonRes({ error: "to, subject, html are required" }, 400, corsH);
-    }
-    if (!env.RESEND_API_KEY) {
-      return jsonRes({ error: "RESEND_API_KEY not configured" }, 500, corsH);
-    }
-    try {
-      var resendRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + env.RESEND_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "onboarding@resend.dev",
-          to: Array.isArray(sendTo) ? sendTo : [sendTo],
-          subject: sendSubject,
-          html: sendHtml,
-        }),
-      });
-      var resendData = await resendRes.json();
-      if (!resendRes.ok) {
-        return jsonRes({ error: "Resend API error", detail: resendData }, resendRes.status, corsH);
-      }
-      return jsonRes({ success: true, id: resendData.id }, 200, corsH);
-    } catch (err) {
-      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
-    }
-  }
-
-  // =========================================================
   // POST /api/vision-board/upload-image — 画像アップロード (multipart)
   // =========================================================
   if (url.pathname === "/api/vision-board/upload-image") {
