@@ -295,45 +295,13 @@
 </div>
 
 <script>
-const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/gyosei-advisor';
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/advisor/gyosei';
 
 let currentMode = 'general';
 let isLoading = false;
 let conversationHistory = [];
 
-const systemPrompts = {
-  general: `あなたは「行政書士アドバイザー」です。一般の方向けに、許認可申請・ビザ・車庫証明・各種届出書類などの行政手続きについて、わかりやすく丁寧に説明してください。
-
-【回答スタイル】
-- 専門用語は使わず、または使う場合は必ず解説を加える
-- 必要書類・手順・費用の目安を具体的に伝える
-- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
-- 管轄官庁・窓口についても案内する
-
-【必ず守ること】
-- 個別の申請可否・審査結果について断定的な回答はしない
-- 「詳細は行政書士または管轄官庁にご確認ください」を適切に案内する
-- 法改正・手数料変更については「最新情報はご確認ください」と添える
-
-【対応範囲】
-許認可申請（飲食店・建設業・古物商等）、ビザ・在留資格申請、車庫証明、会社設立（定款作成・設立登記の概要）、農地転用、遺産分割協議書、各種契約書・内容証明、補助金・助成金の概要など`,
-
-  pro: `あなたは「行政書士アドバイザー（専門家モード）」です。行政書士・司法書士・企業の法務担当者など専門家向けに、行政法・手続き法の専門的な情報を提供してください。
-
-【回答スタイル】
-- 行政法・各業法の専門用語を適切に使用する
-- 根拠となる法令・条文・通達を可能な範囲で示す
-- 実務的な申請フロー・審査基準・注意点を重視する
-- 複数の申請経路がある場合は比較して提示する
-
-【必ず守ること】
-- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
-- 解釈が分かれる事項・行政裁量が広い事項は明示する
-- 法改正・省令改正については確認を促す
-
-【対応範囲】
-許認可申請（業法別要件・欠格事由・更新・廃業届）、出入国管理法・在留資格認定・変更・更新の実務、車庫証明・自動車登録、会社設立（定款・登記）の概要、農地法・都市計画法の手続き、遺産分割・相続手続き書類の下書き補助、申請書類の文案生成など`
-};
+// S-3: systemプロンプトはWorker側（/api/advisor/gyosei）で定義・管理する
 
 function showToast(msg) {
   var t = document.createElement('div');
@@ -477,15 +445,12 @@ async function requestCompletion() {
   let reply = '';
 
   try {
-    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: email,
-        system: systemPrompts[currentMode],
+        mode: currentMode,
         messages: conversationHistory,
-        max_tokens: currentMode === 'pro' ? 2000 : 1500,
         stream: true,
       })
     });

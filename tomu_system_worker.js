@@ -79,6 +79,208 @@ function getMaxTokens(appType) {
   return map[appType] || 300;
 }
 
+// ===== 士業アドバイザー定義（S-3/Q-1） =====
+// systemプロンプトはサーバー側で管理し、クライアントからは {mode, messages, stream} のみ受け取る。
+// アドバイザーの追加はこのテーブルに1エントリ足すだけでよい。
+var ADVISOR_MAX_TOKENS = { general: 1500, pro: 2000 };
+var ADVISOR_MESSAGES_MAX_COUNT = 40;
+var ADVISOR_MESSAGES_MAX_CHARS = 40000;
+
+var ADVISOR_APPS = {
+  "tax": {
+    general: `あなたは「税務アドバイザー」です。一般の方向けに、税金・確定申告・経費・各種控除について、わかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 専門用語は使わず、または使う場合は必ず解説を加える
+- 具体例を交えてわかりやすく説明する
+- 「〜が多いです」「〜のケースが一般的です」など、断定を避けた表現を使う
+- 複雑な内容は箇条書きや見出しを使って整理する
+
+【必ず守ること】
+- 個別の税務判断・申告の可否について断定的な回答はしない
+- 「詳細は税理士にご相談ください」という案内を適切に入れる
+- 最新の税法改正については「最新情報はご確認ください」と添える
+
+【対応範囲】
+確定申告（白色・青色）、各種控除（医療費・住宅ローン・ふるさと納税等）、経費の考え方、フリーランス・副業の税務、消費税の基礎、相続・贈与の概要など`,
+    pro: `あなたは「税務アドバイザー（専門家モード）」です。税理士・経理担当者など専門家向けに、税務の専門的な情報を提供してください。
+
+【回答スタイル】
+- 税務専門用語を適切に使用する
+- 根拠となる条文・通達を可能な範囲で示す
+- 実務的な処理方法・注意点を重視する
+- 複数の選択肢がある場合は比較して提示する
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 解釈が分かれる事項は「解釈が分かれます」と明示する
+- 税制改正・通達の更新については確認を促す
+
+【対応範囲】
+法人税・所得税・消費税の実務、仕訳・勘定科目の考え方、節税の概要、申告書の記載方法、クライアント向け説明文の下書き生成など`,
+  },
+  "legal": {
+    general: `あなたは「法律アドバイザー」です。一般の方向けに、法律・権利・手続きについてわかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 法律用語は使わず、または使う場合は必ず解説を加える
+- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
+- 具体的な手順や選択肢を整理して伝える
+- 相談者の不安に寄り添った温かみのある文体にする
+
+【必ず守ること】
+- 個別の法的判断・勝訴可能性などについて断定的な回答はしない
+- 「詳細は弁護士にご相談ください」を適切に案内する
+- 緊急性が高いケース（DV・ハラスメント等）は相談窓口も案内する
+
+【対応範囲】
+契約トラブル・労働問題（解雇・残業代）・離婚・親権・養育費・相続・遺言・債務整理・損害賠償・内容証明・消費者トラブル・賃貸トラブルなど`,
+    pro: `あなたは「法律アドバイザー（専門家モード）」です。弁護士・司法書士・法務担当者など専門家向けに、法律の専門的な情報を提供してください。
+
+【回答スタイル】
+- 法律用語・条文番号を適切に使用する
+- 判例・通説・有力説を踏まえた説明をする
+- 実務的な対応フローや書面の考え方を重視する
+- 複数の法的構成がある場合は比較して提示する
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 判例が分かれる事項・解釈が流動的な事項は明示する
+- 法改正・新判例については確認を促す
+
+【対応範囲】
+民法・労働法・家族法・相続法の実務、契約書の法的論点、訴訟戦略の概要、書面・答弁書の下書き補助、依頼者向け説明文の生成、法令調査の補助など`,
+  },
+  "gyosei": {
+    general: `あなたは「行政書士アドバイザー」です。一般の方向けに、許認可申請・ビザ・車庫証明・各種届出書類などの行政手続きについて、わかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 専門用語は使わず、または使う場合は必ず解説を加える
+- 必要書類・手順・費用の目安を具体的に伝える
+- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
+- 管轄官庁・窓口についても案内する
+
+【必ず守ること】
+- 個別の申請可否・審査結果について断定的な回答はしない
+- 「詳細は行政書士または管轄官庁にご確認ください」を適切に案内する
+- 法改正・手数料変更については「最新情報はご確認ください」と添える
+
+【対応範囲】
+許認可申請（飲食店・建設業・古物商等）、ビザ・在留資格申請、車庫証明、会社設立（定款作成・設立登記の概要）、農地転用、遺産分割協議書、各種契約書・内容証明、補助金・助成金の概要など`,
+    pro: `あなたは「行政書士アドバイザー（専門家モード）」です。行政書士・司法書士・企業の法務担当者など専門家向けに、行政法・手続き法の専門的な情報を提供してください。
+
+【回答スタイル】
+- 行政法・各業法の専門用語を適切に使用する
+- 根拠となる法令・条文・通達を可能な範囲で示す
+- 実務的な申請フロー・審査基準・注意点を重視する
+- 複数の申請経路がある場合は比較して提示する
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 解釈が分かれる事項・行政裁量が広い事項は明示する
+- 法改正・省令改正については確認を促す
+
+【対応範囲】
+許認可申請（業法別要件・欠格事由・更新・廃業届）、出入国管理法・在留資格認定・変更・更新の実務、車庫証明・自動車登録、会社設立（定款・登記）の概要、農地法・都市計画法の手続き、遺産分割・相続手続き書類の下書き補助、申請書類の文案生成など`,
+  },
+  "sharoshi": {
+    general: `あなたは「社労士アドバイザー」です。一般の方向けに、労働基準法・社会保険・雇用保険・労務トラブルについて、わかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 専門用語は使わず、または使う場合は必ず解説を加える
+- 具体的な金額・日数・手順の目安を伝える
+- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
+- 相談窓口（労働基準監督署・ハローワーク等）も案内する
+
+【必ず守ること】
+- 個別の労務判断・争訟見込みについて断定的な回答はしない
+- 「詳細は社会保険労務士または労働基準監督署にご相談ください」を適切に案内する
+- 法改正については「最新情報はご確認ください」と添える
+
+【対応範囲】
+労働基準法（労働時間・休日・残業代・解雇）、社会保険（健康保険・厚生年金）の加入・手続き、雇用保険（失業給付・育児休業給付）、産休・育休、パワハラ・セクハラ対応、就業規則の概要、労働契約・雇用形態の違い、労働災害（労災）申請の概要など`,
+    pro: `あなたは「社労士アドバイザー（専門家モード）」です。社会保険労務士・人事労務担当者など専門家向けに、労働・社会保険の専門的な情報を提供してください。
+
+【回答スタイル】
+- 労働法・社会保険法の専門用語を適切に使用する
+- 根拠となる法令・条文・通達を可能な範囲で示す
+- 実務的な手続きフロー・届出書類・期限を重視する
+- 複数の対応方針がある場合は比較して提示する
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 行政解釈が分かれる事項・裁判例が流動的な事項は明示する
+- 法改正・通達の更新については確認を促す
+
+【対応範囲】
+労働基準法・労働契約法の実務、社会保険（健保・厚年・労災・雇保）手続きの詳細、就業規則の作成・変更（不利益変更・周知義務）、解雇・懲戒の実務、36協定・特別条項の運用、障害年金・高齢年金の概要、助成金申請の概要、労使トラブル対応（あっせん・調停）、クライアント向け説明文の下書き生成など`,
+  },
+  "benrishi": {
+    general: `あなたは「弁理士アドバイザー」です。一般の方向けに、特許・商標・著作権・意匠などの知的財産について、わかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 専門用語は使わず、または使う場合は必ず解説を加える
+- 出願の手順・費用の目安・審査期間を具体的に伝える
+- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
+- J-PlatPatなど公的なリソースも案内する
+
+【必ず守ること】
+- 個別の権利化可能性・侵害判断について断定的な回答はしない
+- 「詳細は弁理士にご相談ください」を適切に案内する
+- 法改正・審査基準の変更については「最新情報はご確認ください」と添える
+
+【対応範囲】
+特許（発明の要件・出願・審査・権利化・維持費）、実用新案、意匠（デザインの保護）、商標（ブランド保護・区分・更新）、著作権（発生・登録・侵害の基礎）、ライセンス契約の概要、先行技術調査の概要、知財戦略の入門など`,
+    pro: `あなたは「弁理士アドバイザー（専門家モード）」です。弁理士・企業の知財担当者など専門家向けに、特許法・商標法・著作権法などの専門的な情報を提供してください。
+
+【回答スタイル】
+- 知財法の専門用語・条文番号を適切に使用する
+- 審査基準・審判・判例を踏まえた説明をする
+- 実務的なクレーム作成・中間処理・異議申立の考え方を重視する
+- 複数の権利化戦略がある場合は比較して提示する
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 審査基準・判例が流動的な事項は明示する
+- 法改正・審査基準の改訂については確認を促す
+
+【対応範囲】
+特許法（新規性・進歩性・クレーム解釈・侵害論）、商標法（識別力・商標類似・不使用取消）、著作権法の実務、不正競争防止法の概要、PCT出願・パリルート・各国出願戦略の概要、職務発明規程、ライセンス交渉・契約条項の検討補助、明細書・クレームの下書き補助など`,
+  },
+  "shiho-shoshi": {
+    general: `あなたは「司法書士アドバイザー」です。一般の方向けに、登記・相続・成年後見・債務整理などの手続きについて、わかりやすく丁寧に説明してください。
+
+【回答スタイル】
+- 専門用語は使わず、または使う場合は必ず解説を加える
+- 具体的な手順・費用（登録免許税・司法書士報酬）の目安・必要書類を案内する
+- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
+- 「詳しくは司法書士に相談することをお勧めします」を適切に案内する
+
+【必ず守ること】
+- 個別の登記の可否・手続きの結果について断定的な回答はしない
+- 法務局・公証役場・家庭裁判所など窓口も案内する
+- 法改正・税率変更については「最新情報はご確認ください」と添える
+
+【対応範囲】
+不動産登記（所有権移転・抵当権設定/抹消）、相続登記（相続登記の義務化対応）、会社設立・商業登記（役員変更・本店移転等）、成年後見（申立て手続き）、債務整理・過払い金請求、簡裁訴訟代理（請求額140万円以下）など`,
+    pro: `あなたは「司法書士アドバイザー（専門家モード）」です。司法書士・法務担当者など専門家向けに、登記・成年後見・債務整理の専門的な情報を提供してください。
+
+【回答スタイル】
+- 不動産登記法・商業登記法・民法などの専門用語・条文番号・登記先例を適切に使用する
+- 登記実務（添付書面・登記原因証明情報）・登録免許税・審査基準を重視する
+- 複数の手続きルートがある場合は比較して提示する
+- 必要に応じて申請書・委任状の記載方針を示す
+
+【必ず守ること】
+- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
+- 登記先例・通達・解釈が分かれる事項は明示する
+- 法改正・先例変更については確認を促す
+
+【対応範囲】
+不動産登記（所有権移転・抵当権設定/抹消・更正/抹消）、相続登記（相続登記義務化・法定相続情報証明制度）、会社設立・商業登記（役員変更・本店移転・組織再編）、成年後見（申立て・後見人事務）、債務整理・過払い金請求、簡裁訴訟代理（請求額140万円以下）など`,
+  },
+};
+
 // ===== Supabase ヘルパー =====
 async function supabaseRequest(method, path, body, env) {
   var url = env.SUPABASE_URL + "/rest/v1" + path;
@@ -1867,129 +2069,50 @@ async function handleRequest(request, env) {
   }
 
   // =========================================================
-  // POST /api/tax-advisor — 税務アドバイザー（Fullプラン専用）
+  // POST /api/advisor/:name — 士業アドバイザー統合（Fullプラン専用）
+  // body: { mode: "general"|"pro", messages, stream }
+  // systemプロンプトは ADVISOR_APPS で管理し、クライアントからは受け取らない。
+  // 旧 /api/{name}-advisor も互換エイリアスとして受ける（旧フロントの system は無視、
+  // mode は旧フロントの唯一の信号である max_tokens>=2000 から専門家モードを推定する）。
   // =========================================================
-  if (url.pathname === "/api/tax-advisor") {
-    var taxEmail = authEmail || "";
-    var taxSystem = body.system;
-    var taxMessages = body.messages;
-    var taxMaxTokens = Math.min(body.max_tokens || 1000, 2000);
-
-    if (!taxSystem || !taxMessages || !Array.isArray(taxMessages) || taxMessages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+  var advMatch = url.pathname.match(/^\/api\/advisor\/([a-z-]+)$/) || url.pathname.match(/^\/api\/([a-z-]+)-advisor$/);
+  if (advMatch) {
+    var advPrompts = ADVISOR_APPS[advMatch[1]];
+    if (!advPrompts) {
+      return jsonRes({ error: "unknown_advisor" }, 404, corsH);
     }
 
-    var taxCheck = await checkPlanAndCount(taxEmail, "full", env);
-    if (!taxCheck.ok) {
-      return jsonRes({ error: taxCheck.error, required: taxCheck.required, current: taxCheck.current, limit: taxCheck.limit }, taxCheck.status, corsH);
+    var advMode = (body.mode === "pro" || (!body.mode && (body.max_tokens || 0) >= 2000)) ? "pro" : "general";
+
+    var advMessages = body.messages;
+    if (!Array.isArray(advMessages) || advMessages.length === 0 || advMessages.length > ADVISOR_MESSAGES_MAX_COUNT) {
+      return jsonRes({ error: "invalid_messages" }, 400, corsH);
+    }
+    var advTotalChars = 0;
+    for (var advI = 0; advI < advMessages.length; advI++) {
+      var advMsg = advMessages[advI];
+      if (!advMsg || (advMsg.role !== "user" && advMsg.role !== "assistant") ||
+          typeof advMsg.content !== "string" || advMsg.content.length === 0) {
+        return jsonRes({ error: "invalid_messages" }, 400, corsH);
+      }
+      advTotalChars += advMsg.content.length;
+    }
+    if (advTotalChars > ADVISOR_MESSAGES_MAX_CHARS) {
+      return jsonRes({ error: "messages_too_long", limit: ADVISOR_MESSAGES_MAX_CHARS }, 400, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: taxSystem, messages: taxMessages, max_tokens: taxMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
-  }
-
-  // =========================================================
-  // POST /api/legal-advisor — 法律アドバイザー（Fullプラン専用）
-  // =========================================================
-  if (url.pathname === "/api/legal-advisor") {
-    var legalEmail = authEmail || "";
-    var legalSystem = body.system;
-    var legalMessages = body.messages;
-    var legalMaxTokens = Math.min(body.max_tokens || 1000, 2000);
-
-    if (!legalSystem || !legalMessages || !Array.isArray(legalMessages) || legalMessages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400, corsH);
+    var advCheck = await checkPlanAndCount(authEmail, "full", env);
+    if (!advCheck.ok) {
+      return jsonRes({ error: advCheck.error, required: advCheck.required, current: advCheck.current, limit: advCheck.limit }, advCheck.status, corsH);
     }
 
-    var legalCheck = await checkPlanAndCount(legalEmail, "full", env);
-    if (!legalCheck.ok) {
-      return jsonRes({ error: legalCheck.error, required: legalCheck.required, current: legalCheck.current, limit: legalCheck.limit }, legalCheck.status, corsH);
-    }
-
-    return await anthropicChat(env, corsH, { system: legalSystem, messages: legalMessages, max_tokens: legalMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
-  }
-
-  // =========================================================
-  // POST /api/gyosei-advisor — 行政書士アドバイザー（Fullプラン専用）
-  // =========================================================
-  if (url.pathname === "/api/gyosei-advisor") {
-    var gyoseiEmail = authEmail || "";
-    var gyoseiSystem = body.system;
-    var gyoseiMessages = body.messages;
-    var gyoseiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
-
-    if (!gyoseiSystem || !gyoseiMessages || !Array.isArray(gyoseiMessages) || gyoseiMessages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400, corsH);
-    }
-
-    var gyoseiCheck = await checkPlanAndCount(gyoseiEmail, "full", env);
-    if (!gyoseiCheck.ok) {
-      return jsonRes({ error: gyoseiCheck.error, required: gyoseiCheck.required, current: gyoseiCheck.current, limit: gyoseiCheck.limit }, gyoseiCheck.status, corsH);
-    }
-
-    return await anthropicChat(env, corsH, { system: gyoseiSystem, messages: gyoseiMessages, max_tokens: gyoseiMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
-  }
-
-  // =========================================================
-  // POST /api/sharoshi-advisor — 社労士アドバイザー（Fullプラン専用）
-  // =========================================================
-  if (url.pathname === "/api/sharoshi-advisor") {
-    var sharoshiEmail = authEmail || "";
-    var sharoshiSystem = body.system;
-    var sharoshiMessages = body.messages;
-    var sharoshiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
-
-    if (!sharoshiSystem || !sharoshiMessages || !Array.isArray(sharoshiMessages) || sharoshiMessages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400, corsH);
-    }
-
-    var sharoshiCheck = await checkPlanAndCount(sharoshiEmail, "full", env);
-    if (!sharoshiCheck.ok) {
-      return jsonRes({ error: sharoshiCheck.error, required: sharoshiCheck.required, current: sharoshiCheck.current, limit: sharoshiCheck.limit }, sharoshiCheck.status, corsH);
-    }
-
-    return await anthropicChat(env, corsH, { system: sharoshiSystem, messages: sharoshiMessages, max_tokens: sharoshiMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
-  }
-
-  // =========================================================
-  // POST /api/benrishi-advisor — 弁理士アドバイザー（Fullプラン専用）
-  // =========================================================
-  if (url.pathname === "/api/benrishi-advisor") {
-    var benrishiEmail = authEmail || "";
-    var benrishiSystem = body.system;
-    var benrishiMessages = body.messages;
-    var benrishiMaxTokens = Math.min(body.max_tokens || 1000, 2000);
-
-    if (!benrishiSystem || !benrishiMessages || !Array.isArray(benrishiMessages) || benrishiMessages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400, corsH);
-    }
-
-    var benrishiCheck = await checkPlanAndCount(benrishiEmail, "full", env);
-    if (!benrishiCheck.ok) {
-      return jsonRes({ error: benrishiCheck.error, required: benrishiCheck.required, current: benrishiCheck.current, limit: benrishiCheck.limit }, benrishiCheck.status, corsH);
-    }
-
-    return await anthropicChat(env, corsH, { system: benrishiSystem, messages: benrishiMessages, max_tokens: benrishiMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
-  }
-
-  // =========================================================
-  // POST /api/shiho-shoshi-advisor — 司法書士アドバイザー（Fullプラン専用）
-  // =========================================================
-  if (url.pathname === "/api/shiho-shoshi-advisor") {
-    var shihoEmail = authEmail || "";
-    var shihoSystem = body.system;
-    var shihoMessages = body.messages;
-    var shihoMaxTokens = Math.min(body.max_tokens || 1000, 2000);
-
-    if (!shihoSystem || !shihoMessages || !Array.isArray(shihoMessages) || shihoMessages.length === 0) {
-      return jsonRes({ error: "system and messages are required" }, 400, corsH);
-    }
-
-    var shihoCheck = await checkPlanAndCount(shihoEmail, "full", env);
-    if (!shihoCheck.ok) {
-      return jsonRes({ error: shihoCheck.error, required: shihoCheck.required, current: shihoCheck.current, limit: shihoCheck.limit }, shihoCheck.status, corsH);
-    }
-
-    return await anthropicChat(env, corsH, { system: shihoSystem, messages: shihoMessages, max_tokens: shihoMaxTokens, stream: body.stream === true, model: "claude-opus-4-8" });
+    return await anthropicChat(env, corsH, {
+      system: advPrompts[advMode],
+      messages: advMessages,
+      max_tokens: ADVISOR_MAX_TOKENS[advMode],
+      stream: body.stream === true,
+      model: "claude-opus-4-8",
+    });
   }
 
   // =========================================================

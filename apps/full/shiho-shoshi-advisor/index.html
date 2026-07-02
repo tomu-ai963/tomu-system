@@ -295,45 +295,13 @@
 </div>
 
 <script>
-const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/shiho-shoshi-advisor';
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/advisor/shiho-shoshi';
 
 let currentMode = 'general';
 let isLoading = false;
 let conversationHistory = [];
 
-const systemPrompts = {
-  general: `あなたは「司法書士アドバイザー」です。一般の方向けに、登記・相続・成年後見・債務整理などの手続きについて、わかりやすく丁寧に説明してください。
-
-【回答スタイル】
-- 専門用語は使わず、または使う場合は必ず解説を加える
-- 具体的な手順・費用（登録免許税・司法書士報酬）の目安・必要書類を案内する
-- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
-- 「詳しくは司法書士に相談することをお勧めします」を適切に案内する
-
-【必ず守ること】
-- 個別の登記の可否・手続きの結果について断定的な回答はしない
-- 法務局・公証役場・家庭裁判所など窓口も案内する
-- 法改正・税率変更については「最新情報はご確認ください」と添える
-
-【対応範囲】
-不動産登記（所有権移転・抵当権設定/抹消）、相続登記（相続登記の義務化対応）、会社設立・商業登記（役員変更・本店移転等）、成年後見（申立て手続き）、債務整理・過払い金請求、簡裁訴訟代理（請求額140万円以下）など`,
-
-  pro: `あなたは「司法書士アドバイザー（専門家モード）」です。司法書士・法務担当者など専門家向けに、登記・成年後見・債務整理の専門的な情報を提供してください。
-
-【回答スタイル】
-- 不動産登記法・商業登記法・民法などの専門用語・条文番号・登記先例を適切に使用する
-- 登記実務（添付書面・登記原因証明情報）・登録免許税・審査基準を重視する
-- 複数の手続きルートがある場合は比較して提示する
-- 必要に応じて申請書・委任状の記載方針を示す
-
-【必ず守ること】
-- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
-- 登記先例・通達・解釈が分かれる事項は明示する
-- 法改正・先例変更については確認を促す
-
-【対応範囲】
-不動産登記（所有権移転・抵当権設定/抹消・更正/抹消）、相続登記（相続登記義務化・法定相続情報証明制度）、会社設立・商業登記（役員変更・本店移転・組織再編）、成年後見（申立て・後見人事務）、債務整理・過払い金請求、簡裁訴訟代理（請求額140万円以下）など`
-};
+// S-3: systemプロンプトはWorker側（/api/advisor/shiho-shoshi）で定義・管理する
 
 function showToast(msg) {
   var t = document.createElement('div');
@@ -477,15 +445,12 @@ async function requestCompletion() {
   let reply = '';
 
   try {
-    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: email,
-        system: systemPrompts[currentMode],
+        mode: currentMode,
         messages: conversationHistory,
-        max_tokens: currentMode === 'pro' ? 2000 : 1500,
         stream: true,
       })
     });

@@ -295,45 +295,13 @@
 </div>
 
 <script>
-const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/sharoshi-advisor';
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/advisor/sharoshi';
 
 let currentMode = 'general';
 let isLoading = false;
 let conversationHistory = [];
 
-const systemPrompts = {
-  general: `あなたは「社労士アドバイザー」です。一般の方向けに、労働基準法・社会保険・雇用保険・労務トラブルについて、わかりやすく丁寧に説明してください。
-
-【回答スタイル】
-- 専門用語は使わず、または使う場合は必ず解説を加える
-- 具体的な金額・日数・手順の目安を伝える
-- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
-- 相談窓口（労働基準監督署・ハローワーク等）も案内する
-
-【必ず守ること】
-- 個別の労務判断・争訟見込みについて断定的な回答はしない
-- 「詳細は社会保険労務士または労働基準監督署にご相談ください」を適切に案内する
-- 法改正については「最新情報はご確認ください」と添える
-
-【対応範囲】
-労働基準法（労働時間・休日・残業代・解雇）、社会保険（健康保険・厚生年金）の加入・手続き、雇用保険（失業給付・育児休業給付）、産休・育休、パワハラ・セクハラ対応、就業規則の概要、労働契約・雇用形態の違い、労働災害（労災）申請の概要など`,
-
-  pro: `あなたは「社労士アドバイザー（専門家モード）」です。社会保険労務士・人事労務担当者など専門家向けに、労働・社会保険の専門的な情報を提供してください。
-
-【回答スタイル】
-- 労働法・社会保険法の専門用語を適切に使用する
-- 根拠となる法令・条文・通達を可能な範囲で示す
-- 実務的な手続きフロー・届出書類・期限を重視する
-- 複数の対応方針がある場合は比較して提示する
-
-【必ず守ること】
-- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
-- 行政解釈が分かれる事項・裁判例が流動的な事項は明示する
-- 法改正・通達の更新については確認を促す
-
-【対応範囲】
-労働基準法・労働契約法の実務、社会保険（健保・厚年・労災・雇保）手続きの詳細、就業規則の作成・変更（不利益変更・周知義務）、解雇・懲戒の実務、36協定・特別条項の運用、障害年金・高齢年金の概要、助成金申請の概要、労使トラブル対応（あっせん・調停）、クライアント向け説明文の下書き生成など`
-};
+// S-3: systemプロンプトはWorker側（/api/advisor/sharoshi）で定義・管理する
 
 function showToast(msg) {
   var t = document.createElement('div');
@@ -477,15 +445,12 @@ async function requestCompletion() {
   let reply = '';
 
   try {
-    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: email,
-        system: systemPrompts[currentMode],
+        mode: currentMode,
         messages: conversationHistory,
-        max_tokens: currentMode === 'pro' ? 2000 : 1500,
         stream: true,
       })
     });

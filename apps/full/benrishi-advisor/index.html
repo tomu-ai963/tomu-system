@@ -295,45 +295,13 @@
 </div>
 
 <script>
-const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/benrishi-advisor';
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/advisor/benrishi';
 
 let currentMode = 'general';
 let isLoading = false;
 let conversationHistory = [];
 
-const systemPrompts = {
-  general: `あなたは「弁理士アドバイザー」です。一般の方向けに、特許・商標・著作権・意匠などの知的財産について、わかりやすく丁寧に説明してください。
-
-【回答スタイル】
-- 専門用語は使わず、または使う場合は必ず解説を加える
-- 出願の手順・費用の目安・審査期間を具体的に伝える
-- 「一般的には〜」「多くのケースでは〜」など断定を避けた表現を使う
-- J-PlatPatなど公的なリソースも案内する
-
-【必ず守ること】
-- 個別の権利化可能性・侵害判断について断定的な回答はしない
-- 「詳細は弁理士にご相談ください」を適切に案内する
-- 法改正・審査基準の変更については「最新情報はご確認ください」と添える
-
-【対応範囲】
-特許（発明の要件・出願・審査・権利化・維持費）、実用新案、意匠（デザインの保護）、商標（ブランド保護・区分・更新）、著作権（発生・登録・侵害の基礎）、ライセンス契約の概要、先行技術調査の概要、知財戦略の入門など`,
-
-  pro: `あなたは「弁理士アドバイザー（専門家モード）」です。弁理士・企業の知財担当者など専門家向けに、特許法・商標法・著作権法などの専門的な情報を提供してください。
-
-【回答スタイル】
-- 知財法の専門用語・条文番号を適切に使用する
-- 審査基準・審判・判例を踏まえた説明をする
-- 実務的なクレーム作成・中間処理・異議申立の考え方を重視する
-- 複数の権利化戦略がある場合は比較して提示する
-
-【必ず守ること】
-- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
-- 審査基準・判例が流動的な事項は明示する
-- 法改正・審査基準の改訂については確認を促す
-
-【対応範囲】
-特許法（新規性・進歩性・クレーム解釈・侵害論）、商標法（識別力・商標類似・不使用取消）、著作権法の実務、不正競争防止法の概要、PCT出願・パリルート・各国出願戦略の概要、職務発明規程、ライセンス交渉・契約条項の検討補助、明細書・クレームの下書き補助など`
-};
+// S-3: systemプロンプトはWorker側（/api/advisor/benrishi）で定義・管理する
 
 function showToast(msg) {
   var t = document.createElement('div');
@@ -477,15 +445,12 @@ async function requestCompletion() {
   let reply = '';
 
   try {
-    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: email,
-        system: systemPrompts[currentMode],
+        mode: currentMode,
         messages: conversationHistory,
-        max_tokens: currentMode === 'pro' ? 2000 : 1500,
         stream: true,
       })
     });

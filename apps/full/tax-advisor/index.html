@@ -293,45 +293,13 @@
 </div>
 
 <script>
-const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/tax-advisor';
+const WORKER_URL = 'https://orange-sound-354b.inverted-triangle-leef.workers.dev/api/advisor/tax';
 
 let currentMode = 'general';
 let isLoading = false;
 let conversationHistory = [];
 
-const systemPrompts = {
-  general: `あなたは「税務アドバイザー」です。一般の方向けに、税金・確定申告・経費・各種控除について、わかりやすく丁寧に説明してください。
-
-【回答スタイル】
-- 専門用語は使わず、または使う場合は必ず解説を加える
-- 具体例を交えてわかりやすく説明する
-- 「〜が多いです」「〜のケースが一般的です」など、断定を避けた表現を使う
-- 複雑な内容は箇条書きや見出しを使って整理する
-
-【必ず守ること】
-- 個別の税務判断・申告の可否について断定的な回答はしない
-- 「詳細は税理士にご相談ください」という案内を適切に入れる
-- 最新の税法改正については「最新情報はご確認ください」と添える
-
-【対応範囲】
-確定申告（白色・青色）、各種控除（医療費・住宅ローン・ふるさと納税等）、経費の考え方、フリーランス・副業の税務、消費税の基礎、相続・贈与の概要など`,
-
-  pro: `あなたは「税務アドバイザー（専門家モード）」です。税理士・経理担当者など専門家向けに、税務の専門的な情報を提供してください。
-
-【回答スタイル】
-- 税務専門用語を適切に使用する
-- 根拠となる条文・通達を可能な範囲で示す
-- 実務的な処理方法・注意点を重視する
-- 複数の選択肢がある場合は比較して提示する
-
-【必ず守ること】
-- AIの限界を認識し、最終判断は専門家が行う旨を適切に伝える
-- 解釈が分かれる事項は「解釈が分かれます」と明示する
-- 税制改正・通達の更新については確認を促す
-
-【対応範囲】
-法人税・所得税・消費税の実務、仕訳・勘定科目の考え方、節税の概要、申告書の記載方法、クライアント向け説明文の下書き生成など`
-};
+// S-3: systemプロンプトはWorker側（/api/advisor/tax）で定義・管理する
 
 function showToast(msg) {
   var t = document.createElement('div');
@@ -475,15 +443,12 @@ async function requestCompletion() {
   let reply = '';
 
   try {
-    const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: email,
-        system: systemPrompts[currentMode],
+        mode: currentMode,
         messages: conversationHistory,
-        max_tokens: currentMode === 'pro' ? 2000 : 1500,
         stream: true,
       })
     });
