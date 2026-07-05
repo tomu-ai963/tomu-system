@@ -1195,55 +1195,5 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
 </script>
 <script src="/tomu-system/tomu-login.js"></script>
 
-<!-- ▼▼▼ LOCAL TEST MOCK ▼▼▼ -->
-<script>
-(function () {
-  const host = location.hostname;
-  const isLocal = host === 'localhost' || host === '127.0.0.1'
-    || /^192\.168\./.test(host) || /^10\./.test(host)
-    || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
-  if (!isLocal) return;
-
-  window.TomuAuth = {
-    getEmail:    function() { return 'inverted.triangle.leef@gmail.com'; },
-    getPlan:     function() { return 'standard'; },
-    isLoggedIn:  function() { return true; },
-    showOverlay: function() { console.log('[LOCAL MOCK] showOverlay() は無効化されています'); },
-  };
-
-  const hideOverlay = function() {
-    document.querySelectorAll('[id*="auth"],[id*="login"],[class*="auth"],[class*="login"]').forEach(function(el) {
-      if (el.id === 'vbChatOverlay' || el.id === 'vbTextModal') return;
-      el.style.display = 'none';
-    });
-    // tomu-auth-overlayを明示的に非表示
-    const authEl = document.getElementById('tomu-auth-overlay');
-    if (authEl) authEl.style.display = 'none';
-    const badgeEl = document.getElementById('tomu-user-badge');
-    if (badgeEl) { badgeEl.classList.add('active'); }
-  };
-
-  document.addEventListener('DOMContentLoaded', function() {
-    hideOverlay();
-    loadBoard();
-  });
-  setTimeout(hideOverlay, 600);
-
-  const badge = document.createElement('div');
-  badge.textContent = '🔓 LOCAL MOCK';
-  Object.assign(badge.style, {
-    position: 'fixed', bottom: '8px', left: '8px', zIndex: '9999',
-    background: 'rgba(184,115,51,0.12)', color: '#b87333',
-    fontFamily: 'sans-serif', fontSize: '9px', letterSpacing: '2px',
-    padding: '4px 8px', borderRadius: '10px', border: '1px solid rgba(184,115,51,0.3)',
-    pointerEvents: 'none',
-  });
-  document.body.appendChild(badge);
-
-  console.log('[LOCAL MOCK] TomuAuth スキップ済み — email:', window.TomuAuth.getEmail());
-})();
-</script>
-<!-- ▲▲▲ LOCAL TEST MOCK END ▲▲▲ -->
-
 </body>
 </html>

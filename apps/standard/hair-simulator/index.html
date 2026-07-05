@@ -865,10 +865,11 @@ header {
     <div style="background:var(--border);height:1px;margin:24px 0;"></div>
     <div class="panel-label">シミュレーション結果</div>
     <div class="result-area" id="resultArea">
-      <div class="result-placeholder">
+      <div class="result-placeholder" id="resultPlaceholder">
         <span class="big">AFTER</span>
         <span class="small">GENERATE を押してください</span>
       </div>
+      <img id="resultImg" alt="result" style="display:none;">
       <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-text">GENERATING...</div>
         <div class="loading-bar"></div>
@@ -923,15 +924,28 @@ const AR = {
 //   p.offsetY ≈ -(faceH*0.05) / drawH ≈ -0.04~-0.02 (small negatives)
 const ASSETS_BASE = 'https://tomu-ai963.github.io/tomu-system/apps/standard/assets/';
 
+// file は WebP（768px・各100〜230KB / 従来PNGの約1/16）。未デプロイ・非対応環境では
+// _ensureHairCache 内で .png へ自動フォールバックする。
 const PRESETS = {
-  short:        { id: 'short',        label: 'ショート',       file: 'hair-short.png',        scale: 1.52, offsetX: 0, offsetY: 0, smooth: 0.20 },
-  bob:          { id: 'bob',          label: 'ボブ',           file: 'hair-bob.png',           scale: 1.76, offsetX: 0, offsetY: 0, smooth: 0.17 },
-  medium:       { id: 'medium',       label: 'ミディアム',     file: 'hair-medium.png',        scale: 1.90, offsetX: 0, offsetY: 0, smooth: 0.15 },
-  longstraight: { id: 'longstraight', label: 'ロングストレート', file: 'hair-long-straight.png', scale: 2.10, offsetX: 0, offsetY: 0, smooth: 0.13 },
-  longwave:     { id: 'longwave',     label: 'ロングウェーブ', file: 'hair-long-wave.png',     scale: 2.10, offsetX: 0, offsetY: 0, smooth: 0.13 },
+  short:        { id: 'short',        label: 'ショート',       file: 'hair-short.webp',        scale: 1.52, offsetX: 0, offsetY: 0, smooth: 0.20 },
+  bob:          { id: 'bob',          label: 'ボブ',           file: 'hair-bob.webp',           scale: 1.76, offsetX: 0, offsetY: 0, smooth: 0.17 },
+  medium:       { id: 'medium',       label: 'ミディアム',     file: 'hair-medium.webp',        scale: 1.90, offsetX: 0, offsetY: 0, smooth: 0.15 },
+  longstraight: { id: 'longstraight', label: 'ロングストレート', file: 'hair-long-straight.webp', scale: 2.10, offsetX: 0, offsetY: 0, smooth: 0.13 },
+  longwave:     { id: 'longwave',     label: 'ロングウェーブ', file: 'hair-long-wave.webp',     scale: 2.10, offsetX: 0, offsetY: 0, smooth: 0.13 },
 };
 
 AR.currentPreset = PRESETS.short;
+
+// ARプリセット ⇄ AI生成パラメータの対応表。
+// AR側でヘアプリセットを選ぶと、AI生成側の「レングス／スタイル」も自動選択され、
+// 2系統に分かれていた髪型指定が連動する（値はAI側ボタンの data-length / data-style と一致）。
+const PRESET_TO_AI = {
+  short:        { length: 'very short pixie cut hair',   style: '' },
+  bob:          { length: 'bob cut medium short hair',   style: '' },
+  medium:       { length: 'medium length shoulder hair', style: '' },
+  longstraight: { length: 'long hair below shoulders',   style: 'straight sleek hair' },
+  longwave:     { length: 'long hair below shoulders',   style: 'natural loose waves hair' },
+};
 
 // Face landmark indices (MediaPipe FaceMesh, camera/non-selfie space)
 // 234 = left cheek (camera left), 454 = right cheek (camera right)
@@ -959,22 +973,42 @@ function selectPreset(id) {
   document.getElementById('presetLabel').textContent = PRESETS[id].label;
   // Ensure this preset is cached
   _ensureHairCache(id);
+  // AI生成側のレングス／スタイル選択も連動させる
+  _syncAiFromPreset(id);
 }
 
+// ARプリセット選択を AI生成側の length/style ボタンへ反映する
+function _syncAiFromPreset(id) {
+  const map = PRESET_TO_AI[id];
+  if (!map) return;
+  if (map.length) {
+    selectedLength = map.length;
+    document.querySelectorAll('[data-length]').forEach(b => b.classList.toggle('active', b.dataset.length === map.length));
+  }
+  if (map.style) {
+    selectedStyle = map.style;
+    document.querySelectorAll('[data-style]').forEach(b => b.classList.toggle('active', b.dataset.style === map.style));
+  }
+  if (typeof _checkReady === 'function') _checkReady();
+}
+
+// 遅延ロード：必要になったプリセットだけ取得する（ページ表示時の一括プリロードを廃止）。
+// WebP が 404／非対応なら PNG へ一度だけフォールバック。
 function _ensureHairCache(id) {
   if (!AR.hairCache[id]) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.onerror = () => {
+      if (!img.dataset.fellBack) {
+        img.dataset.fellBack = '1';
+        img.src = ASSETS_BASE + PRESETS[id].file.replace(/\.webp$/, '.png');
+      }
+    };
     img.src = ASSETS_BASE + PRESETS[id].file;
     AR.hairCache[id] = img;
   }
   return AR.hairCache[id];
 }
-
-// Pre-load all preset images
-(function preload() {
-  for (const id of Object.keys(PRESETS)) _ensureHairCache(id);
-})();
 
 // =====================================================
 // FACE MESH + CAMERA
@@ -1011,6 +1045,7 @@ async function startCamera() {
       AR.faceMesh.onResults(onFaceMeshResults);
     }
 
+    _ensureHairCache(AR.currentPreset.id); // 遅延ロード：現在プリセットを取得
     _resizeCanvas();
     AR.running = true;
     AR.lostFrames = 0;
@@ -1058,12 +1093,19 @@ function onFaceMeshResults(results) {
 // RENDER LOOP
 // =====================================================
 
-const SEND_INTERVAL = 42;   // ~24fps for MediaPipe (keeps mobile smooth)
-const HOLD_FRAMES   = 8;
-const FADE_FRAMES   = 14;
+const SEND_INTERVAL   = 42;   // ~24fps for MediaPipe (keeps mobile smooth)
+const RENDER_INTERVAL = 33;   // 描画も ~30fps に制限（推論側に近づけて発熱・負荷を抑える）
+const HOLD_FRAMES     = 8;
+const FADE_FRAMES     = 14;
+let _lastRender = 0;
 
 function loop() {
   if (!AR.running) return;
+  AR.rafId = requestAnimationFrame(loop);
+
+  const now = performance.now();
+  if (now - _lastRender < RENDER_INTERVAL) return;   // 描画フレームを間引く
+  _lastRender = now;
 
   _resizeCanvas();
   _drawVideo();
@@ -1071,15 +1113,12 @@ function loop() {
 
   // Send to FaceMesh at throttled rate
   if (!AR.processing && AR.faceMesh && video.readyState >= 2) {
-    const now = performance.now();
     if (now - AR.lastSend > SEND_INTERVAL) {
       AR.lastSend = now;
       AR.processing = true;
       AR.faceMesh.send({ image: video }).finally(() => { AR.processing = false; });
     }
   }
-
-  AR.rafId = requestAnimationFrame(loop);
 }
 
 // Draw video mirrored (selfie mode visual)
@@ -1245,19 +1284,22 @@ function _drawLandmarks(lm, w, h) {
 
   _withMirror(() => {
     ctx.save();
+    // 常時描画は軽量な輪郭のみ（顔オーバル＋目・眉・口）
     drawConnectors(ctx, lm, FACEMESH_FACE_OVAL,   { color: 'rgba(232,201,154,0.65)', lineWidth: 1.8 });
-    drawConnectors(ctx, lm, FACEMESH_TESSELATION,  { color: 'rgba(201,169,110,0.12)', lineWidth: 0.7 });
     drawConnectors(ctx, lm, FACEMESH_LIPS,          { color: 'rgba(232,180,140,0.35)', lineWidth: 0.9 });
     drawConnectors(ctx, lm, FACEMESH_LEFT_EYE,      { color: 'rgba(255,255,255,0.50)', lineWidth: 0.9 });
     drawConnectors(ctx, lm, FACEMESH_RIGHT_EYE,     { color: 'rgba(255,255,255,0.50)', lineWidth: 0.9 });
     drawConnectors(ctx, lm, FACEMESH_LEFT_EYEBROW,  { color: 'rgba(201,169,110,0.42)', lineWidth: 0.9 });
     drawConnectors(ctx, lm, FACEMESH_RIGHT_EYEBROW, { color: 'rgba(201,169,110,0.42)', lineWidth: 0.9 });
-    // Dot landmarks
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
-    for (const p of lm) {
-      ctx.beginPath();
-      ctx.arc(p.x * w, p.y * h, 0.7, 0, Math.PI * 2);
-      ctx.fill();
+    // 重いテッセレーション（約2,600本）と全468点ドットは DEBUG 時のみ
+    if (AR.layers.dbg) {
+      drawConnectors(ctx, lm, FACEMESH_TESSELATION, { color: 'rgba(201,169,110,0.12)', lineWidth: 0.7 });
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      for (const p of lm) {
+        ctx.beginPath();
+        ctx.arc(p.x * w, p.y * h, 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.restore();
   });
@@ -1311,12 +1353,15 @@ maskCanvas.width = maskCanvas.height = 512;
 
 let uploadedFile = null, previewObjectURL = null;
 let selectedStyle = '', selectedLength = '', selectedColor = '';
+// マスク生成は顔検出（非同期）を待つ必要があるため Promise で管理
+let maskReady = Promise.resolve();
 
 function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
+  img.onerror = () => { URL.revokeObjectURL(url); showToast('画像を読み込めませんでした（別の形式でお試しください）'); };
   img.onload = () => {
     URL.revokeObjectURL(url);
     const size = Math.min(img.naturalWidth, img.naturalHeight);
@@ -1324,7 +1369,11 @@ function handleFileUpload(e) {
     const c = offscreenCanvas.getContext('2d');
     c.clearRect(0, 0, 512, 512);
     c.drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
+    // 即時フォールバック（固定矩形）→ 顔検出できたら追従マスクへ差し替え
     _genMask();
+    maskReady = _detectFace(offscreenCanvas)
+      .then(lm => { if (lm) _genMaskFromLandmarks(lm); })
+      .catch(() => {});
     offscreenCanvas.toBlob(blob => {
       uploadedFile = blob;
       if (previewObjectURL) URL.revokeObjectURL(previewObjectURL);
@@ -1342,8 +1391,10 @@ function handleFileUpload(e) {
   img.src = url;
 }
 
+// フォールバック：顔検出に失敗した場合の固定矩形マスク（従来挙動）
 function _genMask() {
   const c = maskCanvas.getContext('2d'), W = 512, H = 512;
+  c.globalCompositeOperation = 'source-over';
   c.fillStyle = 'rgba(255,255,255,1)';
   c.fillRect(0, 0, W, H);
   c.clearRect(0, 0, W, H * 0.38);
@@ -1352,6 +1403,94 @@ function _genMask() {
   g.addColorStop(1, 'rgba(255,255,255,1)');
   c.fillStyle = g;
   c.fillRect(0, H * 0.35, W, H * 0.10);
+}
+
+// 静止画（アップロード写真）用の FaceMesh 検出。ライブ用 AR.faceMesh とは
+// 別インスタンスを遅延生成し、1枚だけ推論して landmarks を返す。
+let _stillMesh = null;
+function _detectFace(imageEl) {
+  return new Promise(resolve => {
+    if (typeof FaceMesh === 'undefined') { resolve(null); return; }
+    try {
+      if (!_stillMesh) {
+        _stillMesh = new FaceMesh({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
+        _stillMesh.setOptions({ selfieMode: false, maxNumFaces: 1, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      }
+      let done = false;
+      const finish = v => { if (!done) { done = true; resolve(v); } };
+      _stillMesh.onResults(r => finish(r.multiFaceLandmarks?.[0] ?? null));
+      setTimeout(() => finish(null), 6000); // WASMロード遅延・非検出時の保険
+      Promise.resolve(_stillMesh.send({ image: imageEl })).catch(() => finish(null));
+    } catch (e) { resolve(null); }
+  });
+}
+
+// 顔ランドマークから「髪領域＝再生成 / 顔＝保持」マスクを動的生成する。
+// マスク規約（OpenAI images/edits）: 透過=再生成 / 不透明白=保持。
+// 顔の位置(cx,cy)・回転(roll)・サイズ(faceW,faceH)に追従させることで、
+// 固定矩形で起きていた「お面貼りつき」を解消する。
+function _genMaskFromLandmarks(lm) {
+  const W = 512, H = 512;
+  const need = [234, 454, 10, 152];
+  if (need.some(i => !lm[i])) { _genMask(); return; }
+  const c = maskCanvas.getContext('2d');
+  const P = i => ({ x: lm[i].x * W, y: lm[i].y * H });
+  const lt = P(234), rt = P(454), fh = P(10), ch = P(152); // 左こめかみ/右こめかみ/額頂点/顎先
+
+  const cx = (lt.x + rt.x) / 2, cy = (lt.y + rt.y) / 2;    // こめかみ中点＝回転中心
+  const faceW = Math.max(40, Math.hypot(rt.x - lt.x, rt.y - lt.y));
+  const faceH = Math.max(faceW * 1.1, Math.hypot(ch.x - fh.x, ch.y - fh.y));
+  const roll = Math.atan2(rt.y - lt.y, rt.x - lt.x);       // 顔の傾き（ロール）
+  const cosR = Math.cos(roll), sinR = Math.sin(roll);
+  // 点を「顔ローカル座標」の縦位置(y)へ射影（回転を打ち消す）
+  const localY = p => -(p.x - cx) * sinR + (p.y - cy) * cosR;
+  const fhY = localY(fh);   // 額頂点（中点より上＝負寄り）
+  const chY = localY(ch);   // 顎先（下＝正）
+
+  const clearBottom = fhY + faceH * 0.12;   // 前髪が額上部に少しかかる位置まで再生成
+  const feather     = faceH * 0.12;         // 生え際のぼかし幅
+  const halfW       = faceW * 1.18;         // 頭部横幅（サイドの髪も含む）
+
+  c.globalCompositeOperation = 'source-over';
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = '#fff';
+  c.fillRect(0, 0, W, H);                    // 全体を保持
+
+  // ── 髪領域を透過（再生成）に punch ──
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(roll);
+  c.globalCompositeOperation = 'destination-out';
+  // 生え際より上をベタ抜き
+  c.fillStyle = 'rgba(0,0,0,1)';
+  c.fillRect(-halfW, -H * 1.5, halfW * 2, (clearBottom - feather) - (-H * 1.5));
+  // 生え際のぼかし帯
+  const g = c.createLinearGradient(0, clearBottom - feather, 0, clearBottom);
+  g.addColorStop(0, 'rgba(0,0,0,1)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g;
+  c.fillRect(-halfW, clearBottom - feather, halfW * 2, feather);
+  // 頬の外側（ロング・サイドの髪用）を顎下まで抜く
+  const sideBottom = chY + faceH * 0.12;
+  const sideInner  = faceW * 0.52;
+  c.fillStyle = 'rgba(0,0,0,1)';
+  c.fillRect(-halfW, clearBottom, halfW - sideInner, sideBottom - clearBottom);   // 左
+  c.fillRect(sideInner, clearBottom, halfW - sideInner, sideBottom - clearBottom); // 右
+  c.restore();
+
+  // ── 顔の中核（目・鼻・口・顎＝本人性）を不透明に戻して保持 ──
+  const protectTop = fhY + faceH * 0.30;    // 眉あたりから
+  const protectBot = chY + faceH * 0.04;    // 顎先まで
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(roll);
+  c.globalCompositeOperation = 'source-over';
+  c.fillStyle = '#fff';
+  c.beginPath();
+  c.ellipse(0, (protectTop + protectBot) / 2, faceW * 0.50, (protectBot - protectTop) / 2, 0, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+  c.globalCompositeOperation = 'source-over';
 }
 
 function selectLength(btn) {
@@ -1381,6 +1520,7 @@ async function generate() {
   document.getElementById('downloadBtn').classList.remove('visible');
 
   try {
+    await maskReady; // 顔追従マスクの生成完了を待つ（未完なら固定マスクで続行）
     const maskBlob = await new Promise(r => maskCanvas.toBlob(r, 'image/png'));
     const parts = [selectedLength, selectedStyle, selectedColor, document.getElementById('customPrompt').value.trim()].filter(Boolean);
     const fd = new FormData();
@@ -1405,8 +1545,11 @@ async function generate() {
     if (data.error) throw new Error(data.error);
 
     const imgSrc = `data:image/png;base64,${data.image_base64}`;
-    const ra = document.getElementById('resultArea');
-    ra.innerHTML = `<img src="${imgSrc}" alt="result"><div class="loading-overlay" id="loadingOverlay"></div>`;
+    // innerHTML 全置換はローディング要素を破壊するため、永続 <img> を更新するだけにする
+    const resultImg = document.getElementById('resultImg');
+    resultImg.src = imgSrc;
+    resultImg.style.display = '';
+    document.getElementById('resultPlaceholder').style.display = 'none';
     const dl = document.getElementById('downloadBtn');
     dl.classList.add('visible'); dl.href = imgSrc; dl.download = 'hair-sim-result.png';
     if(window.histSave){histSave({title:'ヘアシミュレーション',summary:'スタイル: '+(selectedStyle||'-')+' / 長さ: '+(selectedLength||'-'),content:'ヘアシミュレーションを実行しました。\nスタイル: '+(selectedStyle||'-')+'\n長さ: '+(selectedLength||'-'),meta:''});setTimeout(histLoad,1000);}
@@ -1493,53 +1636,5 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
 })();
 </script>
 <script src="/tomu-system/tomu-login.js"></script>
-
-<!-- ▼▼▼ LOCAL TEST MOCK — ローカル実機テスト用 (本番では不要) ▼▼▼ -->
-<script>
-(function () {
-  const host = location.hostname;
-  const isLocal = host === 'localhost'
-    || host === '127.0.0.1'
-    || /^192\.168\./.test(host)
-    || /^10\./.test(host)
-    || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
-
-  if (!isLocal) return;
-
-  // tomu-login.js の認証を完全スキップ。ローカルIPからのアクセス時のみ有効。
-  window.TomuAuth = {
-    getEmail:    () => 'inverted.triangle.leef@gmail.com',
-    getPlan:     () => 'standard',
-    isLoggedIn:  () => true,
-    showOverlay: () => { console.log('[LOCAL MOCK] showOverlay() は無効化されています'); },
-  };
-
-  // 認証オーバーレイが表示されていたら非表示に
-  const hideOverlay = () => {
-    document.querySelectorAll(
-      '[id*="auth"],[id*="login"],[id*="overlay"],[class*="auth"],[class*="login"],[class*="overlay"]'
-    ).forEach(el => {
-      if (el.style.display !== 'none' && el.style.display !== '' ) return;
-      el.style.display = 'none';
-    });
-  };
-  document.addEventListener('DOMContentLoaded', hideOverlay);
-  setTimeout(hideOverlay, 600);
-
-  const badge = document.createElement('div');
-  badge.textContent = '🔓 LOCAL MOCK';
-  Object.assign(badge.style, {
-    position: 'fixed', bottom: '8px', right: '8px', zIndex: '9999',
-    background: 'rgba(201,169,110,0.18)', color: '#c9a96e',
-    fontFamily: 'DM Mono, monospace', fontSize: '9px', letterSpacing: '2px',
-    padding: '4px 8px', borderRadius: '2px', border: '1px solid rgba(201,169,110,0.35)',
-    pointerEvents: 'none',
-  });
-  document.body.appendChild(badge);
-
-  console.log('[LOCAL MOCK] TomuAuth スキップ済み — email:', window.TomuAuth.getEmail());
-})();
-</script>
-<!-- ▲▲▲ LOCAL TEST MOCK END ▲▲▲ -->
 </body>
 </html>
