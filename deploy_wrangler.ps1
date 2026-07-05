@@ -15,6 +15,14 @@ if (-not $Token) {
 
 $env:CLOUDFLARE_API_TOKEN = $Token
 
+# --- デプロイ前ガード: テスト用モック／認証バイパスの混入検査 ---
+Write-Host "Checking for test-only auth mocks ..."
+node "$PSScriptRoot\scripts\check-no-test-mock.mjs"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Aborting deploy: test mock detected. 上記を除去してから再実行してください。" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "Deploying orange-sound-354b with wrangler ..."
 
 npx wrangler deploy

@@ -1,0 +1,17 @@
+#!/bin/sh
+# =============================================================================
+# pre-commit — テスト用モック／認証バイパスの混入防止ガード（主防壁）
+# -----------------------------------------------------------------------------
+# フロントは GitHub Pages 直配信（git push = 即公開）のため、commit 前に
+# scripts/check-no-test-mock.mjs を実行して LOCAL TEST MOCK 等を検出する。
+#
+# 有効化（clone 直後に1回）: git config core.hooksPath .githooks
+#
+# 注意: `git commit --no-verify` はこのガードを素通りする。緊急時以外は使わない
+# こと（使った場合も GitHub Actions 側の保険ガードが push 後に検知する）。
+# =============================================================================
+node "$(git rev-parse --show-toplevel)/scripts/check-no-test-mock.mjs" || {
+  echo ""
+  echo "commit を中断しました。テスト用モックを除去してから再度 commit してください。"
+  exit 1
+}

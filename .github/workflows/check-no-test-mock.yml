@@ -1,0 +1,21 @@
+# 保険ガード（事後アラート）: push / PR 時にテスト用モック混入を検知する。
+# GitHub Pages はブランチ直配信のため公開自体は止められないが、
+# 混入した場合に CI 失敗（+ GitHub 標準のメール通知）で即座に気付ける。
+# 主防壁はローカルの pre-commit hook（.githooks/pre-commit）。
+name: check-no-test-mock
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: テスト用モック混入検査
+        run: node scripts/check-no-test-mock.mjs

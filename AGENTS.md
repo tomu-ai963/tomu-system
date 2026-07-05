@@ -56,3 +56,33 @@
 2. 各タスク完了後にコミットする（例: `feat: A-6 ストリーミング対応`）
 3. デプロイは手動で行うため、コード変更のみでOK
 4. 不明点があれば実装を止めてコメントに残す
+
+---
+
+## 開発環境セットアップ（必須・clone直後に1回）
+
+```sh
+git config core.hooksPath .githooks
+```
+
+これで pre-commit hook が有効になり、テスト用モック／認証バイパス
+（LOCAL TEST MOCK・`window.TomuAuth = {...}` の差し替え等）の混入を
+commit 時点でブロックする。
+
+## テストモック混入ガード（3層）
+
+フロントは GitHub Pages 直配信（git push = 即公開）のため、認証バイパスを
+含むテスト用コードが本番に混入した事故（P0-1, 2026-07-06修正）の再発防止
+として以下の3層で検査している。検査本体は `scripts/check-no-test-mock.mjs`。
+
+| 層 | タイミング | 役割 |
+| --- | --- | --- |
+| `.githooks/pre-commit` | commit 時 | 主防壁。push 前にブロック |
+| `.github/workflows/check-no-test-mock.yml` | push / PR 時 | 保険。混入時に CI 失敗で即検知（公開自体は止まらない） |
+| `deploy_wrangler.ps1` | Worker デプロイ時 | Worker 側の最終ゲート |
+
+- ローカルテスト用の認証モックは **アプリの index.html に直接書かないこと**。
+  必要なら未追跡の別ファイル（.gitignore 対象）に置いて手元でだけ読み込む。
+- `git commit --no-verify` はガードを素通りするため緊急時以外禁止
+  （その場合も Actions が push 後に検知する）。
+- 意図的な例外は該当行末に `mock-allow` を付ける（原則使わない）。
