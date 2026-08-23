@@ -410,7 +410,26 @@ var MAGIC_LINK_TTL_SECONDS = 15 * 60;
 var SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 var DEFAULT_REDIRECT_URL = "https://tomu-ai963.github.io/tomu-system/";
 
-var AUTH_RATE_LIMITS = { magic: 5, magicip: 20 };
+var AUTH_RATE_LIMITS = { magic: 5, magicip: 20, oauthreg: 10, oauthauth: 20 };
+
+// トークン照合用の定数時間比較（長さの一致だけは早期に判定する）
+function timingSafeEqual(a, b) {
+  var sa = String(a == null ? "" : a);
+  var sb = String(b == null ? "" : b);
+  if (sa.length !== sb.length) return false;
+  var diff = 0;
+  for (var i = 0; i < sa.length; i++) diff |= sa.charCodeAt(i) ^ sb.charCodeAt(i);
+  return diff === 0;
+}
+
+// 現在の MCP_TOKEN の指紋。発行済み OAuth トークンに埋め、
+// MCP_TOKEN を差し替えたら過去のトークンが一括失効するようにする
+async function mcpTokenFingerprint(env) {
+  if (!env.MCP_TOKEN) return "";
+  var digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("mcp-token-fp-v1:" + env.MCP_TOKEN));
+  return Array.from(new Uint8Array(digest)).slice(0, 8)
+    .map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+}
 
 function rateBucket() {
   // "2026-07-02T07:23:45.000Z" → "2026-07-02-07"（UTC時単位のバケット）
@@ -1217,9 +1236,10 @@ async function handleMcp(request, env) {
   var bearerToken = /^Bearer\s+/i.test(authHeader) ? authHeader.replace(/^Bearer\s+/i, "") : "";
   var token = request.headers.get("MCP-Token") || mcpUrl.searchParams.get("token") || bearerToken || "";
 
-  var authorized = !!env.MCP_TOKEN && token === env.MCP_TOKEN;
+  var authorized = !!env.MCP_TOKEN && timingSafeEqual(token, env.MCP_TOKEN);
   if (!authorized && bearerToken) {
-    authorized = !!(await oauthGetJson(env, "oauth:token:" + bearerToken));
+    var granted = await oauthGetJson(env, "oauth:token:" + bearerToken);
+    authorized = !!granted && granted.mcp_fp === (await mcpTokenFingerprint(env));
   }
   if (!authorized) {
     var prm = oauthIssuer(request) + "/.well-known/oauth-protected-resource";
@@ -1327,7 +1347,23 @@ function handleOauthProtectedResource(request, env, corsH) {
   }, 200, corsH);
 }
 
+// 認可コードの送り先。https と loopback のみ許可し、平文 http や javascript:/data: を弾く
+function isAllowedRedirectUri(raw) {
+  if (typeof raw !== "string" || raw.length > 512) return false;
+  var u;
+  try { u = new URL(raw); } catch (e) { return false; }
+  if (u.hash) return false;
+  if (u.protocol === "https:") return true;
+  return u.protocol === "http:" &&
+    (u.hostname === "127.0.0.1" || u.hostname === "localhost" || u.hostname === "[::1]");
+}
+
 async function handleOauthRegister(request, env, corsH) {
+  // 未認証で叩けるので IP 単位で登録数を絞る（KV への無制限書き込み防止）
+  if (!(await checkAuthRateLimit(env, "oauthreg", request.headers.get("CF-Connecting-IP") || ""))) {
+    return jsonRes({ error: "rate_limited" }, 429, corsH);
+  }
+
   var body;
   try {
     body = await request.json();
@@ -1336,8 +1372,11 @@ async function handleOauthRegister(request, env, corsH) {
   }
 
   var redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
-  if (redirectUris.length === 0) {
-    return jsonRes({ error: "invalid_redirect_uri", error_description: "redirect_uris is required" }, 400, corsH);
+  if (redirectUris.length === 0 || redirectUris.length > 5) {
+    return jsonRes({ error: "invalid_redirect_uri", error_description: "redirect_uris is required (max 5)" }, 400, corsH);
+  }
+  if (!redirectUris.every(isAllowedRedirectUri)) {
+    return jsonRes({ error: "invalid_redirect_uri", error_description: "redirect_uri must be https or loopback, without fragment" }, 400, corsH);
   }
 
   var clientId = randomToken(16);
@@ -1361,7 +1400,7 @@ async function handleOauthRegister(request, env, corsH) {
 
 var OAUTH_PARAM_KEYS = ["client_id", "redirect_uri", "state", "code_challenge", "code_challenge_method", "response_type", "scope"];
 
-function oauthAuthorizeForm(params, error) {
+function oauthAuthorizeForm(params, error, client) {
   var hidden = OAUTH_PARAM_KEYS.map(function (k) {
     return params[k] ? '<input type="hidden" name="' + k + '" value="' + escapeHtml(params[k]) + '">' : "";
   }).join("\n");
@@ -1376,10 +1415,13 @@ p{font-size:14px;color:#555;line-height:1.6;}
 input[type=password]{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin:12px 0;}
 button{width:100%;padding:12px;border:none;border-radius:8px;background:#2d2a26;color:#fff;font-size:15px;cursor:pointer;}
 .err{color:#c0392b;font-size:13px;}
+.meta{font-size:13px;color:#333;background:#f2efe9;border-radius:8px;padding:8px 10px;word-break:break-all;}
 </style></head><body>
 <div class="card">
 <h1>とむSYSTEM への連携を許可しますか?</h1>
-<p>外部アプリ(MCPクライアント)が、あなたのとむSYSTEMへの接続をリクエストしています。連携を許可するには、アクセストークンを入力してください。</p>
+<p><strong>${escapeHtml((client && client.client_name) || "不明なクライアント")}</strong> が、あなたのとむSYSTEMへの接続をリクエストしています。</p>
+<p class="meta">認可コードの送信先: <code>${escapeHtml((function () { try { return new URL(params.redirect_uri).origin; } catch (e) { return params.redirect_uri || "(不明)"; } })())}</code></p>
+<p>心当たりのないアプリ名・送信先であれば、<strong>トークンを入力せずにこのページを閉じてください。</strong>入力するとこのアプリにあなたのとむSYSTEMへのアクセスを許可することになります。</p>
 ${error ? '<p class="err">' + escapeHtml(error) + '</p>' : ""}
 <form method="POST">
 ${hidden}
@@ -1416,12 +1458,22 @@ async function handleOauthAuthorize(request, env) {
     return jsonRes({ error: "invalid_client", error_description: "Unknown client_id or redirect_uri" }, 400, {});
   }
 
-  if (!isPost) {
-    return htmlRes(oauthAuthorizeForm(params, null));
+  // メタデータで S256 のみ広告しているので、plain や PKCE 無しへの格下げを拒否する
+  if (!params.code_challenge || params.code_challenge_method !== "S256") {
+    return jsonRes({ error: "invalid_request", error_description: "code_challenge with code_challenge_method=S256 is required" }, 400, {});
   }
 
-  if (!env.MCP_TOKEN || enteredToken !== env.MCP_TOKEN) {
-    return htmlRes(oauthAuthorizeForm(params, "トークンが正しくありません。もう一度お試しください。"));
+  if (!isPost) {
+    return htmlRes(oauthAuthorizeForm(params, null, client));
+  }
+
+  // 同意画面は MCP_TOKEN を外部から試せる唯一の口なので、IP 単位で試行を絞る
+  if (!(await checkAuthRateLimit(env, "oauthauth", request.headers.get("CF-Connecting-IP") || ""))) {
+    return htmlRes(oauthAuthorizeForm(params, "試行回数が上限に達しました。しばらく待ってからやり直してください。", client));
+  }
+
+  if (!env.MCP_TOKEN || !timingSafeEqual(enteredToken, env.MCP_TOKEN)) {
+    return htmlRes(oauthAuthorizeForm(params, "トークンが正しくありません。もう一度お試しください。", client));
   }
 
   var code = randomToken(32);
@@ -1429,7 +1481,7 @@ async function handleOauthAuthorize(request, env) {
     client_id: params.client_id,
     redirect_uri: params.redirect_uri,
     code_challenge: params.code_challenge,
-    code_challenge_method: params.code_challenge_method || "plain",
+    code_challenge_method: "S256",
   }), { expirationTtl: 600 });
 
   var redirect = new URL(params.redirect_uri);
@@ -1444,7 +1496,7 @@ var OAUTH_REFRESH_TTL = 60 * 60 * 24 * 365;
 async function oauthIssueTokens(env, clientId) {
   var accessToken = randomToken(32);
   var refreshToken = randomToken(32);
-  var rec = JSON.stringify({ client_id: clientId, issued_at: Date.now() });
+  var rec = JSON.stringify({ client_id: clientId, issued_at: Date.now(), mcp_fp: await mcpTokenFingerprint(env) });
   await env.SUBSCRIPTIONS.put("oauth:token:" + accessToken, rec, { expirationTtl: OAUTH_ACCESS_TTL });
   await env.SUBSCRIPTIONS.put("oauth:refresh:" + refreshToken, rec, { expirationTtl: OAUTH_REFRESH_TTL });
   return {
@@ -1479,6 +1531,10 @@ async function handleOauthToken(request, env, corsH) {
     if (data.client_id && data.client_id !== refreshRec.client_id) {
       return jsonRes({ error: "invalid_grant", error_description: "client_id mismatch" }, 400, corsH);
     }
+    if (refreshRec.mcp_fp !== (await mcpTokenFingerprint(env))) {
+      await env.SUBSCRIPTIONS.delete(refreshKey);
+      return jsonRes({ error: "invalid_grant", error_description: "Token revoked" }, 400, corsH);
+    }
     await env.SUBSCRIPTIONS.delete(refreshKey);
     return jsonRes(await oauthIssueTokens(env, refreshRec.client_id), 200, corsH);
   }
@@ -1498,14 +1554,8 @@ async function handleOauthToken(request, env, corsH) {
     return jsonRes({ error: "invalid_grant", error_description: "client_id/redirect_uri mismatch" }, 400, corsH);
   }
 
-  if (stored.code_challenge) {
-    var verifier = data.code_verifier || "";
-    var expected = stored.code_challenge_method === "S256"
-      ? await sha256Base64Url(verifier)
-      : verifier;
-    if (expected !== stored.code_challenge) {
-      return jsonRes({ error: "invalid_grant", error_description: "PKCE verification failed" }, 400, corsH);
-    }
+  if (!stored.code_challenge || (await sha256Base64Url(data.code_verifier || "")) !== stored.code_challenge) {
+    return jsonRes({ error: "invalid_grant", error_description: "PKCE verification failed" }, 400, corsH);
   }
 
   return jsonRes(await oauthIssueTokens(env, stored.client_id), 200, corsH);
