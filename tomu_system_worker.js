@@ -431,6 +431,17 @@ async function mcpTokenFingerprint(env) {
     .map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
 }
 
+// 発行時に記録した指紋が現行 MCP_TOKEN のものと一致するか。
+// 記録が無い / 空、または現行 MCP_TOKEN が未設定なら、比較するまでもなく不一致として扱う。
+// （"" === "" で素通りしないよう、両側を独立に falsy 判定する）
+async function mcpFingerprintMatches(env, rec) {
+  var recorded = rec && rec.mcp_fp;
+  if (!recorded) return false;
+  var current = await mcpTokenFingerprint(env);
+  if (!current) return false;
+  return recorded === current;
+}
+
 function rateBucket() {
   // "2026-07-02T07:23:45.000Z" → "2026-07-02-07"（UTC時単位のバケット）
   return new Date().toISOString().slice(0, 13).replace("T", "-");
@@ -1239,7 +1250,7 @@ async function handleMcp(request, env) {
   var authorized = !!env.MCP_TOKEN && timingSafeEqual(token, env.MCP_TOKEN);
   if (!authorized && bearerToken) {
     var granted = await oauthGetJson(env, "oauth:token:" + bearerToken);
-    authorized = !!granted && granted.mcp_fp === (await mcpTokenFingerprint(env));
+    authorized = await mcpFingerprintMatches(env, granted);
   }
   if (!authorized) {
     var prm = oauthIssuer(request) + "/.well-known/oauth-protected-resource";
@@ -1494,9 +1505,12 @@ var OAUTH_ACCESS_TTL = 60 * 60 * 24 * 90;
 var OAUTH_REFRESH_TTL = 60 * 60 * 24 * 365;
 
 async function oauthIssueTokens(env, clientId) {
+  // MCP_TOKEN 未設定のまま発行すると mcp_fp が空のレコードができるので、その手前で止める
+  var fp = await mcpTokenFingerprint(env);
+  if (!fp) return null;
   var accessToken = randomToken(32);
   var refreshToken = randomToken(32);
-  var rec = JSON.stringify({ client_id: clientId, issued_at: Date.now(), mcp_fp: await mcpTokenFingerprint(env) });
+  var rec = JSON.stringify({ client_id: clientId, issued_at: Date.now(), mcp_fp: fp });
   await env.SUBSCRIPTIONS.put("oauth:token:" + accessToken, rec, { expirationTtl: OAUTH_ACCESS_TTL });
   await env.SUBSCRIPTIONS.put("oauth:refresh:" + refreshToken, rec, { expirationTtl: OAUTH_REFRESH_TTL });
   return {
@@ -1531,12 +1545,16 @@ async function handleOauthToken(request, env, corsH) {
     if (data.client_id && data.client_id !== refreshRec.client_id) {
       return jsonRes({ error: "invalid_grant", error_description: "client_id mismatch" }, 400, corsH);
     }
-    if (refreshRec.mcp_fp !== (await mcpTokenFingerprint(env))) {
+    if (!(await mcpFingerprintMatches(env, refreshRec))) {
       await env.SUBSCRIPTIONS.delete(refreshKey);
       return jsonRes({ error: "invalid_grant", error_description: "Token revoked" }, 400, corsH);
     }
     await env.SUBSCRIPTIONS.delete(refreshKey);
-    return jsonRes(await oauthIssueTokens(env, refreshRec.client_id), 200, corsH);
+    var refreshed = await oauthIssueTokens(env, refreshRec.client_id);
+    if (!refreshed) {
+      return jsonRes({ error: "temporarily_unavailable", error_description: "Server is not configured for MCP access" }, 503, corsH);
+    }
+    return jsonRes(refreshed, 200, corsH);
   }
 
   if (data.grant_type !== "authorization_code") {
@@ -1558,7 +1576,11 @@ async function handleOauthToken(request, env, corsH) {
     return jsonRes({ error: "invalid_grant", error_description: "PKCE verification failed" }, 400, corsH);
   }
 
-  return jsonRes(await oauthIssueTokens(env, stored.client_id), 200, corsH);
+  var issued = await oauthIssueTokens(env, stored.client_id);
+  if (!issued) {
+    return jsonRes({ error: "temporarily_unavailable", error_description: "Server is not configured for MCP access" }, 503, corsH);
+  }
+  return jsonRes(issued, 200, corsH);
 }
 
 // ===== メインハンドラー =====
