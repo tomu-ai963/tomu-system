@@ -26,6 +26,23 @@ function getCorsHeaders(origin) {
   };
 }
 
+// OAuth ディスカバリと /mcp は claude.ai 等の任意オリジンから叩かれるため CORS を全許可にする
+var OAUTH_CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, MCP-Token, MCP-Protocol-Version",
+  "Access-Control-Max-Age": "86400",
+};
+
+function isOauthOrMcpPath(pathname) {
+  return pathname === "/mcp" ||
+    pathname === "/register" ||
+    pathname === "/oauth/authorize" ||
+    pathname === "/oauth/token" ||
+    pathname === "/.well-known/openid-configuration" ||
+    pathname.indexOf("/.well-known/oauth-") === 0;
+}
+
 var ADMIN_EMAILS = ["inverted.triangle.leef@gmail.com"];
 function isAdmin(email) {
   return !!email && ADMIN_EMAILS.indexOf(email.toLowerCase()) !== -1;
@@ -1184,13 +1201,38 @@ async function callMcpTool(name, args, env) {
 }
 
 async function handleMcp(request, env) {
+  // Streamable HTTP: GET リクエストにはサーバー情報を返す
+  if (request.method === "GET") {
+    return new Response(JSON.stringify({
+      name: "tomu-system",
+      version: "1.0.0",
+      protocolVersion: "2024-11-05",
+    }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   var mcpUrl = new URL(request.url);
-  var token = request.headers.get("MCP-Token") || mcpUrl.searchParams.get("token") || "";
-  if (!env.MCP_TOKEN || token !== env.MCP_TOKEN) {
+  var authHeader = request.headers.get("Authorization") || "";
+  var bearerToken = /^Bearer\s+/i.test(authHeader) ? authHeader.replace(/^Bearer\s+/i, "") : "";
+  var token = request.headers.get("MCP-Token") || mcpUrl.searchParams.get("token") || bearerToken || "";
+
+  var authorized = !!env.MCP_TOKEN && token === env.MCP_TOKEN;
+  if (!authorized && bearerToken) {
+    authorized = !!(await oauthGetJson(env, "oauth:token:" + bearerToken));
+  }
+  if (!authorized) {
+    var prm = oauthIssuer(request) + "/.well-known/oauth-protected-resource";
     return new Response(JSON.stringify({
       jsonrpc: "2.0", id: null,
       error: { code: -32001, message: "Unauthorized" }
-    }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }), {
+      status: 401,
+      headers: Object.assign({}, OAUTH_CORS, {
+        "Content-Type": "application/json",
+        "WWW-Authenticate": 'Bearer resource_metadata="' + prm + '"',
+      }),
+    });
   }
 
   var body;
@@ -1206,7 +1248,7 @@ async function handleMcp(request, env) {
   var rpcId = body.id !== undefined ? body.id : null;
   var method = body.method;
   var params = body.params || {};
-  var h = { "Content-Type": "application/json" };
+  var h = Object.assign({}, OAUTH_CORS, { "Content-Type": "application/json" });
 
   function ok(result) {
     return new Response(JSON.stringify({ jsonrpc: "2.0", id: rpcId, result: result }), { status: 200, headers: h });
@@ -1237,6 +1279,238 @@ async function handleMcp(request, env) {
   return rpcErr(-32601, "Method not found: " + method);
 }
 
+// ===== OAuth2 / PKCE (Claude.ai Webコネクタ向け、既存の ?token= 認証と並存) =====
+
+function oauthIssuer(request) {
+  return new URL(request.url).origin;
+}
+
+function randomToken(bytes) {
+  var arr = new Uint8Array(bytes || 32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+}
+
+async function sha256Base64Url(input) {
+  var digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  var bytes = new Uint8Array(digest);
+  var bin = "";
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function oauthGetJson(env, key) {
+  var raw = await env.SUBSCRIPTIONS.get(key);
+  return raw ? JSON.parse(raw) : null;
+}
+
+function handleOauthMetadata(request, env, corsH) {
+  var issuer = oauthIssuer(request);
+  return jsonRes({
+    issuer: issuer,
+    authorization_endpoint: issuer + "/oauth/authorize",
+    token_endpoint: issuer + "/oauth/token",
+    registration_endpoint: issuer + "/register",
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code", "refresh_token"],
+    code_challenge_methods_supported: ["S256"],
+    token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+    scopes_supported: ["mcp"],
+  }, 200, corsH);
+}
+
+function handleOauthProtectedResource(request, env, corsH) {
+  var issuer = oauthIssuer(request);
+  return jsonRes({
+    resource: issuer + "/mcp",
+    authorization_servers: [issuer],
+  }, 200, corsH);
+}
+
+async function handleOauthRegister(request, env, corsH) {
+  var body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return jsonRes({ error: "invalid_client_metadata", error_description: "Invalid JSON" }, 400, corsH);
+  }
+
+  var redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
+  if (redirectUris.length === 0) {
+    return jsonRes({ error: "invalid_redirect_uri", error_description: "redirect_uris is required" }, 400, corsH);
+  }
+
+  var clientId = randomToken(16);
+  var client = {
+    client_id: clientId,
+    client_name: body.client_name || "MCP Client",
+    redirect_uris: redirectUris,
+    created_at: Date.now(),
+  };
+  await env.SUBSCRIPTIONS.put("oauth:client:" + clientId, JSON.stringify(client), { expirationTtl: 60 * 60 * 24 * 365 });
+
+  return jsonRes({
+    client_id: clientId,
+    client_name: client.client_name,
+    redirect_uris: redirectUris,
+    token_endpoint_auth_method: "none",
+    grant_types: ["authorization_code", "refresh_token"],
+    response_types: ["code"],
+  }, 201, corsH);
+}
+
+var OAUTH_PARAM_KEYS = ["client_id", "redirect_uri", "state", "code_challenge", "code_challenge_method", "response_type", "scope"];
+
+function oauthAuthorizeForm(params, error) {
+  var hidden = OAUTH_PARAM_KEYS.map(function (k) {
+    return params[k] ? '<input type="hidden" name="' + k + '" value="' + escapeHtml(params[k]) + '">' : "";
+  }).join("\n");
+  return `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>とむSYSTEM - 連携の許可</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f5f2;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+.card{background:#fff;border-radius:16px;padding:32px;max-width:380px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+h1{font-size:18px;margin:0 0 8px;}
+p{font-size:14px;color:#555;line-height:1.6;}
+input[type=password]{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin:12px 0;}
+button{width:100%;padding:12px;border:none;border-radius:8px;background:#2d2a26;color:#fff;font-size:15px;cursor:pointer;}
+.err{color:#c0392b;font-size:13px;}
+</style></head><body>
+<div class="card">
+<h1>とむSYSTEM への連携を許可しますか?</h1>
+<p>外部アプリ(MCPクライアント)が、あなたのとむSYSTEMへの接続をリクエストしています。連携を許可するには、アクセストークンを入力してください。</p>
+${error ? '<p class="err">' + escapeHtml(error) + '</p>' : ""}
+<form method="POST">
+${hidden}
+<input type="password" name="mcp_token" placeholder="アクセストークン" required autofocus>
+<button type="submit">許可する</button>
+</form>
+</div>
+</body></html>`;
+}
+
+async function handleOauthAuthorize(request, env) {
+  var url = new URL(request.url);
+  var isPost = request.method === "POST";
+  var params = {};
+  var enteredToken = "";
+
+  if (isPost) {
+    var form = await request.formData();
+    OAUTH_PARAM_KEYS.forEach(function (k) { params[k] = form.get(k) || ""; });
+    enteredToken = form.get("mcp_token") || "";
+  } else {
+    OAUTH_PARAM_KEYS.forEach(function (k) { params[k] = url.searchParams.get(k) || ""; });
+  }
+
+  if (params.response_type && params.response_type !== "code") {
+    return jsonRes({ error: "unsupported_response_type" }, 400, {});
+  }
+  if (!params.client_id || !params.redirect_uri) {
+    return jsonRes({ error: "invalid_request", error_description: "client_id and redirect_uri are required" }, 400, {});
+  }
+
+  var client = await oauthGetJson(env, "oauth:client:" + params.client_id);
+  if (!client || client.redirect_uris.indexOf(params.redirect_uri) === -1) {
+    return jsonRes({ error: "invalid_client", error_description: "Unknown client_id or redirect_uri" }, 400, {});
+  }
+
+  if (!isPost) {
+    return htmlRes(oauthAuthorizeForm(params, null));
+  }
+
+  if (!env.MCP_TOKEN || enteredToken !== env.MCP_TOKEN) {
+    return htmlRes(oauthAuthorizeForm(params, "トークンが正しくありません。もう一度お試しください。"));
+  }
+
+  var code = randomToken(32);
+  await env.SUBSCRIPTIONS.put("oauth:code:" + code, JSON.stringify({
+    client_id: params.client_id,
+    redirect_uri: params.redirect_uri,
+    code_challenge: params.code_challenge,
+    code_challenge_method: params.code_challenge_method || "plain",
+  }), { expirationTtl: 600 });
+
+  var redirect = new URL(params.redirect_uri);
+  redirect.searchParams.set("code", code);
+  if (params.state) redirect.searchParams.set("state", params.state);
+  return new Response(null, { status: 302, headers: { "Location": redirect.toString() } });
+}
+
+var OAUTH_ACCESS_TTL = 60 * 60 * 24 * 90;
+var OAUTH_REFRESH_TTL = 60 * 60 * 24 * 365;
+
+async function oauthIssueTokens(env, clientId) {
+  var accessToken = randomToken(32);
+  var refreshToken = randomToken(32);
+  var rec = JSON.stringify({ client_id: clientId, issued_at: Date.now() });
+  await env.SUBSCRIPTIONS.put("oauth:token:" + accessToken, rec, { expirationTtl: OAUTH_ACCESS_TTL });
+  await env.SUBSCRIPTIONS.put("oauth:refresh:" + refreshToken, rec, { expirationTtl: OAUTH_REFRESH_TTL });
+  return {
+    access_token: accessToken,
+    token_type: "Bearer",
+    expires_in: OAUTH_ACCESS_TTL,
+    refresh_token: refreshToken,
+    scope: "mcp",
+  };
+}
+
+async function handleOauthToken(request, env, corsH) {
+  var contentType = request.headers.get("Content-Type") || "";
+  var data = {};
+  try {
+    if (contentType.indexOf("application/json") !== -1) {
+      data = await request.json();
+    } else {
+      var form = await request.formData();
+      form.forEach(function (v, k) { data[k] = v; });
+    }
+  } catch (e) {
+    return jsonRes({ error: "invalid_request", error_description: "Invalid request body" }, 400, corsH);
+  }
+
+  if (data.grant_type === "refresh_token") {
+    var refreshKey = "oauth:refresh:" + (data.refresh_token || "");
+    var refreshRec = await oauthGetJson(env, refreshKey);
+    if (!refreshRec) {
+      return jsonRes({ error: "invalid_grant", error_description: "Unknown or expired refresh_token" }, 400, corsH);
+    }
+    if (data.client_id && data.client_id !== refreshRec.client_id) {
+      return jsonRes({ error: "invalid_grant", error_description: "client_id mismatch" }, 400, corsH);
+    }
+    await env.SUBSCRIPTIONS.delete(refreshKey);
+    return jsonRes(await oauthIssueTokens(env, refreshRec.client_id), 200, corsH);
+  }
+
+  if (data.grant_type !== "authorization_code") {
+    return jsonRes({ error: "unsupported_grant_type" }, 400, corsH);
+  }
+
+  var codeKey = "oauth:code:" + (data.code || "");
+  var stored = await oauthGetJson(env, codeKey);
+  if (!stored) {
+    return jsonRes({ error: "invalid_grant", error_description: "Unknown or expired code" }, 400, corsH);
+  }
+  await env.SUBSCRIPTIONS.delete(codeKey);
+
+  if (data.client_id !== stored.client_id || data.redirect_uri !== stored.redirect_uri) {
+    return jsonRes({ error: "invalid_grant", error_description: "client_id/redirect_uri mismatch" }, 400, corsH);
+  }
+
+  if (stored.code_challenge) {
+    var verifier = data.code_verifier || "";
+    var expected = stored.code_challenge_method === "S256"
+      ? await sha256Base64Url(verifier)
+      : verifier;
+    if (expected !== stored.code_challenge) {
+      return jsonRes({ error: "invalid_grant", error_description: "PKCE verification failed" }, 400, corsH);
+    }
+  }
+
+  return jsonRes(await oauthIssueTokens(env, stored.client_id), 200, corsH);
+}
+
 // ===== メインハンドラー =====
 export default {
   async fetch(request, env, ctx) {
@@ -1250,7 +1524,7 @@ async function handleRequest(request, env) {
   var corsH = getCorsHeaders(origin);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsH });
+    return new Response(null, { headers: isOauthOrMcpPath(url.pathname) ? OAUTH_CORS : corsH });
   }
 
   // ===== 認証（マジックリンク + Bearerセッション） =====
@@ -1499,6 +1773,34 @@ async function handleRequest(request, env) {
     return htmlRes(PRIVACY_HTML);
   }
 
+  // =========================================================
+  // /mcp — とむSYSTEM MCPサーバー (JSON-RPC 2.0、GETはサーバー情報を返す)
+  // =========================================================
+  if (url.pathname === "/mcp") {
+    return handleMcp(request, env);
+  }
+
+  // =========================================================
+  // OAuth2 / PKCE — Claude.ai Webコネクタ向け (?token= 認証と並存)
+  // =========================================================
+  if (url.pathname === "/.well-known/oauth-authorization-server" ||
+      url.pathname === "/.well-known/openid-configuration") {
+    return handleOauthMetadata(request, env, OAUTH_CORS);
+  }
+  if (url.pathname === "/.well-known/oauth-protected-resource" ||
+      url.pathname === "/.well-known/oauth-protected-resource/mcp") {
+    return handleOauthProtectedResource(request, env, OAUTH_CORS);
+  }
+  if (url.pathname === "/register" && request.method === "POST") {
+    return handleOauthRegister(request, env, OAUTH_CORS);
+  }
+  if (url.pathname === "/oauth/authorize" && (request.method === "GET" || request.method === "POST")) {
+    return handleOauthAuthorize(request, env);
+  }
+  if (url.pathname === "/oauth/token" && request.method === "POST") {
+    return handleOauthToken(request, env, OAUTH_CORS);
+  }
+
   if (request.method !== "POST") {
     return jsonRes({ error: "Method not allowed" }, 405, corsH);
   }
@@ -1624,13 +1926,6 @@ async function handleRequest(request, env) {
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message, stack: err.stack }, 500, corsH);
     }
-  }
-
-  // =========================================================
-  // POST /mcp — とむSYSTEM MCPサーバー (JSON-RPC 2.0)
-  // =========================================================
-  if (url.pathname === "/mcp") {
-    return handleMcp(request, env);
   }
 
   // =========================================================
