@@ -1619,13 +1619,28 @@ function marketYmd(d) {
   return d.toISOString().slice(0, 10);
 }
 
+// Workers の fetch は User-Agent を自動付与しない。CoinGecko は UA 無しのリクエストを
+// 403「Please add a descriptive User-Agent to your request.」で弾くため、
+// market 系の外部呼び出しでは必ず明示する。
+var MARKET_UA = "tomu-system-worker/1.0 (+https://tomu-ai963.github.io/tomu-system/)";
+
 async function marketFetchJson(url, label, headers) {
   var res = await fetch(url, {
-    headers: Object.assign({ "Accept": "application/json" }, headers || {}),
+    headers: Object.assign({
+      "Accept": "application/json",
+      "User-Agent": MARKET_UA,
+    }, headers || {}),
   });
   if (!res.ok) {
-    // URLはAPIキーを含みうるのでエラー文にURLを載せない
-    throw new Error(label + ": HTTP " + res.status);
+    // URLはAPIキーを含みうるのでエラー文にURLは載せない。
+    // 代わりに上流レスポンスの本文先頭だけ添えて、レート制限かUA拒否かを切り分けられるようにする。
+    var detail = "";
+    try {
+      detail = (await res.text()).replace(/\s+/g, " ").trim().slice(0, 160);
+    } catch (e) {
+      // 本文が読めなくてもHTTPコードだけは返す
+    }
+    throw new Error(label + ": HTTP " + res.status + (detail ? " — " + detail : ""));
   }
   return await res.json();
 }
@@ -1671,6 +1686,9 @@ async function resolveMarketGenre(genre, fetcher, env) {
     var rec = await writeMarketCache(genre, fresh, env);
     return { data: rec.data, fetched_at: rec.fetched_at, stale: false, cache: "miss" };
   } catch (err) {
+    // wrangler tail で原因を追えるように、全ジャンル共通の形式でログに残す
+    // （レスポンスの sources[genre].error と同じ文面）
+    console.error("[market] " + genre + " fetch failed: " + err.message);
     if (cached) {
       return { data: cached.data, fetched_at: cached.fetched_at, stale: true, cache: "stale", error: err.message };
     }
