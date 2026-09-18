@@ -1583,6 +1583,252 @@ async function handleOauthToken(request, env, corsH) {
   return jsonRes(issued, 200, corsH);
 }
 
+// =========================================================
+// マーケット時価チェッカー（貴金属／為替／暗号資産／エネルギー）
+// KVキャッシュ: market:metals / market:forex / market:crypto / market:energy
+// 各キーに {data, fetched_at} をJSON文字列で保存する。
+// ジャンルごとに独立して取得・キャッシュするため、1ジャンルの失敗が全体に波及しない。
+// 外部APIは fetchMarket* のアダプタ1枚で吸収しているので、後から差し替え可能。
+// =========================================================
+
+var TROY_OUNCE_G = 31.1034768;
+
+// 鮮度（秒）。これを過ぎたら再取得を試みる。
+var MARKET_TTL = { metals: 600, forex: 600, crypto: 300, energy: 3600 };
+
+// KVに残しておく期間（秒）。鮮度切れ後もフォールバック用に保持する。
+var MARKET_KV_TTL = 60 * 60 * 24 * 7;
+
+var MARKET_GENRES = ["metals", "forex", "crypto", "energy"];
+
+function marketRound(v, digits) {
+  if (typeof v !== "number" || !isFinite(v)) return null;
+  var p = Math.pow(10, digits);
+  return Math.round(v * p) / p;
+}
+
+// 前日比（%）。前日値が無い／0のときは null（フロントは「—」表示）
+function marketPct(latest, prev) {
+  if (typeof latest !== "number" || typeof prev !== "number") return null;
+  if (!isFinite(latest) || !isFinite(prev) || prev === 0) return null;
+  return marketRound(((latest - prev) / prev) * 100, 2);
+}
+
+function marketYmd(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+async function marketFetchJson(url, label) {
+  var res = await fetch(url, { headers: { "Accept": "application/json" } });
+  if (!res.ok) {
+    // URLはAPIキーを含みうるのでエラー文にURLを載せない
+    throw new Error(label + ": HTTP " + res.status);
+  }
+  return await res.json();
+}
+
+async function readMarketCache(genre, env) {
+  try {
+    var raw = await env.SUBSCRIPTIONS.get("market:" + genre);
+    if (!raw) return null;
+    var rec = JSON.parse(raw);
+    if (!rec || !rec.data || !rec.fetched_at) return null;
+    return rec;
+  } catch (e) {
+    return null; // 壊れたキャッシュは無いものとして扱う
+  }
+}
+
+async function writeMarketCache(genre, data, env) {
+  var rec = { data: data, fetched_at: new Date().toISOString() };
+  try {
+    await env.SUBSCRIPTIONS.put("market:" + genre, JSON.stringify(rec), { expirationTtl: MARKET_KV_TTL });
+  } catch (e) {
+    // KV書き込み失敗でもレスポンスは返す（次回また取りに行くだけ）
+  }
+  return rec;
+}
+
+function isMarketFresh(rec, genre) {
+  if (!rec || !rec.fetched_at) return false;
+  var t = Date.parse(rec.fetched_at);
+  if (!isFinite(t)) return false;
+  return (Date.now() - t) / 1000 < (MARKET_TTL[genre] || 600);
+}
+
+// 鮮度内ならKVをそのまま返す。切れていればAPIを叩き直してKVを更新。
+// API失敗時は期限切れのキャッシュを stale:true で返す（真っ白な画面を避ける）。
+async function resolveMarketGenre(genre, fetcher, env) {
+  var cached = await readMarketCache(genre, env);
+  if (isMarketFresh(cached, genre)) {
+    return { data: cached.data, fetched_at: cached.fetched_at, stale: false, cache: "hit" };
+  }
+  try {
+    var fresh = await fetcher();
+    var rec = await writeMarketCache(genre, fresh, env);
+    return { data: rec.data, fetched_at: rec.fetched_at, stale: false, cache: "miss" };
+  } catch (err) {
+    if (cached) {
+      return { data: cached.data, fetched_at: cached.fetched_at, stale: true, cache: "stale", error: err.message };
+    }
+    return { data: null, fetched_at: null, stale: true, cache: "empty", error: err.message };
+  }
+}
+
+// ---- 為替: Frankfurter（ECB基準・無料・登録不要） -------------------------
+// 直近10日分を1回で取り、最新と1つ前の営業日を比べて前日比を出す。
+async function fetchMarketForex() {
+  var end = new Date();
+  var start = new Date(end.getTime() - 10 * 86400000);
+  var url = "https://api.frankfurter.app/" + marketYmd(start) + ".." + marketYmd(end) +
+            "?base=JPY&symbols=USD,EUR,CNY";
+  var j = await marketFetchJson(url, "frankfurter");
+  var dates = Object.keys((j && j.rates) || {}).sort();
+  if (!dates.length) throw new Error("frankfurter: no rates");
+  var last = j.rates[dates[dates.length - 1]];
+  var prev = dates.length > 1 ? j.rates[dates[dates.length - 2]] : null;
+
+  var pairs = [["USDJPY", "USD"], ["EURJPY", "EUR"], ["CNYJPY", "CNY"]];
+  var out = {};
+  for (var i = 0; i < pairs.length; i++) {
+    var name = pairs[i][0], sym = pairs[i][1];
+    // base=JPY なので rates[sym] は「1円あたりの外貨」。逆数が円建てレート。
+    var rate = last && last[sym] ? 1 / last[sym] : null;
+    var prevRate = prev && prev[sym] ? 1 / prev[sym] : null;
+    out[name] = {
+      rate: marketRound(rate, 4),
+      change_pct_1d: marketPct(rate, prevRate),
+      as_of: dates[dates.length - 1],
+    };
+  }
+  if (out.USDJPY.rate === null) throw new Error("frankfurter: USDJPY missing");
+  return out;
+}
+
+// ---- 貴金属: metals-api.com -----------------------------------------------
+// latest（当日）と {date}（前日）の2本を叩く。前日分が取れなくても当日値は返す。
+// 1g/1oz の切り替えはフロントで計算させず、ここで4通りとも埋めて返す。
+var METAL_SYMBOLS = { gold: "XAU", silver: "XAG", platinum: "XPT", palladium: "XPD" };
+
+function metalUsdPerOz(rate) {
+  if (typeof rate !== "number" || !isFinite(rate) || rate <= 0) return null;
+  // base=USD のとき metals-api は「1USD = n XAU」を返すため逆数を取る。
+  // プランによっては既に USD/oz が入っているので、1未満なら逆数・1以上ならそのまま。
+  // （貴金属のUSD/ozは常に1を大きく超え、XAU/USDは常に1未満なので判別できる）
+  return rate < 1 ? 1 / rate : rate;
+}
+
+async function fetchMarketMetals(env, usdJpy) {
+  if (!env.METALS_API_KEY) throw new Error("METALS_API_KEY is not configured");
+  var q = "?access_key=" + encodeURIComponent(env.METALS_API_KEY) +
+          "&base=USD&symbols=XAU,XAG,XPT,XPD";
+  var latest = await marketFetchJson("https://metals-api.com/api/latest" + q, "metals-api");
+  if (!latest || latest.success === false || !latest.rates) {
+    throw new Error("metals-api: " + (((latest || {}).error || {}).info || "invalid response"));
+  }
+
+  var prevRates = null;
+  try {
+    var y = marketYmd(new Date(Date.now() - 86400000));
+    var hist = await marketFetchJson("https://metals-api.com/api/" + y + q, "metals-api");
+    if (hist && hist.success !== false && hist.rates) prevRates = hist.rates;
+  } catch (e) {
+    // 前日値が取れなくても当日値は返す（change_pct_1d は null）
+  }
+
+  var out = {};
+  var names = Object.keys(METAL_SYMBOLS);
+  for (var i = 0; i < names.length; i++) {
+    var name = names[i], sym = METAL_SYMBOLS[name];
+    var usdOz = metalUsdPerOz(latest.rates[sym]);
+    var prevUsdOz = prevRates ? metalUsdPerOz(prevRates[sym]) : null;
+    var usdG = usdOz === null ? null : usdOz / TROY_OUNCE_G;
+    out[name] = {
+      usd_per_oz: marketRound(usdOz, 2),
+      usd_per_g: marketRound(usdG, 3),
+      jpy_per_oz: usdOz !== null && usdJpy ? marketRound(usdOz * usdJpy, 0) : null,
+      jpy_per_g: usdG !== null && usdJpy ? marketRound(usdG * usdJpy, 1) : null,
+      change_pct_1d: marketPct(usdOz, prevUsdOz),
+    };
+  }
+  return out;
+}
+
+// ---- 暗号資産: CoinGecko（無料・登録不要） --------------------------------
+var CRYPTO_IDS = { BTC: "bitcoin", ETH: "ethereum" };
+
+async function fetchMarketCrypto() {
+  var url = "https://api.coingecko.com/api/v3/simple/price" +
+            "?ids=bitcoin,ethereum&vs_currencies=jpy&include_24hr_change=true";
+  var j = await marketFetchJson(url, "coingecko");
+  var out = {};
+  var syms = Object.keys(CRYPTO_IDS);
+  for (var i = 0; i < syms.length; i++) {
+    var sym = syms[i], row = j && j[CRYPTO_IDS[sym]];
+    if (!row || typeof row.jpy !== "number") throw new Error("coingecko: " + sym + " missing");
+    out[sym] = {
+      jpy: marketRound(row.jpy, 0),
+      change_pct_1d: marketRound(row.jpy_24h_change, 2),
+    };
+  }
+  return out;
+}
+
+// ---- エネルギー: EIA API（WTI原油スポット RWTC） ---------------------------
+// ガソリン価格は無料で自動取得できるAPIが乏しいため、このバージョンでは原油のみ。
+async function fetchMarketEnergy(env) {
+  if (!env.EIA_API_KEY) throw new Error("EIA_API_KEY is not configured");
+  var url = "https://api.eia.gov/v2/petroleum/pri/spt/data/" +
+            "?api_key=" + encodeURIComponent(env.EIA_API_KEY) +
+            "&frequency=daily&data[0]=value&facets[series][]=RWTC" +
+            "&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=2";
+  var j = await marketFetchJson(url, "eia");
+  var rows = (j && j.response && j.response.data) || [];
+  if (!rows.length) throw new Error("eia: no data");
+  var latest = Number(rows[0].value);
+  var prev = rows.length > 1 ? Number(rows[1].value) : null;
+  if (!isFinite(latest)) throw new Error("eia: invalid value");
+  return {
+    wti_usd_per_barrel: {
+      value: marketRound(latest, 2),
+      change_pct_1d: marketPct(latest, prev),
+      as_of: rows[0].period || null,
+    },
+  };
+}
+
+// GET /market/prices — 4ジャンルをまとめて返す（フロントは1回のfetchで済む）
+async function handleMarketPrices(env, corsH) {
+  // 貴金属の円建て換算に USDJPY が要るので、為替だけ先に解決する
+  var forex = await resolveMarketGenre("forex", fetchMarketForex, env);
+  var usdJpy = forex.data && forex.data.USDJPY ? forex.data.USDJPY.rate : null;
+
+  var rest = await Promise.all([
+    resolveMarketGenre("metals", function () { return fetchMarketMetals(env, usdJpy); }, env),
+    resolveMarketGenre("crypto", fetchMarketCrypto, env),
+    resolveMarketGenre("energy", function () { return fetchMarketEnergy(env); }, env),
+  ]);
+
+  var resolved = { forex: forex, metals: rest[0], crypto: rest[1], energy: rest[2] };
+  var body = { sources: {} };
+  var anyStale = false;
+  var newest = 0;
+
+  for (var i = 0; i < MARKET_GENRES.length; i++) {
+    var g = MARKET_GENRES[i], r = resolved[g];
+    body[g] = r.data;
+    body.sources[g] = { stale: r.stale, fetched_at: r.fetched_at, cache: r.cache };
+    if (r.error) body.sources[g].error = r.error;
+    if (r.stale) anyStale = true;
+    var t = r.fetched_at ? Date.parse(r.fetched_at) : 0;
+    if (isFinite(t) && t > newest) newest = t;
+  }
+
+  body.stale = anyStale;
+  body.updated_at = new Date(newest || Date.now()).toISOString();
+  return jsonRes(body, 200, corsH);
+}
+
 // ===== メインハンドラー =====
 export default {
   async fetch(request, env, ctx) {
@@ -1843,6 +2089,25 @@ async function handleRequest(request, env) {
   // =========================================================
   if (url.pathname === "/legal/privacy" && request.method === "GET") {
     return htmlRes(PRIVACY_HTML);
+  }
+
+  // =========================================================
+  // GET /market/prices — マーケット時価チェッカー（Standardプラン以上）
+  // 4ジャンル（貴金属／為替／暗号資産／エネルギー）をKVキャッシュ経由でまとめて返す
+  // =========================================================
+  if (url.pathname === "/market/prices" && request.method === "GET") {
+    var mktEmail = authEmail || "";
+    if (!mktEmail) return jsonRes({ error: "login_required" }, 401, corsH);
+    var mktPlan = await env.SUBSCRIPTIONS.get(mktEmail);
+    if (!mktPlan) return jsonRes({ error: "subscription_required" }, 403, corsH);
+    if (!planMeetsRequirement(mktPlan, "standard")) {
+      return jsonRes({ error: "plan_upgrade_required", required: "standard", current: mktPlan }, 403, corsH);
+    }
+    try {
+      return await handleMarketPrices(env, corsH);
+    } catch (err) {
+      return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
+    }
   }
 
   // =========================================================

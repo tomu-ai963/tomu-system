@@ -352,6 +352,15 @@
       "path": "/tomu-system/apps/standard/marketing-agent/"
     },
     {
+      "id": "market-checker",
+      "title": "マーケット時価チェッカー",
+      "description": "金・銀・プラチナ・パラジウム、為替、BTC/ETH、WTI原油の時価をタブ切り替えで一覧。前日比つきで今の相場が1画面で分かる。",
+      "plan": "standard",
+      "category": "ビジネス",
+      "emoji": "📈",
+      "path": "/tomu-system/apps/standard/market-checker/"
+    },
+    {
       "id": "benrishi-advisor",
       "title": "弁理士アドバイザー",
       "description": "特許・商標・著作権・意匠から知財トラブルまで。知的財産の疑問に、AIがその場で答える専門アドバイザー。",

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マーケット時価チェッカー — とむSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #0f1120;
+  --mist: #6b6f8f;
+  --moon: #e8d9a8;
+  --moon-soft: #f3ecd4;
+  --aurora: #8b7fc7;
+  --aurora-soft: #b8aee0;
+  --line: rgba(139,127,199,0.18);
+  --up: #e0706c;    /* 上昇＝赤（日本の相場表示の慣習に合わせる） */
+  --down: #6fa8dc;  /* 下落＝青 */
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139,127,199,0.25), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(232,217,168,0.12), transparent 50%),
+    linear-gradient(180deg, #0f1120 0%, #16182b 40%, #1a1d2e 100%);
+  background-attachment: fixed;
+  color: var(--moon-soft);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 18px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15,17,32,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--moon-soft);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--aurora-soft); }
+.nav-badge {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mist);
+  border: 1px solid rgba(139,127,199,0.35);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+.hero {
+  text-align: center;
+  padding: 110px 0 28px;
+  animation: fadeUp 0.9s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.hero-icon {
+  font-size: 2.6rem;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 24px rgba(232,217,168,0.4));
+}
+.hero-title {
+  font-family: 'Zen Old Mincho', serif;
+  font-weight: 500;
+  font-size: 34px;
+  letter-spacing: 0.16em;
+  margin: 0 0 10px;
+  color: var(--moon-soft);
+}
+.hero-sub { font-size: 13px; letter-spacing: 0.1em; color: var(--mist); }
+
+/* ── 更新ステータス ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(247,245,240,0.03);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  animation: fadeUp 0.9s ease 0.1s both;
+}
+.updated { font-size: 12px; letter-spacing: 0.06em; color: var(--mist); }
+.updated strong { color: var(--moon); font-weight: 400; }
+.reload {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--aurora-soft);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.reload:hover:not(:disabled) { border-color: var(--aurora); color: var(--moon-soft); }
+.reload:disabled { opacity: 0.5; cursor: default; }
+
+.notice {
+  border: 1px solid rgba(224,112,108,0.35);
+  background: rgba(224,112,108,0.08);
+  border-radius: 4px;
+  color: #f0c0be;
+  font-size: 12.5px;
+  line-height: 1.9;
+  padding: 11px 15px;
+  margin-bottom: 14px;
+}
+.notice.err { border-color: rgba(224,112,108,0.5); }
+.notice .retry {
+  display: inline-block;
+  margin-left: 10px;
+  background: none;
+  border: 1px solid rgba(224,112,108,0.5);
+  border-radius: 999px;
+  color: #f0c0be;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 3px 13px;
+  cursor: pointer;
+}
+
+/* ── タブ ── */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.9s ease 0.15s both;
+}
+.tab {
+  background: rgba(247,245,240,0.03);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--mist);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  padding: 11px 4px;
+  cursor: pointer;
+  transition: color 0.25s, border-color 0.25s, background 0.25s;
+}
+.tab:hover { color: var(--moon-soft); border-color: rgba(139,127,199,0.35); }
+.tab[aria-selected="true"] {
+  color: var(--night);
+  background: linear-gradient(135deg, var(--aurora), var(--aurora-soft));
+  border-color: transparent;
+  font-weight: 500;
+}
+.tab-icon { display: block; font-size: 16px; margin-bottom: 2px; }
+
+/* ── 単位切り替え ── */
+.unit-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+.unit-switch .label { font-size: 11px; letter-spacing: 0.12em; color: var(--mist); }
+.unit-btn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--mist);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 5px 15px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.unit-btn[aria-pressed="true"] {
+  color: var(--moon);
+  border-color: rgba(232,217,168,0.45);
+  background: rgba(232,217,168,0.08);
+}
+
+/* ── カード ── */
+.card {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  background: rgba(247,245,240,0.03);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  transition: border-color 0.3s;
+}
+.card:hover { border-color: rgba(139,127,199,0.35); }
+.card-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.card-name {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  color: var(--moon-soft);
+}
+.card-sub { font-size: 11px; letter-spacing: 0.06em; color: var(--mist); }
+.card-right { text-align: right; flex-shrink: 0; }
+.price {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 21px;
+  letter-spacing: 0.02em;
+  color: var(--moon);
+  white-space: nowrap;
+}
+.price .unit { font-size: 11px; color: var(--mist); margin-left: 4px; letter-spacing: 0.08em; }
+.change { font-size: 12px; letter-spacing: 0.04em; margin-top: 2px; }
+.change.up   { color: var(--up); }
+.change.down { color: var(--down); }
+.change.flat { color: var(--mist); }
+
+.genre-note {
+  font-size: 11.5px;
+  color: var(--mist);
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  margin-top: 16px;
+  text-align: center;
+}
+.skeleton {
+  height: 74px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, rgba(247,245,240,0.03), rgba(247,245,240,0.07), rgba(247,245,240,0.03));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.empty { text-align: center; padding: 40px 0; color: var(--mist); font-size: 13.5px; line-height: 2; }
+
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: rgba(107,111,143,0.7);
+}
+footer a { color: var(--aurora-soft); text-decoration: none; }
+
+@media (max-width: 520px) {
+  nav { padding: 16px 20px; }
+  .hero { padding: 96px 0 24px; }
+  .hero-title { font-size: 27px; }
+  .tab { font-size: 11.5px; letter-spacing: 0.02em; }
+  .price { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+  <script src="/tomu-system/common/header.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f1120">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</head>
+<body>
+
+<nav>
+  <a href="/tomu-system/index.html" class="nav-logo">とむ<span>SYSTEM</span></a>
+  <span class="nav-badge">Standard Plan</span>
+</nav>
+
+<main>
+  <header class="hero">
+    <span class="hero-icon">📈</span>
+    <p class="hero-sub">Tomu System — Standard</p>
+    <h1 class="hero-title">マーケット時価チェッカー</h1>
+    <p class="hero-sub">貴金属・為替・暗号資産・原油を、ひと画面で</p>
+  </header>
+
+  <div class="status-bar">
+    <span class="updated" id="updated">最終更新: <strong>—</strong></span>
+    <button class="reload" id="reload" onclick="loadPrices()" aria-label="時価を再読み込み">↻ 更新</button>
+  </div>
+
+  <p id="stale-note" class="notice" style="display:none;"></p>
+  <p id="error-note" class="notice err" style="display:none;"></p>
+
+  <div class="tabs" role="tablist" aria-label="ジャンル切り替え">
+    <button class="tab" role="tab" id="tab-metals"  aria-selected="true"  aria-controls="panel" onclick="selectTab('metals')"><span class="tab-icon">🥇</span>貴金属</button>
+    <button class="tab" role="tab" id="tab-forex"   aria-selected="false" aria-controls="panel" onclick="selectTab('forex')"><span class="tab-icon">💱</span>為替</button>
+    <button class="tab" role="tab" id="tab-crypto"  aria-selected="false" aria-controls="panel" onclick="selectTab('crypto')"><span class="tab-icon">₿</span>暗号資産</button>
+    <button class="tab" role="tab" id="tab-energy"  aria-selected="false" aria-controls="panel" onclick="selectTab('energy')"><span class="tab-icon">🛢</span>エネルギー</button>
+  </div>
+
+  <div class="unit-switch" id="unit-switch" style="display:none;">
+    <span class="label">単位</span>
+    <button class="unit-btn" id="unit-g"  aria-pressed="true"  onclick="selectUnit('g')">1g</button>
+    <button class="unit-btn" id="unit-oz" aria-pressed="false" onclick="selectUnit('oz')">1oz</button>
+  </div>
+
+  <div id="panel" role="tabpanel" aria-labelledby="tab-metals">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+
+  <p class="genre-note" id="genre-note"></p>
+</main>
+
+<footer>
+  <a href="/tomu-system/index.html">← とむSYSTEM</a>
+  &nbsp;·&nbsp;
+  Powered by Cloudflare Workers
+</footer>
+
+<script>
+const WORKER = "https://orange-sound-354b.inverted-triangle-leef.workers.dev";
+
+// 単位変換はWorker側で済ませてあるので、フロントは「どのキーを読むか」を選ぶだけ。
+const METAL_LABELS = {
+  gold:      { name: "金",       sub: "Gold · XAU" },
+  silver:    { name: "銀",       sub: "Silver · XAG" },
+  platinum:  { name: "プラチナ", sub: "Platinum · XPT" },
+  palladium: { name: "パラジウム", sub: "Palladium · XPD" },
+};
+const FOREX_LABELS = {
+  USDJPY: { name: "米ドル / 円", sub: "USD/JPY" },
+  EURJPY: { name: "ユーロ / 円", sub: "EUR/JPY" },
+  CNYJPY: { name: "人民元 / 円", sub: "CNY/JPY" },
+};
+const CRYPTO_LABELS = {
+  BTC: { name: "ビットコイン", sub: "BTC/JPY" },
+  ETH: { name: "イーサリアム", sub: "ETH/JPY" },
+};
+const GENRE_NOTES = {
+  metals:  "出典: metals-api.com ／ 円建ては当日のUSD/JPYで換算（キャッシュ 10分）",
+  forex:   "出典: Frankfurter（ECB参照レート・営業日ベース／キャッシュ 10分）",
+  crypto:  "出典: CoinGecko ／ 前日比は24時間変化率（キャッシュ 5分）",
+  energy:  "出典: EIA（WTI原油スポット RWTC・日次／キャッシュ 60分）。ガソリン価格は無料APIが乏しいため今回は対象外",
+};
+
+let priceData = null;
+let currentTab = "metals";
+let metalUnit = "g";   // "g" | "oz"
+let loading = false;
+
+function _e(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function fmtNum(v, digits) {
+  if (typeof v !== "number" || !isFinite(v)) return null;
+  return v.toLocaleString("ja-JP", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function changeHtml(pct) {
+  if (typeof pct !== "number" || !isFinite(pct)) {
+    return '<div class="change flat">前日比 —</div>';
+  }
+  const cls = pct > 0 ? "up" : (pct < 0 ? "down" : "flat");
+  const mark = pct > 0 ? "▲" : (pct < 0 ? "▼" : "―");
+  return '<div class="change ' + cls + '">' + mark + " " + _e(Math.abs(pct).toFixed(2)) + "% <span>前日比</span></div>";
+}
+
+function cardHtml(name, sub, priceText, unitText, pct) {
+  return '' +
+    '<div class="card">' +
+    '  <div class="card-left">' +
+    '    <span class="card-name">' + _e(name) + '</span>' +
+    '    <span class="card-sub">' + _e(sub) + '</span>' +
+    '  </div>' +
+    '  <div class="card-right">' +
+    '    <div class="price">' + _e(priceText) + '<span class="unit">' + _e(unitText) + '</span></div>' +
+    changeHtml(pct) +
+    '  </div>' +
+    '</div>';
+}
+
+function unavailableHtml(label) {
+  return '<p class="empty">' + _e(label) + 'のデータを取得できませんでした。<br>時間をおいて「更新」をお試しください。</p>';
+}
+
+function renderMetals(d) {
+  if (!d) return unavailableHtml("貴金属");
+  return Object.keys(METAL_LABELS).map(function (k) {
+    const row = d[k] || {};
+    const jpy = metalUnit === "g" ? row.jpy_per_g : row.jpy_per_oz;
+    const usd = metalUnit === "g" ? row.usd_per_g : row.usd_per_oz;
+    const jpyText = fmtNum(jpy, metalUnit === "g" ? 1 : 0);
+    const usdText = fmtNum(usd, metalUnit === "g" ? 3 : 2);
+    const label = METAL_LABELS[k];
+    const sub = label.sub + (usdText ? " · $" + usdText + "/" + metalUnit : "");
+    return cardHtml(label.name, sub, jpyText === null ? "—" : "¥" + jpyText,
+      "/ 1" + metalUnit, row.change_pct_1d);
+  }).join("");
+}
+
+function renderForex(d) {
+  if (!d) return unavailableHtml("為替");
+  return Object.keys(FOREX_LABELS).map(function (k) {
+    const row = d[k] || {};
+    const text = fmtNum(row.rate, row.rate !== null && row.rate < 10 ? 4 : 2);
+    return cardHtml(FOREX_LABELS[k].name, FOREX_LABELS[k].sub,
+      text === null ? "—" : "¥" + text, "", row.change_pct_1d);
+  }).join("");
+}
+
+function renderCrypto(d) {
+  if (!d) return unavailableHtml("暗号資産");
+  return Object.keys(CRYPTO_LABELS).map(function (k) {
+    const row = d[k] || {};
+    const text = fmtNum(row.jpy, 0);
+    return cardHtml(CRYPTO_LABELS[k].name, CRYPTO_LABELS[k].sub,
+      text === null ? "—" : "¥" + text, "", row.change_pct_1d);
+  }).join("");
+}
+
+function renderEnergy(d) {
+  if (!d || !d.wti_usd_per_barrel) return unavailableHtml("エネルギー");
+  const row = d.wti_usd_per_barrel;
+  const text = fmtNum(row.value, 2);
+  const sub = "WTI Crude Oil" + (row.as_of ? " · " + row.as_of : "");
+  return cardHtml("WTI原油", sub, text === null ? "—" : "$" + text, "/ バレル", row.change_pct_1d);
+}
+
+function render() {
+  const panel = document.getElementById("panel");
+  const unitSwitch = document.getElementById("unit-switch");
+  const note = document.getElementById("genre-note");
+
+  unitSwitch.style.display = currentTab === "metals" ? "" : "none";
+  note.textContent = priceData ? (GENRE_NOTES[currentTab] || "") : "";
+  panel.setAttribute("aria-labelledby", "tab-" + currentTab);
+
+  if (!priceData) return;
+
+  if (currentTab === "metals")      panel.innerHTML = renderMetals(priceData.metals);
+  else if (currentTab === "forex")  panel.innerHTML = renderForex(priceData.forex);
+  else if (currentTab === "crypto") panel.innerHTML = renderCrypto(priceData.crypto);
+  else                              panel.innerHTML = renderEnergy(priceData.energy);
+}
+
+function selectTab(genre) {
+  currentTab = genre;
+  ["metals", "forex", "crypto", "energy"].forEach(function (g) {
+    document.getElementById("tab-" + g).setAttribute("aria-selected", String(g === genre));
+  });
+  render();
+}
+
+function selectUnit(unit) {
+  metalUnit = unit;
+  document.getElementById("unit-g").setAttribute("aria-pressed", String(unit === "g"));
+  document.getElementById("unit-oz").setAttribute("aria-pressed", String(unit === "oz"));
+  render();
+}
+
+function agoText(iso) {
+  const t = Date.parse(iso);
+  if (!isFinite(t)) return "—";
+  const min = Math.floor((Date.now() - t) / 60000);
+  if (min < 1) return "たった今";
+  if (min < 60) return min + "分前";
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return hour + "時間前";
+  return Math.floor(hour / 24) + "日前";
+}
+
+function refreshUpdatedLabel() {
+  const el = document.getElementById("updated");
+  if (!priceData || !priceData.updated_at) { el.innerHTML = "最終更新: <strong>—</strong>"; return; }
+  el.innerHTML = "最終更新: <strong>" + _e(agoText(priceData.updated_at)) + "</strong>";
+}
+
+const GENRE_JA = { metals: "貴金属", forex: "為替", crypto: "暗号資産", energy: "エネルギー" };
+
+function showStaleNote() {
+  const el = document.getElementById("stale-note");
+  const src = (priceData && priceData.sources) || {};
+  const staleGenres = Object.keys(src).filter(function (g) { return src[g].stale && priceData[g]; });
+  const deadGenres  = Object.keys(src).filter(function (g) { return src[g].stale && !priceData[g]; });
+
+  const msgs = [];
+  if (staleGenres.length) {
+    msgs.push("最新データ取得に失敗、前回値を表示中（" +
+      staleGenres.map(function (g) { return GENRE_JA[g]; }).join("・") + "）");
+  }
+  if (deadGenres.length) {
+    msgs.push(deadGenres.map(function (g) { return GENRE_JA[g]; }).join("・") + "は現在取得できません");
+  }
+  if (!msgs.length) { el.style.display = "none"; el.textContent = ""; return; }
+  el.textContent = "⚠ " + msgs.join(" / ");
+  el.style.display = "";
+}
+
+function showError(msg) {
+  const el = document.getElementById("error-note");
+  if (!msg) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.innerHTML = _e(msg) + '<button class="retry" onclick="loadPrices()">再試行</button>';
+  el.style.display = "";
+}
+
+async function loadPrices() {
+  if (loading) return;
+  const email = window.TomuAuth ? TomuAuth.getEmail() : null;
+  if (!email) { if (window.TomuAuth) TomuAuth.showOverlay(); return; }
+
+  loading = true;
+  const btn = document.getElementById("reload");
+  btn.disabled = true;
+  btn.textContent = "↻ 取得中…";
+  showError("");
+
+  try {
+    const res = await fetch(WORKER + "/market/prices");
+    if (!res.ok) {
+      const err = await res.json().catch(function () { return {}; });
+      if (err.error === "login_required" || err.error === "subscription_required" || err.error === "plan_upgrade_required") {
+        if (window.TomuAuth) TomuAuth.showOverlay();
+        return;
+      }
+      throw new Error("HTTP " + res.status);
+    }
+    priceData = await res.json();
+    refreshUpdatedLabel();
+    showStaleNote();
+    render();
+  } catch (e) {
+    if (!priceData) document.getElementById("panel").innerHTML = "";
+    showError("時価の取得に失敗しました。");
+  } finally {
+    loading = false;
+    btn.disabled = false;
+    btn.textContent = "↻ 更新";
+  }
+}
+
+// 「◯分前」は取得しなくても進むので、表示だけ1分ごとに更新する
+setInterval(refreshUpdatedLabel, 60000);
+
+document.addEventListener("DOMContentLoaded", function () { setTimeout(loadPrices, 800); });
+document.addEventListener("tomu:unlocked", function () { setTimeout(loadPrices, 300); });
+</script>
+
+<script>window.TOMU_REQUIRED_PLAN = 'standard';</script>
+<script src="/tomu-system/tomu-login.js"></script>
+</body>
+</html>
