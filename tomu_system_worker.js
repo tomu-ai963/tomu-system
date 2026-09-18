@@ -1594,7 +1594,8 @@ async function handleOauthToken(request, env, corsH) {
 var TROY_OUNCE_G = 31.1034768;
 
 // 鮮度（秒）。これを過ぎたら再取得を試みる。
-var MARKET_TTL = { metals: 600, forex: 600, crypto: 300, energy: 3600 };
+// metals は GoldAPI.io の無料枠（月100リクエスト・1コール1金属）に合わせて24時間。
+var MARKET_TTL = { metals: 86400, forex: 600, crypto: 300, energy: 3600 };
 
 // KVに残しておく期間（秒）。鮮度切れ後もフォールバック用に保持する。
 var MARKET_KV_TTL = 60 * 60 * 24 * 7;
@@ -1618,8 +1619,10 @@ function marketYmd(d) {
   return d.toISOString().slice(0, 10);
 }
 
-async function marketFetchJson(url, label) {
-  var res = await fetch(url, { headers: { "Accept": "application/json" } });
+async function marketFetchJson(url, label, headers) {
+  var res = await fetch(url, {
+    headers: Object.assign({ "Accept": "application/json" }, headers || {}),
+  });
   if (!res.ok) {
     // URLはAPIキーを含みうるのでエラー文にURLを載せない
     throw new Error(label + ": HTTP " + res.status);
@@ -1705,50 +1708,39 @@ async function fetchMarketForex() {
   return out;
 }
 
-// ---- 貴金属: metals-api.com -----------------------------------------------
-// latest（当日）と {date}（前日）の2本を叩く。前日分が取れなくても当日値は返す。
+// ---- 貴金属: GoldAPI.io ----------------------------------------------------
+// GET https://www.goldapi.io/api/{symbol}/USD、認証はヘッダ x-access-token。
+// 1コール=1金属なので、1回の更新で XAU/XAG/XPT/XPD の計4リクエストを消費する。
+// 無料枠が月100リクエストしかないため MARKET_TTL.metals を24時間に設定してあり、
+// 4金属 × 1日1回 × 30日 = 月120リクエスト（多少の超過は許容する運用）。
+// 枠を使い切ると429が返るが、その場合は下の throw で genre 全体を失敗させ、
+// resolveMarketGenre の「直前キャッシュを stale:true で返す」経路にそのまま乗る。
+// 部分成功を採らないのは、4金属を同一時点のスナップショットとして揃えるため。
+// 前日比は GoldAPI.io の chp（前営業日終値比・%）をそのまま使う。
 // 1g/1oz の切り替えはフロントで計算させず、ここで4通りとも埋めて返す。
 var METAL_SYMBOLS = { gold: "XAU", silver: "XAG", platinum: "XPT", palladium: "XPD" };
 
-function metalUsdPerOz(rate) {
-  if (typeof rate !== "number" || !isFinite(rate) || rate <= 0) return null;
-  // base=USD のとき metals-api は「1USD = n XAU」を返すため逆数を取る。
-  // プランによっては既に USD/oz が入っているので、1未満なら逆数・1以上ならそのまま。
-  // （貴金属のUSD/ozは常に1を大きく超え、XAU/USDは常に1未満なので判別できる）
-  return rate < 1 ? 1 / rate : rate;
-}
-
 async function fetchMarketMetals(env, usdJpy) {
-  if (!env.METALS_API_KEY) throw new Error("METALS_API_KEY is not configured");
-  var q = "?access_key=" + encodeURIComponent(env.METALS_API_KEY) +
-          "&base=USD&symbols=XAU,XAG,XPT,XPD";
-  var latest = await marketFetchJson("https://metals-api.com/api/latest" + q, "metals-api");
-  if (!latest || latest.success === false || !latest.rates) {
-    throw new Error("metals-api: " + (((latest || {}).error || {}).info || "invalid response"));
-  }
-
-  var prevRates = null;
-  try {
-    var y = marketYmd(new Date(Date.now() - 86400000));
-    var hist = await marketFetchJson("https://metals-api.com/api/" + y + q, "metals-api");
-    if (hist && hist.success !== false && hist.rates) prevRates = hist.rates;
-  } catch (e) {
-    // 前日値が取れなくても当日値は返す（change_pct_1d は null）
-  }
-
+  if (!env.GOLDAPI_KEY) throw new Error("GOLDAPI_KEY is not configured");
   var out = {};
   var names = Object.keys(METAL_SYMBOLS);
   for (var i = 0; i < names.length; i++) {
     var name = names[i], sym = METAL_SYMBOLS[name];
-    var usdOz = metalUsdPerOz(latest.rates[sym]);
-    var prevUsdOz = prevRates ? metalUsdPerOz(prevRates[sym]) : null;
-    var usdG = usdOz === null ? null : usdOz / TROY_OUNCE_G;
+    // 429で枠切れしているときは残りを叩いても無駄なので、1本落ちた時点で中断する
+    var j = await marketFetchJson(
+      "https://www.goldapi.io/api/" + sym + "/USD",
+      "goldapi:" + sym,
+      { "x-access-token": env.GOLDAPI_KEY }
+    );
+    var usdOz = (j && typeof j.price === "number" && isFinite(j.price) && j.price > 0) ? j.price : null;
+    if (usdOz === null) throw new Error("goldapi:" + sym + ": price missing");
+    var usdG = usdOz / TROY_OUNCE_G;
     out[name] = {
       usd_per_oz: marketRound(usdOz, 2),
       usd_per_g: marketRound(usdG, 3),
-      jpy_per_oz: usdOz !== null && usdJpy ? marketRound(usdOz * usdJpy, 0) : null,
-      jpy_per_g: usdG !== null && usdJpy ? marketRound(usdG * usdJpy, 1) : null,
-      change_pct_1d: marketPct(usdOz, prevUsdOz),
+      jpy_per_oz: usdJpy ? marketRound(usdOz * usdJpy, 0) : null,
+      jpy_per_g: usdJpy ? marketRound(usdG * usdJpy, 1) : null,
+      change_pct_1d: marketRound(j.chp, 2),
     };
   }
   return out;
