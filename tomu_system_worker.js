@@ -1594,8 +1594,9 @@ async function handleOauthToken(request, env, corsH) {
 var TROY_OUNCE_G = 31.1034768;
 
 // 鮮度（秒）。これを過ぎたら再取得を試みる。
-// metals は GoldAPI.io の無料枠（月100リクエスト・1コール1金属）に合わせて24時間。
-var MARKET_TTL = { metals: 86400, forex: 600, crypto: 300, energy: 3600 };
+// metals は GoldAPI.io の無料枠（月100リクエスト・1コール1金属）に合わせて30時間。
+// 4金属 × 24h/30h × 30日 = 月96リクエストで枠内に収まる。
+var MARKET_TTL = { metals: 108000, forex: 600, crypto: 300, energy: 3600 };
 
 // KVに残しておく期間（秒）。鮮度切れ後もフォールバック用に保持する。
 var MARKET_KV_TTL = 60 * 60 * 24 * 7;
@@ -1729,8 +1730,8 @@ async function fetchMarketForex() {
 // ---- 貴金属: GoldAPI.io ----------------------------------------------------
 // GET https://www.goldapi.io/api/{symbol}/USD、認証はヘッダ x-access-token。
 // 1コール=1金属なので、1回の更新で XAU/XAG/XPT/XPD の計4リクエストを消費する。
-// 無料枠が月100リクエストしかないため MARKET_TTL.metals を24時間に設定してあり、
-// 4金属 × 1日1回 × 30日 = 月120リクエスト（多少の超過は許容する運用）。
+// 無料枠が月100リクエストしかないため MARKET_TTL.metals を30時間に設定してあり、
+// 4金属 × 24h/30h × 30日 = 月96リクエストで枠内に収まる。
 // 枠を使い切ると429が返るが、その場合は下の throw で genre 全体を失敗させ、
 // resolveMarketGenre の「直前キャッシュを stale:true で返す」経路にそのまま乗る。
 // 部分成功を採らないのは、4金属を同一時点のスナップショットとして揃えるため。
