@@ -654,7 +654,7 @@ async function anthropicChat(env, corsH, opts) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: opts.model || "claude-sonnet-5",
+        model: opts.model || "claude-sonnet-5-5",
         max_tokens: opts.max_tokens,
         system: opts.system,
         messages: opts.messages,
@@ -1060,7 +1060,7 @@ async function handleYamaCalendar(request, corsH, env, authEmail) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: "claude-sonnet-5-5",
         max_tokens: 1024,
         system: "あなたは山暮らしの農作業アドバイザーです。\n月齢・旧暦の吉日と、ユーザーのGoogleカレンダーの予定を組み合わせて、\n今月の農作業タイミングを具体的に提案してください。\n豪雪地帯・高標高の山林環境を考慮し、キノコの原木栽培・山仕事に特化したアドバイスを含めること。\n出力は日本語で、見やすくまとめてください。",
         messages: [{
@@ -1213,7 +1213,7 @@ async function callMcpTool(name, args, env) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: "claude-sonnet-5-5",
         max_tokens: MCP_MAX_TOKENS[name] || 800,
         system: systemPrompt,
         messages: [{ role: "user", content: userContent }],
@@ -2525,7 +2525,7 @@ async function handleRequest(request, env) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-5",
+          model: "claude-sonnet-5-5",
           max_tokens: vbChatMaxTokens,
           system: vbChatSystem,
           messages: vbChatMessagesToSend,
@@ -2843,7 +2843,7 @@ async function handleRequest(request, env) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-5",
+          model: "claude-sonnet-5-5",
           max_tokens: 1024,
           messages: [
             {
