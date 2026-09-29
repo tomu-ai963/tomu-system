@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_PATH = path.join(here, "..", "..", "tomu_system_worker.js");
-const OUT_DIR = path.join(here, "results");
+let OUT_DIR = path.join(here, "results");
 
 const CONFIGS = [
   // 現行の本番と同一（thinking・effort 指定なし）
@@ -42,12 +42,21 @@ const PRICES = {
 const TOKENS_PER_CHAR_UPPER = 1.5;
 
 function parseArgs(argv) {
-  const args = { dryRun: false, budget: 1.8 };
+  const args = { dryRun: false, budget: 1.8, configs: null, maxGeneral: null, maxPro: null, out: "results" };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--dry-run") args.dryRun = true;
     else if (argv[i] === "--budget") args.budget = Number(argv[++i]);
+    else if (argv[i] === "--configs") args.configs = argv[++i].split(",");
+    else if (argv[i] === "--max-general") args.maxGeneral = Number(argv[++i]);
+    else if (argv[i] === "--max-pro") args.maxPro = Number(argv[++i]);
+    else if (argv[i] === "--out") args.out = argv[++i];
+    else throw new Error(`不明なオプション: ${argv[i]}`);
   }
   if (!(args.budget > 0)) throw new Error("--budget には正の数を指定してください");
+  if (args.configs) {
+    const unknown = args.configs.filter((id) => !CONFIGS.some((c) => c.id === id));
+    if (unknown.length) throw new Error(`不明な設定: ${unknown.join(", ")}（${CONFIGS.map((c) => c.id).join(", ")}）`);
+  }
   return args;
 }
 
@@ -115,7 +124,7 @@ function writeReports(results) {
     key += "\n";
   });
 
-  key += "## 設定ごとの集計\n\n| 設定 | 成功数 | エラー | 上限到達(max_tokens) | 平均出力tok | 平均時間(秒) | 合計コスト($) |\n|---|---|---|---|---|---|---|\n";
+  key += `## 設定ごとの集計\n\n条件: max_tokens 一般 ${results.maxTokens.general} / 専門家 ${results.maxTokens.pro}\n\n| 設定 | 成功数 | エラー | 上限到達(max_tokens) | 平均出力tok | 平均時間(秒) | 合計コスト($) |\n|---|---|---|---|---|---|---|\n`;
   for (const c of CONFIGS) {
     const t = totals[c.id];
     if (!t) continue;
@@ -130,7 +139,14 @@ function writeReports(results) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const { apps, maxTokens } = loadAdvisorDefs();
+  const { apps, maxTokens: prodMaxTokens } = loadAdvisorDefs();
+  // 上限の上書きはこのスクリプト内だけ（本番の ADVISOR_MAX_TOKENS は変更しない）
+  const maxTokens = {
+    general: args.maxGeneral || prodMaxTokens.general,
+    pro: args.maxPro || prodMaxTokens.pro,
+  };
+  const configs = args.configs ? CONFIGS.filter((c) => args.configs.includes(c.id)) : CONFIGS;
+  OUT_DIR = path.join(here, args.out);
   const questions = JSON.parse(fs.readFileSync(path.join(here, "questions.json"), "utf8"));
 
   // 計画と最悪コスト
@@ -138,17 +154,18 @@ async function main() {
   for (const q of questions) {
     const system = apps[q.advisor]?.[q.mode];
     if (!system) throw new Error(`未定義のアドバイザー/モード: ${q.advisor}/${q.mode}`);
-    for (const c of CONFIGS) worstTotal += worstCaseCost(c.model, system, q.question, maxTokens[q.mode]);
+    for (const c of configs) worstTotal += worstCaseCost(c.model, system, q.question, maxTokens[q.mode]);
   }
-  console.log(`質問 ${questions.length} 問 × 設定 ${CONFIGS.length} 通り = ${questions.length * CONFIGS.length} 回`);
-  console.log(`最悪コスト見積もり: $${worstTotal.toFixed(3)} / 予算 $${args.budget.toFixed(2)}`);
+  console.log(`質問 ${questions.length} 問 × 設定 ${configs.length} 通り（${configs.map((c) => c.id).join(", ")}） = ${questions.length * configs.length} 回`);
+  console.log(`max_tokens: 一般 ${maxTokens.general} / 専門家 ${maxTokens.pro}  出力先: ${OUT_DIR}`);
+  console.log(`全回答が上限まで出た場合のコスト: $${worstTotal.toFixed(3)} / 予算 $${args.budget.toFixed(2)}（実費ベースで判定）`);
   if (args.dryRun) {
     console.log("--dry-run のため API は呼びません。");
     return;
   }
 
   const client = new Anthropic({ maxRetries: 0 });
-  const results = { startedAt: new Date().toISOString(), budget: args.budget, spent: 0, stoppedEarly: false, questions: [] };
+  const results = { startedAt: new Date().toISOString(), budget: args.budget, maxTokens, spent: 0, stoppedEarly: false, questions: [] };
 
   outer:
   for (const [qi, q] of questions.entries()) {
@@ -156,7 +173,7 @@ async function main() {
     const entry = { ...q, runs: [] };
     results.questions.push(entry);
 
-    for (const c of shuffled(CONFIGS)) {
+    for (const c of shuffled(configs)) {
       const worst = worstCaseCost(c.model, system, q.question, maxTokens[q.mode]);
       if (results.spent + worst > args.budget) {
         console.log(`予算上限に達するため中止（使用済み $${results.spent.toFixed(4)} + 最悪 $${worst.toFixed(4)} > $${args.budget}）`);

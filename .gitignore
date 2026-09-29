@@ -7,4 +7,4 @@ tokushoho.html
 .dev.vars*
 *.bak
 scripts/advisor-compare/node_modules/
-scripts/advisor-compare/results/
+scripts/advisor-compare/results*/
