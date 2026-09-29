@@ -1130,20 +1130,31 @@ async function loadCalendarAdvice() {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
+    // A-7: AI の回答・サーバーの値はエスケープしてから埋め込む（改行→<br> はエスケープ後に行う）
     resultDiv.innerHTML = `
-      <div style="font-family:'Shippori Mincho',serif;font-size:0.85rem;color:var(--gold-light);margin-bottom:8px;">📅 ${data.month} 農作業タイミング提案</div>
-      <div class="advice-text">${data.advice.replace(/\n/g, '<br>')}</div>
+      <div style="font-family:'Shippori Mincho',serif;font-size:0.85rem;color:var(--gold-light);margin-bottom:8px;">📅 ${escapeHtml(data.month)} 農作業タイミング提案</div>
+      <div class="advice-text">${escapeHtml(data.advice).replace(/\n/g, '<br>')}</div>
       <details>
         <summary>今月の月齢吉日</summary>
-        ${data.keyDays.map(d => `<p>${d.day}日: ${d.phase}</p>`).join('')}
+        ${data.keyDays.map(d => `<p>${escapeHtml(d.day)}日: ${escapeHtml(d.phase)}</p>`).join('')}
       </details>
     `;
     if(data.advice&&window.histSave){histSave({title:(data.month||'')+' 農作業タイミング',summary:String(data.advice).replace(/\n/g,' ').slice(0,80),content:data.advice,meta:''});setTimeout(histLoad,1000);}
   } catch (err) {
-    resultDiv.innerHTML = `⚠️ ${err.message}`;
+    resultDiv.textContent = `⚠️ ${err.message}`;
   }
 
   btn.disabled = false;
+}
+
+// A-7: HTML の特殊文字をエスケープする（AI の回答を innerHTML に入れるとき用）
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ===== タブ =====

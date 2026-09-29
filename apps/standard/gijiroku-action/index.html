@@ -925,11 +925,23 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
   }
 
   // 結果レンダリング（Markdownライク）
+  // A-7: AI の回答を innerHTML に入れる前に HTML の特殊文字をエスケープする
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function renderResult(text) {
     const container = document.getElementById('result-content');
     if(text&&window.histSave){histSave({title:'議事録アクション',summary:String(text).replace(/[【】#*>-]+/g,' ').slice(0,80),content:text,meta:''});setTimeout(histLoad,1000);}
     // シンプルにpre形式で表示しつつ、セクションヘッダーを装飾
-    const html = text
+    // 先に全体をエスケープし、装飾用のタグだけをこちらで組み立てる（【】・-・数字はエスケープの影響を受けない）
+    const safe = escapeHtml(text);
+    const html = safe
       .replace(/【(.+?)】/g, '<div class="section-h">$1</div>')
       .replace(/^[-・]\s*(.+)$/gm, (_, body) => {
         const isPriHigh = body.includes('優先度：高') || body.includes('重要');
@@ -944,7 +956,7 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
           <div class="item-body"><div class="item-main">${body}</div></div>
         </div>`;
       });
-    container.innerHTML = html || `<div class="raw-text">${text}</div>`;
+    container.innerHTML = html || `<div class="raw-text">${safe}</div>`;
     window._lastResult = text;
   }
 
