@@ -4,3 +4,7 @@ mcp-config-tomu.json
 privacy.html
 tokushoho.html
 .dev.vars
+.dev.vars*
+*.bak
+scripts/advisor-compare/node_modules/
+scripts/advisor-compare/results/

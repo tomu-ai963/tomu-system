@@ -1,0 +1,9 @@
+{
+  "name": "advisor-compare",
+  "private": true,
+  "type": "module",
+  "description": "士業アドバイザーのモデル比較（Opus 4.8 / Sonnet 5.5 low・medium / Opus 5.5 low）",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0"
+  }
+}
