@@ -521,7 +521,7 @@ async function generate() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'etiquette',
+        appType: 'etiquette', notice: true,
         input: `シーン: ${scene}\n自分の立場: ${position}`,
         email: TomuAuth.getEmail()
       })

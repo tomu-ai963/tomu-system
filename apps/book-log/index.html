@@ -584,7 +584,7 @@ async function generate() {
     const res = await fetch(WORKER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appType: "book-log", input, email: TomuAuth.getEmail() }),
+      body: JSON.stringify({ appType: "book-log", notice: true, input, email: TomuAuth.getEmail() }),
     });
 
     const data = await res.json();

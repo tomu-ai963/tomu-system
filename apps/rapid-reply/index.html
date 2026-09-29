@@ -520,7 +520,7 @@ async function generateReply() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        appType: "rapid-reply",
+        appType: "rapid-reply", notice: true,
         input: input,
         extra: { direction: selectedDirection },
         email: TomuAuth.getEmail()

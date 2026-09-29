@@ -519,7 +519,7 @@ async function generate() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'polite-decline',
+        appType: 'polite-decline', notice: true,
         input: `断りたい内容: ${situation}\n相手との関係性: ${relation}`,
         email: TomuAuth.getEmail()
       })

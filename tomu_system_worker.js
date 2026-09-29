@@ -663,20 +663,26 @@ function extractText(data) {
     .map(function(b) { return b.text; }).join("");
 }
 
-// 出力上限（max_tokens）で途中終了した回答に付けるお知らせ
+// 出力上限（max_tokens）で途中終了した回答に付けるお知らせ。
+// 既定では付けない。回答を文章として表示するアプリがリクエストに "notice": true を付けたときだけ付ける
+// （JSON として読むアプリの出力を壊さないため）
 var TRUNCATION_NOTICE = "※回答が長くなったため途中で終了しました。";
 
-// 画面にそのまま表示するテキスト用。途中終了ならお知らせを末尾に付ける
-function displayText(data) {
+function wantsNotice(body) {
+  return !!body && body.notice === true;
+}
+
+// 画面にそのまま表示するテキスト用。notice が true かつ途中終了ならお知らせを末尾に付ける
+function displayText(data, notice) {
   var text = extractText(data);
-  if (data && data.stop_reason === "max_tokens") text += (text ? "\n\n" : "") + TRUNCATION_NOTICE;
+  if (notice === true && data && data.stop_reason === "max_tokens") text += (text ? "\n\n" : "") + TRUNCATION_NOTICE;
   return text;
 }
 
-// Anthropic 形式のまま返す /api/chat 用。途中終了なら最後の text ブロックにお知らせを付ける
+// Anthropic 形式のまま返す /api/chat 用。notice が true かつ途中終了なら最後の text ブロックにお知らせを付ける
 // （content[0].text で読むフロントにも届くよう、text ブロックがなければ新たに追加する）
-function appendTruncationNotice(data) {
-  if (!data || data.stop_reason !== "max_tokens" || !Array.isArray(data.content)) return data;
+function appendTruncationNotice(data, notice) {
+  if (notice !== true || !data || data.stop_reason !== "max_tokens" || !Array.isArray(data.content)) return data;
   for (var i = data.content.length - 1; i >= 0; i--) {
     if (data.content[i].type === "text") {
       data.content[i].text += "\n\n" + TRUNCATION_NOTICE;
@@ -728,7 +734,7 @@ async function anthropicChat(env, corsH, opts) {
   }
   var aiText = await aiRes.text();
   try {
-    aiText = JSON.stringify(appendTruncationNotice(stripThinking(JSON.parse(aiText))));
+    aiText = JSON.stringify(appendTruncationNotice(stripThinking(JSON.parse(aiText)), opts.notice === true));
   } catch (e) {
     // パースできない場合は受け取ったまま返す
   }
@@ -1087,7 +1093,8 @@ function getMonthMoonData() {
   return moonData;
 }
 
-async function handleYamaCalendar(request, corsH, env, authEmail) {
+// reqBody は呼び出し元で解析済みのリクエスト body（使うのは notice の指定のみ）
+async function handleYamaCalendar(reqBody, corsH, env, authEmail) {
   var email = authEmail || "";
   var planCheck = await checkPlanAndCount(email, "standard", env);
   if (!planCheck.ok) {
@@ -1128,7 +1135,7 @@ async function handleYamaCalendar(request, corsH, env, authEmail) {
       }),
     });
     var aiData = await aiRes.json();
-    var advice = displayText(aiData) || "AI提案を取得できませんでした";
+    var advice = displayText(aiData, wantsNotice(reqBody)) || "AI提案を取得できませんでした";
 
     return jsonRes({
       success: true,
@@ -1280,7 +1287,8 @@ async function callMcpTool(name, args, env) {
     if (data.error) {
       return { content: [{ type: "text", text: "AI error: " + data.error.message }], isError: true };
     }
-    var text = displayText(data);
+    // MCP はクライアントから notice を受け取る経路がないため、既定どおりお知らせは付けない
+    var text = displayText(data, false);
     return { content: [{ type: "text", text: text }] };
   } catch (err) {
     return { content: [{ type: "text", text: "Worker error: " + err.message }], isError: true };
@@ -2605,7 +2613,7 @@ async function handleRequest(request, env) {
         }
       } else {
         // generate_prompt は画像生成に渡す JSON なのでお知らせは付けない。会話モードのみ付ける
-        return jsonRes({ reply: displayText(vbChatData) }, 200, corsH);
+        return jsonRes({ reply: displayText(vbChatData, wantsNotice(body)) }, 200, corsH);
       }
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
@@ -2774,7 +2782,7 @@ async function handleRequest(request, env) {
   // POST /api/yama-calendar — 山の暦（月齢×カレンダー農作業提案）
   // =========================================================
   if (url.pathname === "/api/yama-calendar") {
-    return handleYamaCalendar(request, corsH, env, authEmail);
+    return handleYamaCalendar(body, corsH, env, authEmail);
   }
 
   // =========================================================
@@ -2931,7 +2939,7 @@ async function handleRequest(request, env) {
         return jsonRes({ error: (fsErr.error && fsErr.error.message) || ("Anthropic API error: " + fsApiRes.status) }, 502, corsH);
       }
       var fsData = await fsApiRes.json();
-      var fsResult = displayText(fsData);
+      var fsResult = displayText(fsData, wantsNotice(body));
       return jsonRes({ result: fsResult }, 200, corsH);
     } catch (err) {
       return jsonRes({ error: "Worker error: " + err.message }, 500, corsH);
@@ -2956,7 +2964,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: chatCheck.error, required: chatCheck.required, current: chatCheck.current, limit: chatCheck.limit }, chatCheck.status, corsH);
     }
 
-    return await anthropicChat(env, corsH, { system: system, messages: messages, max_tokens: maxTokens, stream: body.stream === true });
+    return await anthropicChat(env, corsH, { system: system, messages: messages, max_tokens: maxTokens, stream: body.stream === true, notice: wantsNotice(body) });
   }
 
   // =========================================================
@@ -3003,7 +3011,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: "Anthropic API error", detail: await lightRes.text() }, lightRes.status, corsH);
     }
     var lightData = await lightRes.json();
-    var text = displayText(lightData);
+    var text = displayText(lightData, wantsNotice(body));
     return jsonRes({ result: text }, 200, corsH);
   } catch (err) {
     return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);

@@ -893,6 +893,7 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          notice: true, // 出力上限で途中終了したらお知らせを付ける
           email: userEmail,
           system: buildSystem(style, team),
           messages: [{ role: 'user', content: `以下の議事録を分析してアクションプランを作成してください：\n\n${text}` }],

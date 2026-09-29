@@ -937,6 +937,7 @@ ${notes ? `- 特別な要望・懸念：${notes}` : ""}`;
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        notice: true, // 出力上限で途中終了したらお知らせを付ける
         email: userEmail,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],

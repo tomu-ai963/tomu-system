@@ -461,6 +461,7 @@ document.addEventListener('tomu:unlocked',function(){setTimeout(histLoad,300);})
           'X-Customer-Email': email,
         },
         body: JSON.stringify({
+          notice: true, // 出力上限で途中終了したらお知らせを付ける
           image: base64Image,
           media_type: mediaType,
           mode: currentMode,

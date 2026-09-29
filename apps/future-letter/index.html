@@ -409,7 +409,7 @@ async function sendLetter() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'future-letter',
+        appType: 'future-letter', notice: true,
         input: input,
         email: TomuAuth.getEmail()
       })

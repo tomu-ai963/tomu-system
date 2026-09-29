@@ -541,7 +541,7 @@ async function generate() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'outing',
+        appType: 'outing', notice: true,
         input: `子供の年齢: ${age}\n天気: ${weather}\n予算: ${budget}\n移動時間の目安: ${travel}`,
         email: TomuAuth.getEmail()
       })

@@ -512,7 +512,7 @@ async function generate() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'parent-message',
+        appType: 'parent-message', notice: true,
         input: `伝えたい内容: ${content}\n親との関係感: ${relation}`,
         email: TomuAuth.getEmail()
       })

@@ -790,7 +790,7 @@ async function getSpinComment(menuName) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'lunch',
+        appType: 'lunch', notice: true,
         input: prompt,
         email: TomuAuth.getEmail()
       })

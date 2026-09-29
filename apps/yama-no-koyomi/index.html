@@ -1052,6 +1052,7 @@ async function askAI() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        notice: true, // 出力上限で途中終了したらお知らせを付ける
         email: email,
         system: systemPrompt,
         messages: [{ role: 'user', content: query }],
@@ -1124,6 +1125,7 @@ async function loadCalendarAdvice() {
         'Content-Type': 'application/json',
         'X-User-Email': window.TomuAuth ? window.TomuAuth.getEmail() : (localStorage.getItem('tomu_email') || ''),
       },
+      body: JSON.stringify({ notice: true }), // 出力上限で途中終了したらお知らせを付ける
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);

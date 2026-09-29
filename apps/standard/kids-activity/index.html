@@ -585,6 +585,7 @@ async function generateResult() {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
+        notice: true, // 出力上限で途中終了したらお知らせを付ける
         email: window.TomuAuth.getEmail(),
         system,
         messages: [{ role: "user", content: userSummary }],

@@ -545,7 +545,7 @@ ${subText}
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'subscript-checker',
+        appType: 'subscript-checker', notice: true,
         input: prompt,
         email: TomuAuth.getEmail()
       })

@@ -955,7 +955,7 @@ async function sendChat() {
     const res = await fetch(WORKER_URL + '/api/vision-board/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, messages: chatMessages, mode: 'chat' }),
+      body: JSON.stringify({ email: email, messages: chatMessages, mode: 'chat', notice: true }),
     });
     const data = await res.json();
     removeMsg(typingId);

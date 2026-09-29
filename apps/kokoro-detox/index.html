@@ -759,7 +759,7 @@ async function runDetox() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appType: 'kokoro_detox',
+        appType: 'kokoro_detox', notice: true,
         input: `${userInput}　（返し方：${selectedTone}。最後に「---」の後に1文の詩的なアファーメーションを添えてください）`,
         extra: { tone: selectedTone },
         email: email

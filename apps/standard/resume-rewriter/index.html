@@ -636,6 +636,7 @@ ${memo ? `- 補足情報：${memo}` : ''}
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        notice: true, // 出力上限で途中終了したらお知らせを付ける
         email,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],

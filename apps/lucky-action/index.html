@@ -630,7 +630,7 @@ async function fetchLucky() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        appType: "lucky-action",
+        appType: "lucky-action", notice: true,
         input: inputText,
         email: TomuAuth.getEmail()
       })

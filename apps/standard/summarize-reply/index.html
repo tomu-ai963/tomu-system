@@ -548,6 +548,7 @@ async function callWorker(systemPrompt, userContent) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      notice: true, // 出力上限で途中終了したらお知らせを付ける
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }]
     })

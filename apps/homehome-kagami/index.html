@@ -101,7 +101,7 @@ async function getPraise() {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        appType: "praise",
+        appType: "praise", notice: true,
         input: input,
         email: TomuAuth.getEmail()
       })
