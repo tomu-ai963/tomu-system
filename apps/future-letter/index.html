@@ -454,7 +454,7 @@ function escapeHtml(str) {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+    .replace(/>/g, '&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
     .replace(/\n/g, '<br>');
 }
 
@@ -506,7 +506,7 @@ async function callMystic(tool, args) {
 const A='future-letter',W='https://orange-sound-354b.inverted-triangle-leef.workers.dev';
 let _s=[];
 function _isFull(){return !!(window.TomuAuth&&TomuAuth.getPlan&&TomuAuth.getPlan()==='full');}
-function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 window.histLoad=async function(){if(!_isFull()){const sec=document.getElementById('hist-section');if(sec)sec.style.display='none';return;}const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?app_id='+A+'&limit=5',{headers:{'X-Customer-Email':em}});const d=await r.json();_s=d.sessions||[];histRender(_s);}catch(x){}};
 window.histRender=function(ss){const sec=document.getElementById('hist-section');const li=document.getElementById('hist-list');if(!sec||!li)return;if(!_isFull()){sec.style.display='none';return;}if(!ss.length){li.innerHTML='<p class="hist-empty">まだ履歴がありません</p>';sec.style.display='';return;}li.innerHTML=ss.map((s,i)=>{const sd=s.session_data||{},dt=new Date(s.created_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});return'<div class="hist-card" onclick="histOpen('+i+')"><div class="hist-card-meta"><span class="hist-card-date">'+dt+'</span><button class="hist-del" onclick="event.stopPropagation();histDel(\''+_e(s.id)+'\')">🗑</button></div><div class="hist-card-title">'+_e(sd.title||'—')+'</div>'+(sd.summary?'<div class="hist-card-summary">'+_e(sd.summary)+'</div>':'')+'</div>';}).join('');sec.style.display='';};
 window.histOpen=function(i){const s=_s[i];if(!s)return;const sd=s.session_data||{};document.getElementById('hist-modal-date').textContent=new Date(s.created_at).toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});document.getElementById('hist-modal-title').textContent=sd.title||'—';document.getElementById('hist-modal-meta').textContent=sd.meta||'';document.getElementById('hist-modal-body').textContent=sd.content||'';document.getElementById('hist-modal').style.display='flex';document.body.style.overflow='hidden';};
