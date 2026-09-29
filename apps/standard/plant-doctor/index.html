@@ -787,12 +787,16 @@ function renderHistory(sessions) {
       <div class="history-meta">
         <span class="history-date">${esc(date)}</span>
         <span class="status-badge ${statusClass(sd.overallStatus)}">${esc(sd.overallLabel || sd.overallStatus || '—')}</span>
-        <button class="history-delete-btn" title="削除" onclick="event.stopPropagation(); deleteHistory('${esc(s.id)}')">🗑</button>
+        <button class="history-delete-btn" title="削除" data-idx="${i}">🗑</button>
       </div>
       <div class="history-plant">${esc(sd.plantName || '不明な植物')}</div>
       ${advice ? `<div class="history-advice">${esc(advice)}</div>` : ''}
     </div>`;
   }).join('');
+  // A-7: 削除する id はインラインの onclick に埋め込まず、一覧の番号から sessions を引いて渡す
+  list.querySelectorAll('.history-delete-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); deleteHistory(sessions[+btn.dataset.idx].id); });
+  });
   section.style.display = 'block';
 }
 

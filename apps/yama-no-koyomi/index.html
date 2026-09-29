@@ -902,11 +902,12 @@ function renderRecordHistory() {
     container.innerHTML = '<div style="font-size:0.8rem;color:#888">まだ記録がありません</div>';
     return;
   }
-  container.innerHTML = sorted.slice(0, 30).map(([key, val]) => {
+  const shown = sorted.slice(0, 30);
+  container.innerHTML = shown.map(([key, val], i) => {
     const d = new Date(key);
     const kichiStr = val.kichi && val.kichi.length > 0 ? ` · ${val.kichi.join('·')}` : '';
     return `
-      <div style="border-bottom:1px solid var(--paper2);padding:10px 0;cursor:pointer" onclick="selectRecordDate('${key}')">
+      <div class="record-row" style="border-bottom:1px solid var(--paper2);padding:10px 0;cursor:pointer" data-idx="${i}">
         <div style="font-size:0.72rem;color:var(--gold);font-weight:600;margin-bottom:4px">
           ${key}（${dowNames[d.getDay()]}）月齢${val.moonAge} ${val.moonName}${kichiStr}
         </div>
@@ -914,6 +915,10 @@ function renderRecordHistory() {
       </div>
     `;
   }).join('');
+  // A-7: 日付キーはインラインの onclick に埋め込まず、一覧の番号から引いて渡す
+  container.querySelectorAll('.record-row').forEach(el => {
+    el.addEventListener('click', () => selectRecordDate(shown[+el.dataset.idx][0]));
+  });
 }
 
 function selectRecordDate(key) {
@@ -967,23 +972,30 @@ function renderSchedules() {
     container.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85rem;padding:20px">予定がありません</div>';
     return;
   }
-  container.innerHTML = schedules.map(s => {
+  container.innerHTML = schedules.map((s, i) => {
     const d = new Date(s.date + 'T00:00:00');
     const moonAge = getMoonAge(d);
     const kichi = getKichiDays(d);
     const kichiStr = kichi.length > 0 ? ` · ${kichi[0].label}` : '';
     return `
       <div class="schedule-item ${s.done ? 'done' : ''}">
-        <div class="schedule-check" onclick="toggleSchedule(${s.id})">${s.done ? '✓' : ''}</div>
+        <div class="schedule-check" data-idx="${i}">${s.done ? '✓' : ''}</div>
         <div class="schedule-info">
           <div class="schedule-title">${s.title}</div>
           <div class="schedule-meta">${s.date}（${dowNames[d.getDay()]}）${s.time ? ' ' + s.time : ''} ${getMoonEmoji(moonAge)}月齢${moonAge.toFixed(0)}${kichiStr}</div>
           ${s.memo ? `<div style="font-size:0.72rem;color:#888;margin-top:2px">${s.memo}</div>` : ''}
         </div>
-        <button class="schedule-delete" onclick="deleteSchedule(${s.id})">×</button>
+        <button class="schedule-delete" data-idx="${i}">×</button>
       </div>
     `;
   }).join('');
+  // A-7: id はインラインの onclick に埋め込まず、一覧の番号から schedules を引いて渡す
+  container.querySelectorAll('.schedule-check').forEach(el => {
+    el.addEventListener('click', () => toggleSchedule(schedules[+el.dataset.idx].id));
+  });
+  container.querySelectorAll('.schedule-delete').forEach(el => {
+    el.addEventListener('click', () => deleteSchedule(schedules[+el.dataset.idx].id));
+  });
 }
 
 // ===== メモ =====
@@ -1010,13 +1022,17 @@ function renderMemos() {
     container.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85rem;padding:20px">メモがありません</div>';
     return;
   }
-  container.innerHTML = memos.map(m => `
+  container.innerHTML = memos.map((m, i) => `
     <div class="memo-card">
       <div class="memo-date">${m.date}</div>
       <div class="memo-text">${m.text}</div>
-      <button class="memo-delete" onclick="deleteMemo(${m.id})">×</button>
+      <button class="memo-delete" data-idx="${i}">×</button>
     </div>
   `).join('');
+  // A-7: id はインラインの onclick に埋め込まず、一覧の番号から memos を引いて渡す
+  container.querySelectorAll('.memo-delete').forEach(el => {
+    el.addEventListener('click', () => deleteMemo(memos[+el.dataset.idx].id));
+  });
 }
 
 // ===== AI (Worker経由) =====
@@ -1214,7 +1230,7 @@ let _s=[];
 function _isFull(){return !!(window.TomuAuth&&TomuAuth.getPlan&&TomuAuth.getPlan()==='full');}
 function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 window.histLoad=async function(){if(!_isFull()){const sec=document.getElementById('hist-section');if(sec)sec.style.display='none';return;}const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?app_id='+A+'&limit=5',{headers:{'X-Customer-Email':em}});const d=await r.json();_s=d.sessions||[];histRender(_s);}catch(x){}};
-window.histRender=function(ss){const sec=document.getElementById('hist-section');const li=document.getElementById('hist-list');if(!sec||!li)return;if(!_isFull()){sec.style.display='none';return;}if(!ss.length){li.innerHTML='<p class="hist-empty">まだ履歴がありません</p>';sec.style.display='';return;}li.innerHTML=ss.map((s,i)=>{const sd=s.session_data||{},dt=new Date(s.created_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});return'<div class="hist-card" onclick="histOpen('+i+')"><div class="hist-card-meta"><span class="hist-card-date">'+dt+'</span><button class="hist-del" onclick="event.stopPropagation();histDel(\''+_e(s.id)+'\')">🗑</button></div><div class="hist-card-title">'+_e(sd.title||'—')+'</div>'+(sd.summary?'<div class="hist-card-summary">'+_e(sd.summary)+'</div>':'')+'</div>';}).join('');sec.style.display='';};
+window.histRender=function(ss){const sec=document.getElementById('hist-section');const li=document.getElementById('hist-list');if(!sec||!li)return;if(!_isFull()){sec.style.display='none';return;}if(!ss.length){li.innerHTML='<p class="hist-empty">まだ履歴がありません</p>';sec.style.display='';return;}li.innerHTML=ss.map((s,i)=>{const sd=s.session_data||{},dt=new Date(s.created_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});return'<div class="hist-card" onclick="histOpen('+i+')"><div class="hist-card-meta"><span class="hist-card-date">'+dt+'</span><button class="hist-del" data-i="'+i+'">🗑</button></div><div class="hist-card-title">'+_e(sd.title||'—')+'</div>'+(sd.summary?'<div class="hist-card-summary">'+_e(sd.summary)+'</div>':'')+'</div>';}).join('');li.querySelectorAll('.hist-del').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();histDel(ss[+b.dataset.i].id);});});sec.style.display='';};
 window.histOpen=function(i){const s=_s[i];if(!s)return;const sd=s.session_data||{};document.getElementById('hist-modal-date').textContent=new Date(s.created_at).toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});document.getElementById('hist-modal-title').textContent=sd.title||'—';document.getElementById('hist-modal-meta').textContent=sd.meta||'';document.getElementById('hist-modal-body').textContent=sd.content||'';document.getElementById('hist-modal').style.display='flex';document.body.style.overflow='hidden';};
 window.histClose=function(e){if(e&&e.target!==document.getElementById('hist-modal'))return;document.getElementById('hist-modal').style.display='none';document.body.style.overflow='';};
 window.histDel=async function(id){if(!id||!confirm('この履歴を削除しますか？'))return;const em=window.TomuAuth?window.TomuAuth.getEmail():null;if(!em)return;try{const r=await fetch(W+'/api/history?id='+encodeURIComponent(id),{method:'DELETE',headers:{'X-Customer-Email':em}});if(r.ok)await histLoad();else alert('削除に失敗しました。');}catch(x){alert('通信エラー');}};

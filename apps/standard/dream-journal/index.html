@@ -374,14 +374,15 @@ function render() {
   empty.style.display = 'none';
   note.style.display = entries.length >= KV_MAX_ENTRIES ? '' : 'none';
 
-  wrap.innerHTML = entries.map(function (en) {
+  // A-7: id はインラインの onclick に埋め込まず、一覧の番号（data-idx）から entries を引いて渡す
+  wrap.innerHTML = entries.map(function (en, i) {
     const open = expandedId === en.id;
     const syms = (en.symbols || []).map(function (s) {
       return '<span class="symbol">' + _e(s) + '</span>';
     }).join('');
     return '' +
       '<div class="card">' +
-      '  <div class="card-head" onclick="toggle(' + JSON.stringify(en.id) + ')">' +
+      '  <div class="card-head" data-idx="' + i + '">' +
       '    <div class="card-head-left">' +
       '      <span class="card-title">' + _e(en.title) + '</span>' +
       '      <span class="card-date">' + _e(en.date) + '</span>' +
@@ -395,11 +396,17 @@ function render() {
         (syms ? '    <div class="block-label">🌙 象徴</div><div class="symbols">' + syms + '</div>' : '') +
         '    <div class="block-label">✦ 夢占い</div>' +
         '    <p class="fortune">' + _e(en.fortune) + '</p>' +
-        '    <button class="del" onclick="deleteEntry(event,' + JSON.stringify(en.id) + ')">🗑 この夢を消す</button>' +
+        '    <button class="del" data-idx="' + i + '">🗑 この夢を消す</button>' +
         '  </div>'
         : '') +
       '</div>';
   }).join('');
+  wrap.querySelectorAll('.card-head').forEach(function (el) {
+    el.addEventListener('click', function () { toggle(entries[+el.dataset.idx].id); });
+  });
+  wrap.querySelectorAll('.del').forEach(function (el) {
+    el.addEventListener('click', function (ev) { deleteEntry(ev, entries[+el.dataset.idx].id); });
+  });
 }
 
 function toggle(id) {
