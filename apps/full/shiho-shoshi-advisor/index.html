@@ -443,6 +443,7 @@ async function requestCompletion() {
   const loadingEl = appendLoading();
   let streamMsgEl = null;
   let reply = '';
+  let stopReason = null;
 
   try {
     const response = await fetch(WORKER_URL, {
@@ -483,6 +484,9 @@ async function requestCompletion() {
         if (!payload || payload === '[DONE]') continue;
         let ev;
         try { ev = JSON.parse(payload); } catch (e) { continue; }
+        if (ev.type === 'message_delta' && ev.delta && ev.delta.stop_reason) {
+          stopReason = ev.delta.stop_reason;
+        }
         if (ev.type === 'content_block_delta' && ev.delta && typeof ev.delta.text === 'string') {
           reply += ev.delta.text;
           bubble.innerHTML = formatText(reply);
@@ -496,6 +500,9 @@ async function requestCompletion() {
       showRetry('応答を取得できませんでした。');
       return;
     }
+
+    // 出力上限に達して途中で終わった場合は利用者に知らせる（会話履歴には含めない）
+    if (stopReason === 'max_tokens') appendTruncationNote(bubble);
 
     conversationHistory.push({ role: 'assistant', content: reply });
     trimHistory();
@@ -511,6 +518,15 @@ async function requestCompletion() {
     isLoading = false;
     document.getElementById('sendBtn').disabled = false;
   }
+}
+
+function appendTruncationNote(bubble) {
+  const note = document.createElement('p');
+  note.className = 'truncation-note';
+  note.setAttribute('role', 'status');
+  note.textContent = '※回答が長くなったため途中で終了しました。';
+  note.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);font-size:13px;';
+  bubble.appendChild(note);
 }
 
 function appendMessage(role, text) {

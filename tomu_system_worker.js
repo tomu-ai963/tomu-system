@@ -663,6 +663,30 @@ function extractText(data) {
     .map(function(b) { return b.text; }).join("");
 }
 
+// 出力上限（max_tokens）で途中終了した回答に付けるお知らせ
+var TRUNCATION_NOTICE = "※回答が長くなったため途中で終了しました。";
+
+// 画面にそのまま表示するテキスト用。途中終了ならお知らせを末尾に付ける
+function displayText(data) {
+  var text = extractText(data);
+  if (data && data.stop_reason === "max_tokens") text += (text ? "\n\n" : "") + TRUNCATION_NOTICE;
+  return text;
+}
+
+// Anthropic 形式のまま返す /api/chat 用。途中終了なら最後の text ブロックにお知らせを付ける
+// （content[0].text で読むフロントにも届くよう、text ブロックがなければ新たに追加する）
+function appendTruncationNotice(data) {
+  if (!data || data.stop_reason !== "max_tokens" || !Array.isArray(data.content)) return data;
+  for (var i = data.content.length - 1; i >= 0; i--) {
+    if (data.content[i].type === "text") {
+      data.content[i].text += "\n\n" + TRUNCATION_NOTICE;
+      return data;
+    }
+  }
+  data.content.push({ type: "text", text: TRUNCATION_NOTICE });
+  return data;
+}
+
 async function anthropicChat(env, corsH, opts) {
   var wantStream = opts.stream === true;
   var reqBody = {
@@ -704,7 +728,7 @@ async function anthropicChat(env, corsH, opts) {
   }
   var aiText = await aiRes.text();
   try {
-    aiText = JSON.stringify(stripThinking(JSON.parse(aiText)));
+    aiText = JSON.stringify(appendTruncationNotice(stripThinking(JSON.parse(aiText))));
   } catch (e) {
     // パースできない場合は受け取ったまま返す
   }
@@ -1104,7 +1128,7 @@ async function handleYamaCalendar(request, corsH, env, authEmail) {
       }),
     });
     var aiData = await aiRes.json();
-    var advice = extractText(aiData) || "AI提案を取得できませんでした";
+    var advice = displayText(aiData) || "AI提案を取得できませんでした";
 
     return jsonRes({
       success: true,
@@ -1256,7 +1280,7 @@ async function callMcpTool(name, args, env) {
     if (data.error) {
       return { content: [{ type: "text", text: "AI error: " + data.error.message }], isError: true };
     }
-    var text = extractText(data);
+    var text = displayText(data);
     return { content: [{ type: "text", text: text }] };
   } catch (err) {
     return { content: [{ type: "text", text: "Worker error: " + err.message }], isError: true };
@@ -2580,7 +2604,8 @@ async function handleRequest(request, env) {
           return jsonRes({ prompt: vbChatText.replace(/```json|```/g, "").trim() }, 200, corsH);
         }
       } else {
-        return jsonRes({ reply: vbChatText }, 200, corsH);
+        // generate_prompt は画像生成に渡す JSON なのでお知らせは付けない。会話モードのみ付ける
+        return jsonRes({ reply: displayText(vbChatData) }, 200, corsH);
       }
     } catch (err) {
       return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
@@ -2906,7 +2931,7 @@ async function handleRequest(request, env) {
         return jsonRes({ error: (fsErr.error && fsErr.error.message) || ("Anthropic API error: " + fsApiRes.status) }, 502, corsH);
       }
       var fsData = await fsApiRes.json();
-      var fsResult = extractText(fsData);
+      var fsResult = displayText(fsData);
       return jsonRes({ result: fsResult }, 200, corsH);
     } catch (err) {
       return jsonRes({ error: "Worker error: " + err.message }, 500, corsH);
@@ -2978,7 +3003,7 @@ async function handleRequest(request, env) {
       return jsonRes({ error: "Anthropic API error", detail: await lightRes.text() }, lightRes.status, corsH);
     }
     var lightData = await lightRes.json();
-    var text = (lightData.content && lightData.content[0]) ? lightData.content[0].text : "";
+    var text = displayText(lightData);
     return jsonRes({ result: text }, 200, corsH);
   } catch (err) {
     return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
