@@ -99,7 +99,8 @@ function getMaxTokens(appType) {
 // ===== 士業アドバイザー定義（S-3/Q-1） =====
 // systemプロンプトはサーバー側で管理し、クライアントからは {mode, messages, stream} のみ受け取る。
 // アドバイザーの追加はこのテーブルに1エントリ足すだけでよい。
-var ADVISOR_MAX_TOKENS = { general: 1500, pro: 2000 };
+// 1500/2000 では専門家モードで回答が途中で切れていた（比較検証 12問中4問）。4000/6000 で切れなくなることを確認済み
+var ADVISOR_MAX_TOKENS = { general: 4000, pro: 6000 };
 var ADVISOR_MESSAGES_MAX_COUNT = 40;
 var ADVISOR_MESSAGES_MAX_CHARS = 40000;
 
