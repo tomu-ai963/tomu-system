@@ -978,8 +978,9 @@ ${notes ? `- 特別な要望・懸念：${notes}` : ""}`;
   }
 }
 
+// A-7: AI の回答は先にエスケープし、見出し・太字・箇条書きのタグだけをこちらで組み立てる
 function convertMarkdown(text) {
-  return text
+  return _e(text)
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")

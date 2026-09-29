@@ -572,11 +572,15 @@ function renderResults(rawText, media, strategy) {
         sections[key].forEach((item, idx) => {
             const div = document.createElement('div');
             div.className = 'idea-item';
+            // A-7: コピー対象は onclick に埋め込まず、エスケープして data-copy に入れ、addEventListener で扱う
+            // （以前の onclick は JSON.stringify の " で属性が途中で終わり、COPY が動かず属性注入の余地もあった）
             div.innerHTML = `
                 <div class="idea-num">0${idx + 1}</div>
                 <div class="idea-text">${escHtml(item)}</div>
-                <button class="idea-copy" onclick="copyItem(this, ${JSON.stringify(item)})">COPY</button>
+                <button class="idea-copy" data-copy="${escHtml(item)}">COPY</button>
             `;
+            const copyBtn = div.querySelector('.idea-copy');
+            copyBtn.addEventListener('click', () => copyItem(copyBtn, copyBtn.dataset.copy));
             panel.appendChild(div);
         });
 

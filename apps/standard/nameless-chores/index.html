@@ -718,8 +718,8 @@ function renderResult(rawText) {
     const color = BG_COLORS[key];
     shareGrid.innerHTML += `
       <div class="share-item">
-        <div class="person-dot" style="background:${color}">${name[0]}</div>
-        <div class="person-name">${name}</div>
+        <div class="person-dot" style="background:${color}">${_e(name[0])}</div>
+        <div class="person-name">${_e(name)}</div>
         <div class="person-count">${count}</div>
         <div class="person-label">件担当</div>
       </div>`;
@@ -736,14 +736,15 @@ function renderResult(rawText) {
     const item = document.createElement('div');
     item.className = 'chore-item';
     item.style.animationDelay = `${i * 0.05}s`;
+    // A-7: AI が返した家事の各項目はエスケープしてから挿入する
     item.innerHTML = `
-      <div class="chore-emoji">${c.emoji || '🏠'}</div>
+      <div class="chore-emoji">${_e(c.emoji || '🏠')}</div>
       <div class="chore-content">
-        <div class="chore-name">${c.name || ''}</div>
-        <div class="chore-detail">${c.detail || ''}</div>
+        <div class="chore-name">${_e(c.name)}</div>
+        <div class="chore-detail">${_e(c.detail)}</div>
         <div class="chore-meta">
-          <span class="badge freq">🔁 ${c.frequency || ''}</span>
-          <span class="badge assign" data-person="${assignKey}" style="background:${BG_COLORS[assignKey]||BG_COLORS['−']}">👤 ${assignName}</span>
+          <span class="badge freq">🔁 ${_e(c.frequency)}</span>
+          <span class="badge assign" data-person="${_e(assignKey)}" style="background:${BG_COLORS[assignKey]||BG_COLORS['−']}">👤 ${_e(assignName)}</span>
           ${namelessBadge}
         </div>
       </div>`;

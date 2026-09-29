@@ -762,6 +762,11 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// A-7: 診断項目の status は CSS クラス名に使うため、既知の3値以外は good に丸める
+function itemStatus(s) {
+  return s === 'caution' || s === 'bad' ? s : 'good';
+}
+
 function statusClass(s) {
   return s === 'good' ? 'status-good' : s === 'caution' ? 'status-caution' : 'status-bad';
 }
@@ -806,7 +811,7 @@ function openHistoryModal(index) {
 
   const grid = document.getElementById('modal-diag-grid');
   grid.innerHTML = (sd.items || []).map(item => `
-    <div class="diag-item ${item.status || 'good'}">
+    <div class="diag-item ${itemStatus(item.status)}">
       <div class="diag-icon">${esc(item.icon || '🌿')}</div>
       <div class="diag-body">
         <div class="diag-label">${esc(item.category)}</div>
@@ -891,13 +896,14 @@ function renderResult(r, fallbackName) {
   grid.innerHTML = '';
   (r.items || []).forEach(item => {
     const div = document.createElement('div');
-    div.className = 'diag-item ' + (item.status || 'good');
+    div.className = 'diag-item ' + itemStatus(item.status);
+    // A-7: AI の診断結果はエスケープしてから挿入する
     div.innerHTML = `
-      <div class="diag-icon">${item.icon || '🌿'}</div>
+      <div class="diag-icon">${esc(item.icon || '🌿')}</div>
       <div class="diag-body">
-        <div class="diag-label">${item.category}</div>
-        <div class="diag-title">${item.title}</div>
-        <div class="diag-desc">${item.description}</div>
+        <div class="diag-label">${esc(item.category)}</div>
+        <div class="diag-title">${esc(item.title)}</div>
+        <div class="diag-desc">${esc(item.description)}</div>
       </div>`;
     grid.appendChild(div);
   });

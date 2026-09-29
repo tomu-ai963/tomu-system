@@ -626,8 +626,9 @@ async function generateResult() {
 }
 
 // ── Markdown簡易変換 ──
+// A-7: AI の回答は先にエスケープし、見出し・太字・番号のタグだけをこちらで組み立てる
 function markdownToHtml(text) {
-  return text
+  return _e(text)
     .replace(/### (.+)/g, '<h3 style="margin:14px 0 6px;font-size:.95rem;color:#05c091;">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/^(\d+)\. /gm, '<br><strong>$1.</strong> ')

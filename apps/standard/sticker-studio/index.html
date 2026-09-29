@@ -776,6 +776,11 @@ function handleFile(input) {
 // ═══════════════════════════════════════
 // Cloudflare Worker API呼び出し
 // ═══════════════════════════════════════
+// A-7: AI が返した色は #rrggbb 形式のみ受け付ける（CSS への任意の値の混入を防ぐ）
+function safeColor(c, fallback) {
+  return /^#[0-9a-fA-F]{6}$/.test(String(c || '')) ? c : fallback;
+}
+
 async function callClaude(system, user) {
   const email = window.TomuAuth ? window.TomuAuth.getEmail() : null;
   const res = await fetch(`${WORKER_URL}/api/chat`, {
@@ -850,12 +855,13 @@ async function runColorCoach() {
     data.palettes.forEach(p => {
       const chip = document.createElement('button');
       chip.className = 'ai-chip';
-      chip.style.cssText = `background:${p.bg};color:${p.text};border-color:${p.text}44;display:block;width:100%;text-align:left;padding:10px 14px;border-radius:10px;margin-bottom:4px;`;
-      chip.innerHTML = `<b>${p.name}</b><br><span style="font-size:0.75rem;opacity:0.8">${p.desc}</span>`;
+      const pBg = safeColor(p.bg, '#ffffff'), pText = safeColor(p.text, '#333333');
+      chip.style.cssText = `background:${pBg};color:${pText};border-color:${pText}44;display:block;width:100%;text-align:left;padding:10px 14px;border-radius:10px;margin-bottom:4px;`;
+      chip.innerHTML = `<b>${_e(p.name)}</b><br><span style="font-size:0.75rem;opacity:0.8">${_e(p.desc)}</span>`;
       chip.onclick = () => {
-        STATE.bgColor = p.bg; STATE.textColor = p.text;
-        document.getElementById('bgColor').value = p.bg;
-        document.getElementById('textColor').value = p.text;
+        STATE.bgColor = pBg; STATE.textColor = pText;
+        document.getElementById('bgColor').value = pBg;
+        document.getElementById('textColor').value = pText;
         redraw();
       };
       chips.appendChild(chip);
@@ -952,13 +958,14 @@ async function runConceptGenerator() {
     data.concepts.forEach(con => {
       const chip = document.createElement('button');
       chip.className = 'ai-chip';
-      chip.style.cssText = `background:${con.bg};color:${con.textColor};border-color:${con.textColor}44;display:block;width:100%;text-align:left;padding:12px 16px;border-radius:12px;margin-bottom:4px;`;
-      chip.innerHTML = `<b>${con.name}</b><br><span style="font-size:0.75rem;opacity:0.8">${con.desc}</span>`;
+      const cBg = safeColor(con.bg, '#ffffff'), cText = safeColor(con.textColor, '#333333');
+      chip.style.cssText = `background:${cBg};color:${cText};border-color:${cText}44;display:block;width:100%;text-align:left;padding:12px 16px;border-radius:12px;margin-bottom:4px;`;
+      chip.innerHTML = `<b>${_e(con.name)}</b><br><span style="font-size:0.75rem;opacity:0.8">${_e(con.desc)}</span>`;
       chip.onclick = () => {
-        STATE.bgColor = con.bg; STATE.textColor = con.textColor;
+        STATE.bgColor = cBg; STATE.textColor = cText;
         STATE.text = con.text; STATE.shape = con.shape;
-        document.getElementById('bgColor').value = con.bg;
-        document.getElementById('textColor').value = con.textColor;
+        document.getElementById('bgColor').value = cBg;
+        document.getElementById('textColor').value = cText;
         document.getElementById('textInput').value = con.text;
         document.querySelectorAll('.btn-shape').forEach(b => {
           b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${con.shape}'`));
