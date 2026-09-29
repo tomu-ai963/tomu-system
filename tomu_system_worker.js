@@ -642,8 +642,37 @@ async function handleAuthLogout(request, env, corsH) {
 
 // A-6: Anthropic /v1/messages へのプロキシ。opts.stream === true のとき SSE をそのままフォワードする。
 // stream を指定しない既存の呼び出し元は従来通り JSON を受け取る（挙動不変）。
+// Sonnet 5.5 は effort 未指定だと high（ほぼ毎回 thinking する）。チャット用途は low で十分なので明示する。
+var SONNET_EFFORT = "low";
+
+// Sonnet 5.5 は thinking が既定で有効なため、content の先頭に中身が空の thinking ブロックが来ることがある。
+// フロントの多くが content[0].text で読むので、Worker から返す前に thinking 系ブロックを取り除く。
+function stripThinking(data) {
+  if (data && Array.isArray(data.content)) {
+    data.content = data.content.filter(function(b) {
+      return b.type !== "thinking" && b.type !== "redacted_thinking";
+    });
+  }
+  return data;
+}
+
+// Worker 内で回答テキストを取り出すときは位置ではなく type で読む
+function extractText(data) {
+  return ((data && data.content) || []).filter(function(b) { return b.type === "text"; })
+    .map(function(b) { return b.text; }).join("");
+}
+
 async function anthropicChat(env, corsH, opts) {
   var wantStream = opts.stream === true;
+  var reqBody = {
+    model: opts.model || "claude-sonnet-5-5",
+    max_tokens: opts.max_tokens,
+    system: opts.system,
+    messages: opts.messages,
+    stream: wantStream,
+  };
+  // モデル指定のない呼び出し（= Sonnet 5.5）だけ effort を付ける。士業（Opus 4.8）の挙動は変えない
+  if (!opts.model) reqBody.output_config = { effort: SONNET_EFFORT };
   var aiRes;
   try {
     aiRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -653,13 +682,7 @@ async function anthropicChat(env, corsH, opts) {
         "x-api-key": env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({
-        model: opts.model || "claude-sonnet-5-5",
-        max_tokens: opts.max_tokens,
-        system: opts.system,
-        messages: opts.messages,
-        stream: wantStream,
-      }),
+      body: JSON.stringify(reqBody),
     });
   } catch (err) {
     return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);
@@ -678,7 +701,13 @@ async function anthropicChat(env, corsH, opts) {
       }),
     });
   }
-  return new Response(await aiRes.text(), {
+  var aiText = await aiRes.text();
+  try {
+    aiText = JSON.stringify(stripThinking(JSON.parse(aiText)));
+  } catch (e) {
+    // パースできない場合は受け取ったまま返す
+  }
+  return new Response(aiText, {
     status: 200,
     headers: Object.assign({}, corsH, { "Content-Type": "application/json" }),
   });
@@ -1062,6 +1091,7 @@ async function handleYamaCalendar(request, corsH, env, authEmail) {
       body: JSON.stringify({
         model: "claude-sonnet-5-5",
         max_tokens: 1024,
+        output_config: { effort: SONNET_EFFORT },
         system: "あなたは山暮らしの農作業アドバイザーです。\n月齢・旧暦の吉日と、ユーザーのGoogleカレンダーの予定を組み合わせて、\n今月の農作業タイミングを具体的に提案してください。\n豪雪地帯・高標高の山林環境を考慮し、キノコの原木栽培・山仕事に特化したアドバイスを含めること。\n出力は日本語で、見やすくまとめてください。",
         messages: [{
           role: "user",
@@ -1073,7 +1103,7 @@ async function handleYamaCalendar(request, corsH, env, authEmail) {
       }),
     });
     var aiData = await aiRes.json();
-    var advice = (aiData.content && aiData.content[0] && aiData.content[0].text) || "AI提案を取得できませんでした";
+    var advice = extractText(aiData) || "AI提案を取得できませんでした";
 
     return jsonRes({
       success: true,
@@ -1182,7 +1212,8 @@ var MCP_MAX_TOKENS = {
   task_to_action: 1000,
   resume_rewrite: 2000,
   weekly_coach: 800,
-  lucky_action: 200
+  // 150文字以内の短文だが、thinking 分も max_tokens に含まれるため余裕を持たせる
+  lucky_action: 1000
 };
 
 async function callMcpTool(name, args, env) {
@@ -1215,6 +1246,7 @@ async function callMcpTool(name, args, env) {
       body: JSON.stringify({
         model: "claude-sonnet-5-5",
         max_tokens: MCP_MAX_TOKENS[name] || 800,
+        output_config: { effort: SONNET_EFFORT },
         system: systemPrompt,
         messages: [{ role: "user", content: userContent }],
       }),
@@ -1223,7 +1255,7 @@ async function callMcpTool(name, args, env) {
     if (data.error) {
       return { content: [{ type: "text", text: "AI error: " + data.error.message }], isError: true };
     }
-    var text = (data.content && data.content[0]) ? data.content[0].text : "";
+    var text = extractText(data);
     return { content: [{ type: "text", text: text }] };
   } catch (err) {
     return { content: [{ type: "text", text: "Worker error: " + err.message }], isError: true };
@@ -2504,7 +2536,7 @@ async function handleRequest(request, env) {
     var vbChatSystem, vbChatMaxTokens, vbChatMessagesToSend;
     if (vbChatMode === "generate_prompt") {
       vbChatSystem = "あなたは画像生成プロンプト変換AIです。会話の内容を元に gpt-image-1.5 用の英語プロンプトを生成します。必ず {\"prompt\": \"...\"} のJSON形式のみ返してください。他の文字・説明・質問は一切含めないこと。";
-      vbChatMaxTokens = 300;
+      vbChatMaxTokens = 1000; // thinking 分も max_tokens に含まれるため余裕を持たせる（出力長はプロンプトで制限）
       // 会話履歴の末尾に「今すぐJSON出力」を命令するuserメッセージを追加
       vbChatMessagesToSend = vbChatMessages.concat([{
         role: "user",
@@ -2512,7 +2544,7 @@ async function handleRequest(request, env) {
       }]);
     } else {
       vbChatSystem = "あなたはビジョンボード用の画像プロンプト生成アシスタントです。ユーザーが「こんな画像が欲しい」と言ったら、どんな雰囲気か（明るい・落ち着いた・神秘的など）、スタイル（リアル・イラスト・水彩など）、色のトーンを会話で引き出してください。日本語で自然に会話してください。150文字以内で応答してください。Markdownを使わず普通のテキストで返答してください。";
-      vbChatMaxTokens = 200;
+      vbChatMaxTokens = 1000; // 同上（150文字以内はプロンプトで指定済み）
       vbChatMessagesToSend = vbChatMessages;
     }
 
@@ -2527,6 +2559,7 @@ async function handleRequest(request, env) {
         body: JSON.stringify({
           model: "claude-sonnet-5-5",
           max_tokens: vbChatMaxTokens,
+          output_config: { effort: SONNET_EFFORT },
           system: vbChatSystem,
           messages: vbChatMessagesToSend,
         }),
@@ -2535,7 +2568,7 @@ async function handleRequest(request, env) {
         return jsonRes({ error: "Anthropic API error", detail: await vbChatApiRes.text() }, vbChatApiRes.status, corsH);
       }
       var vbChatData = await vbChatApiRes.json();
-      var vbChatText = (vbChatData.content && vbChatData.content[0]) ? vbChatData.content[0].text : "";
+      var vbChatText = extractText(vbChatData);
 
       if (vbChatMode === "generate_prompt") {
         try {
@@ -2656,6 +2689,8 @@ async function handleRequest(request, env) {
           "\n継続的なケアの観点から、前回の状態と比較しながらアドバイスしてください。";
       }
 
+      // モデルはフロント（plant-doctor）が claude-sonnet-5-5 を指定している
+      plantBody.output_config = { effort: SONNET_EFFORT };
       var plantRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -2670,12 +2705,17 @@ async function handleRequest(request, env) {
       }
 
       var plantText = await plantRes.text();
+      try {
+        plantText = JSON.stringify(stripThinking(JSON.parse(plantText)));
+      } catch (e) {
+        // パースできない場合は受け取ったまま返す
+      }
 
       // 診断結果をパースしてSupabaseに保存（Fullプランのみ）
       if (plantIsFull) {
       try {
         var plantData = JSON.parse(plantText);
-        var rawResult = (plantData.content || []).map(function(b) { return b.text || ""; }).join("");
+        var rawResult = extractText(plantData);
         var stripped = rawResult.replace(/```json|```/g, "").trim();
         var jStart = stripped.indexOf("{");
         var jEnd = stripped.lastIndexOf("}");
@@ -2845,6 +2885,7 @@ async function handleRequest(request, env) {
         body: JSON.stringify({
           model: "claude-sonnet-5-5",
           max_tokens: 1024,
+          output_config: { effort: SONNET_EFFORT },
           messages: [
             {
               role: "user",
@@ -2864,7 +2905,7 @@ async function handleRequest(request, env) {
         return jsonRes({ error: (fsErr.error && fsErr.error.message) || ("Anthropic API error: " + fsApiRes.status) }, 502, corsH);
       }
       var fsData = await fsApiRes.json();
-      var fsResult = (fsData.content || []).map(function(b) { return b.text || ""; }).join("");
+      var fsResult = extractText(fsData);
       return jsonRes({ result: fsResult }, 200, corsH);
     } catch (err) {
       return jsonRes({ error: "Worker error: " + err.message }, 500, corsH);
