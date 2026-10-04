@@ -1218,7 +1218,7 @@ footer {
 <section class="hero">
   <div class="hero-left">
     <div class="hero-label">AI App Subscription</div>
-    <h1><em>59本</em>のAIアプリで、<br>毎日がちょっと<br><em>賢くなる</em>。</h1>
+    <h1><em><span class="js-app-total">62</span>本</em>のAIアプリで、<br>毎日がちょっと<br><em>賢くなる</em>。</h1>
     <p class="hero-sub">
       「1機能・1解決」の軽量AIアプリを、月額¥480〜の定額で使い放題。<br>
       Light・Standard・Fullの3プランから、今の自分に合う1つを。<br>
@@ -1226,7 +1226,7 @@ footer {
     </p>
     <div class="hero-btns">
       <a href="#pricing" class="btn-primary">¥480ではじめる</a>
-      <a href="#apps" class="btn-secondary">59本のアプリを見る</a>
+      <a href="#apps" class="btn-secondary"><span class="js-app-total">62</span>本のアプリを見る</a>
     </div>
   </div>
 
@@ -1236,7 +1236,7 @@ footer {
 <section class="proof">
   <div class="proof-grid">
     <div class="proof-item fade-up">
-      <div class="proof-num">59<sup>本</sup></div>
+      <div class="proof-num"><span class="js-app-total">62</span><sup>本</sup></div>
       <div class="proof-label">AIアプリ収録</div>
     </div>
     <div class="proof-item fade-up">
@@ -1276,7 +1276,7 @@ footer {
 
   <div class="concept-memory fade-up">
     <h3 class="concept-memory-title"><span class="concept-memory-mark">✦</span> Fullプランでは、AIがあなたを覚えています</h3>
-    <p class="concept-memory-text">59本のアプリすべてで会話履歴が積み重なり、<br>使うたびに、あなたに寄り添った答えへ近づいていく。</p>
+    <p class="concept-memory-text"><span class="js-app-total">62</span>本のアプリすべてで会話履歴が積み重なり、<br>使うたびに、あなたに寄り添った答えへ近づいていく。</p>
   </div>
 </section>
 
@@ -1316,14 +1316,14 @@ footer {
 
   <!-- Standard Plan -->
   <div class="apps-section-label" style="margin-top:20px;">Standard Plan <span class="apps-plan-tag">¥980/月</span></div>
-  <div class="apps-count-label" id="std-count">18本</div>
+  <div class="apps-count-label" id="std-count">20本</div>
   <div class="apps-grid-v2" id="std-grid">
     <div class="apps-empty-msg" id="std-empty">該当するアプリがありません</div>
   </div>
 
   <!-- Full Plan -->
   <div class="apps-section-label" style="margin-top:20px;">Full Plan <span class="apps-plan-tag">¥1,480/月</span></div>
-  <div class="apps-count-label" id="full-count">5本</div>
+  <div class="apps-count-label" id="full-count">6本</div>
   <div class="apps-grid-v2" id="full-grid">
     <div class="apps-empty-msg" id="full-empty">該当するアプリがありません</div>
   </div>
@@ -1382,9 +1382,9 @@ footer {
       <div class="plan-badge" style="background:var(--accent2);color:#fff;">Now Available</div>
       <div class="plan-name">Full</div>
       <div class="plan-price"><sup>¥</sup>1,480<sub>/月</sub></div>
-      <div class="plan-desc">59本すべてでAIがあなたを覚えている。全アプリ無制限、士業・専門職向けも含む最上位プラン。</div>
+      <div class="plan-desc"><span class="js-app-total">62</span>本すべてでAIがあなたを覚えている。全アプリ無制限、士業・専門職向けも含む最上位プラン。</div>
       <ul class="plan-features">
-        <li class="plan-feature plan-feature-memory">59本すべてで履歴が残る</li>
+        <li class="plan-feature plan-feature-memory"><span class="js-app-total">62</span>本すべてで履歴が残る</li>
         <li class="plan-feature plan-feature-memory">AIがあなたの過去の相談を覚えている</li>
         <li class="plan-feature">全アプリ完全使い放題</li>
         <li class="plan-feature">利用回数無制限</li>
@@ -1839,6 +1839,13 @@ function renderCatalog(apps){
   });
   attachCardHandlers();
   applyAppFilter();
+  updateAppTotals(apps.length);
+}
+
+// apps.json の総数をページ内の「◯本」表記に反映
+function updateAppTotals(total){
+  if (!total) return;
+  document.querySelectorAll('.js-app-total').forEach(el => { el.textContent = total; });
 }
 
 // カテゴリフィルター
