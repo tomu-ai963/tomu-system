@@ -460,7 +460,10 @@ async function handleRequest(request) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-haiku-5-5",
+          // Haiku 5.5 は adaptive thinking が既定で有効。max_tokens が小さいため明示的に無効化し、effort は low
+          thinking: { type: "disabled" },
+          output_config: { effort: "low" },
           max_tokens: maxTokens,
           system: system,
           messages: messages,
@@ -519,7 +522,10 @@ async function handleRequest(request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-5-5",
+        // Haiku 5.5 は adaptive thinking が既定で有効。max_tokens が小さいため明示的に無効化し、effort は low
+        thinking: { type: "disabled" },
+        output_config: { effort: "low" },
         max_tokens: getMaxTokens(appType),
         system: getSystemPrompt(appType, extra),
         messages: [{ role: "user", content: input }],
@@ -529,7 +535,8 @@ async function handleRequest(request) {
       return jsonRes({ error: "Anthropic API error", detail: await lightRes.text() }, lightRes.status, corsH);
     }
     var lightData = await lightRes.json();
-    var text = (lightData.content && lightData.content[0]) ? lightData.content[0].text : "";
+    var textBlock = (lightData.content || []).find(function(b) { return b.type === "text"; });
+    var text = textBlock ? textBlock.text : "";
     return jsonRes({ result: text }, 200, corsH);
   } catch (err) {
     return jsonRes({ error: "Worker error", detail: err.message }, 500, corsH);

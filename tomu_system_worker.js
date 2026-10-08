@@ -3001,7 +3001,10 @@ async function handleRequest(request, env) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-5-5",
+        // Haiku 5.5 は adaptive thinking が既定で有効。max_tokens が小さいため明示的に無効化し、effort は low
+        thinking: { type: "disabled" },
+        output_config: { effort: "low" },
         max_tokens: getMaxTokens(appType),
         system: getSystemPrompt(appType, extra),
         messages: [{ role: "user", content: input }],
