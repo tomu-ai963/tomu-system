@@ -9,7 +9,7 @@ id = "3d4d66de96b449e28198fdceb322b9d4"
 
 [[services]]
 binding = "MYSTIC"
-service = "mystic-system-worker"
+service = "tomu-mystic-worker"
 
 [[r2_buckets]]
 binding = "VISION_R2"

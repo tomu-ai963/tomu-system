@@ -2853,7 +2853,7 @@ async function handleRequest(request, env) {
     }
 
     try {
-      var mcpRes = await env.MYSTIC.fetch("https://mystic-system-worker/mcp", {
+      var mcpRes = await env.MYSTIC.fetch("https://tomu-mystic-worker/mcp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
