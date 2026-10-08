@@ -452,8 +452,8 @@
     </div>
   </div>
 
-  <!-- MYSTIC -->
-  <div class="mystic-section" id="mystic-wrap" style="display:none;padding:0 0 32px;">
+  <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+  <div class="mystic-section" hidden id="mystic-wrap" style="display:none;padding:0 0 32px;">
     <button class="btn-mystic" onclick="callMystic('oracle_message',{feeling:'大切なメールへの返信を考えた後'})">✨ MYSTICで占う</button>
     <div id="mystic-result"></div>
   </div>
@@ -595,7 +595,8 @@ async function runAnalysis() {
     setCardContent('summaryOutput', summary);
     setCardContent('replyOutput', reply);
     if((summary||reply)&&window.histSave){histSave({title:'メール要約・返信',summary:String(summary).replace(/[#*>-]+/g,' ').slice(0,80),content:'【要約】\n'+(summary||'')+'\n\n【返信案】\n'+(reply||''),meta:''});setTimeout(histLoad,1000);}
-    document.getElementById('mystic-wrap').style.display = 'block';
+    // とむMYSTIC 連携は保留中のため表示しない。再開時はこの行と hidden を戻す
+    // document.getElementById('mystic-wrap').style.display = 'block';
 
   } catch (err) {
     showError('エラーが発生しました。もう一度お試しください。');

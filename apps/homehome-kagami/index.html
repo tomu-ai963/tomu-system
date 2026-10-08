@@ -73,8 +73,8 @@ textarea::placeholder{color:#c4a8c0;font-style:italic}
     <div id="praise-section" class="praise-section hidden">
       <div class="praise-header"><span>🌸</span><span class="praise-label">鏡からのことば</span></div>
       <p class="praise-text" id="praiseText"></p>
-      <!-- MYSTIC -->
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);">
+      <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);" hidden>
         <button class="btn-mystic" onclick="callMystic('aura_reading',{current_state: document.getElementById('userInput').value})">✨ MYSTICで占う</button>
         <div id="mystic-result"></div>
       </div>

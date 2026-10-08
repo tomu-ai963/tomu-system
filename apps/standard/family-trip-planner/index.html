@@ -790,8 +790,8 @@
         <button class="btn-copy" onclick="copyResult()">📋 コピー</button>
         <button class="btn-reset" onclick="resetForm()">🔄 最初から</button>
       </div>
-      <!-- MYSTIC -->
-      <div class="mystic-section">
+      <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+      <div class="mystic-section" hidden>
         <button class="btn-mystic" style="margin-bottom:8px;" onclick="callMystic('lucky_color',{})">🎨 ラッキーカラーを見る</button>
         <button class="btn-mystic" onclick="callMystic('cosmic_timing',{action:'旅行の最高のタイミングを知りたい'})">✨ 宇宙のタイミングで占う</button>
         <div id="mystic-result"></div>

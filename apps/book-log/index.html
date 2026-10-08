@@ -523,8 +523,8 @@ footer a:hover { color: var(--accent); }
       <button class="btn-copy" onclick="copyQuote()">Copy — コピー</button>
       <button class="btn-reset" onclick="resetForm()">Reset — もう一度</button>
     </div>
-    <!-- MYSTIC -->
-    <div class="mystic-section">
+    <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+    <div class="mystic-section" hidden>
       <button class="btn-mystic" onclick="callMystic('oracle_message',{feeling:'本を読んで心が動いた'})">✨ MYSTICで占う</button>
       <div id="mystic-result"></div>
     </div>

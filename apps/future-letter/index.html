@@ -342,8 +342,8 @@ textarea:focus {
         <div class="divider-sm"></div>
         <button class="reset-btn" onclick="resetLetter()">もう一通、受け取る</button>
       </div>
-      <!-- MYSTIC -->
-      <div class="mystic-section" id="mystic-section-future" style="display:none">
+      <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+      <div class="mystic-section" hidden id="mystic-section-future" style="display:none">
         <button class="btn-mystic" onclick="callMystic('yearly_forecast',{})">✨ MYSTICで占う</button>
         <div id="mystic-result"></div>
       </div>
@@ -446,7 +446,8 @@ function typewriterStep() {
     const body = document.getElementById('letterBody');
     body.textContent = fullLetter;
     document.getElementById('resetWrap').style.display = 'block';
-    document.getElementById('mystic-section-future').style.display = 'block';
+    // とむMYSTIC 連携は保留中のため表示しない。再開時はこの行と hidden を戻す
+    // document.getElementById('mystic-section-future').style.display = 'block';
   }
 }
 

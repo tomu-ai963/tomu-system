@@ -515,8 +515,8 @@
       気になる数値・症状がある場合は必ず医師にご相談ください。
     </div>
     <button class="reset-btn" onclick="resetForm()">← 入力に戻る</button>
-    <!-- MYSTIC -->
-    <div class="mystic-section">
+    <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+    <div class="mystic-section" hidden>
       <button class="btn-mystic" style="margin-bottom:8px;" onclick="callMystic('health_energy',{concern:'健診結果を見て健康を意識している'})">✨ 健康エネルギーを占う</button>
       <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
         <input type="date" id="mystic-birthdate" style="flex:1;padding:8px 12px;border:1px solid #d4af37;border-radius:6px;background:#1a0533;color:#d4af37;font-size:13px;" placeholder="生年月日">

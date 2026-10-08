@@ -794,8 +794,8 @@
           <button class="btn btn-secondary" onclick="copyResult()">コピー</button>
           <button class="btn btn-secondary" onclick="resetResult()">もう一度</button>
         </div>
-        <!-- MYSTIC -->
-        <div class="mystic-section">
+        <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+        <div class="mystic-section" hidden>
           <button class="btn-mystic" style="margin-bottom:8px;" onclick="callMystic('cosmic_timing',{action:'補助金・助成金を活用したい'})">⏰ 最適なタイミングを占う</button>
           <button class="btn-mystic" onclick="callMystic('wealth_flow',{})">💰 富の流れを見る</button>
           <div id="mystic-result"></div>

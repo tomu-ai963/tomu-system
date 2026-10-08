@@ -431,8 +431,8 @@ button.loading .btn-text { display: none; }
       <span class="badge">Powered by Claude</span>
       <button class="retry-btn" onclick="resetUI()">やり直す</button>
     </div>
-    <!-- MYSTIC -->
-    <div class="mystic-section">
+    <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+    <div class="mystic-section" hidden>
       <button class="btn-mystic" onclick="callMystic('cosmic_timing',{action:'今日の3つのタスクを整理した'})">✨ MYSTICで占う</button>
       <div id="mystic-result"></div>
     </div>

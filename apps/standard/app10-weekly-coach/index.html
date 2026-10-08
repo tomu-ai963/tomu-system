@@ -476,8 +476,8 @@
         <div class="saved-badge" id="saved-badge" style="display:none;">
           ✓ 今週の内省を保存しました
         </div>
-        <!-- MYSTIC -->
-        <div class="mystic-section" id="mystic-wrap" style="display:none;">
+        <!-- MYSTIC（とむMYSTIC 連携は保留中のため非表示。再開時はこの直後の div の hidden を外す） -->
+        <div class="mystic-section" hidden id="mystic-wrap" style="display:none;">
           <button class="btn-mystic" style="margin-bottom:8px;" onclick="callMystic('moon_journal',{})">🌙 月の日記で占う</button>
           <button class="btn-mystic" onclick="callMystic('oracle_message',{feeling:'一週間を振り返って'})">✨ オラクルメッセージを受け取る</button>
           <div id="mystic-result"></div>
@@ -612,7 +612,8 @@ async function submitReflection() {
       document.getElementById('response-affirmation').textContent = affirmation;
     }
     document.getElementById('saved-badge').style.display = 'inline-flex';
-    document.getElementById('mystic-wrap').style.display = 'block';
+    // とむMYSTIC 連携は保留中のため表示しない。再開時はこの行と hidden を戻す
+    // document.getElementById('mystic-wrap').style.display = 'block';
     histSave({title:userInput.split('\n')[0].replace('【今週できたこと】','').trim().slice(0,30)||'週次内省',summary:mainText.slice(0,80)+(mainText.length>80?'…':''),content:mainText+(affirmation?'\n\n---\n'+affirmation:'')});
     setTimeout(histLoad,1000);
 
