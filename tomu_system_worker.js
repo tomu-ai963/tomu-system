@@ -83,17 +83,18 @@ function getSystemPrompt(appType, extra) {
   }
 }
 
+// Haiku 5.5 は新トークナイザーで同じ文章が約30%多いトークンになるため1.5倍に設定。出力の長さはプロンプト側で制御
 function getMaxTokens(appType) {
   var map = {
-    "praise": 200, "lunch": 150, "future-letter": 250,
-    "three-tasks": 200, "lucky-action": 150, "kokoro_detox": 350,
-    "rapid-reply": 200, "book-log": 100, "english": 150, "dinner": 150,
-    "subscript-checker": 2000,
-    "drink-excuse": 500, "etiquette": 800, "hangover": 800,
-    "neighbor-trouble": 1000, "oshi": 600, "outing": 1000,
-    "parent-message": 600, "polite-decline": 500, "small-talk": 600,
+    "praise": 300, "lunch": 250, "future-letter": 400,
+    "three-tasks": 300, "lucky-action": 250, "kokoro_detox": 550,
+    "rapid-reply": 300, "book-log": 150, "english": 250, "dinner": 250,
+    "subscript-checker": 3000,
+    "drink-excuse": 750, "etiquette": 1200, "hangover": 1200,
+    "neighbor-trouble": 1500, "oshi": 900, "outing": 1500,
+    "parent-message": 900, "polite-decline": 750, "small-talk": 900,
   };
-  return map[appType] || 300;
+  return map[appType] || 450;
 }
 
 // ===== 士業アドバイザー定義（S-3/Q-1） =====
